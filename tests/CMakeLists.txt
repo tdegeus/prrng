@@ -15,6 +15,7 @@ find_package(Catch2 REQUIRED)
 
 add_executable(${test_name}
     main.cpp
+    pcg32.cpp
     version.cpp)
 
 target_link_libraries(${test_name} PRIVATE
