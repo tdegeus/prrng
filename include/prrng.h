@@ -18,7 +18,20 @@ This is just a wrapper.
 #define PRRNG_H
 
 /**
-Multiplicative factor for pcg32
+Default initialisation state for pcg32()
+(used as constructor parameter that can be overwritten at run-time).
+*/
+#define PRRNG_PCG32_INITSTATE 0x853c49e6748fea9bULL
+
+/**
+Default initialisation sequence for pcg32()
+(used as constructor parameter that can be overwritten at run-time).
+*/
+#define PRRNG_PCG32_INITSEQ 0xda3e39cb94b95bdbULL
+
+/**
+Multiplicative factor for pcg32()
+(used internally, cannot be overwritten at run-time).
 */
 #define PRRNG_PCG32_MULT 6364136223846793005ULL
 
@@ -114,34 +127,92 @@ inline std::string version()
     return detail::unquote(std::string(QUOTE(PRRNG_VERSION)));
 };
 
+/**
+Base class of the pseudorandom number generators.
+This class provides common methods, but itself does not really do much.
+*/
 class Generator
 {
 public:
 
     Generator() = default;
 
+    virtual ~Generator() = default;
+
+    /**
+    Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+
+    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
+    \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
+
+    \param shape The shape of the nd-array.
+    \return The sample of shape `shape`.
+    */
     template <class R, class S>
     R random(const S& shape)
     {
         return this->random_impl<R>(shape);
     }
 
+    /**
+    Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+
+    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
+
+    \param shape The shape of the nd-array (brace input allowed, e.g. `{2, 3, 4}`.
+    \return The sample of shape `shape`.
+    */
     template <class R, class I, std::size_t L>
     R random(const I (&shape)[L])
     {
         return this->random_impl<R>(shape);
     }
 
+    /**
+    Generate an nd-array of random numbers distributed according to Weibull distribution.
+    Internally, the output of random() is converted using the cumulative density
+
+    \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
+
+    such that the output `r` from random() leads to
+
+    \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
+
+    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
+    \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
+
+    \param shape The shape of the nd-array.
+    \param k The "shape" parameter.
+    \param lambda The "scale" parameter.
+    \return The sample of shape `shape`.
+    */
     template <class R, class S>
     R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
     {
-        return this->weibull_impl(shape, k, lambda);
+        return this->weibull_impl<R>(shape, k, lambda);
     };
 
+    /**
+    Generate an nd-array of random numbers distributed according to Weibull distribution.
+    Internally, the output of random() is converted using the cumulative density
+
+    \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
+
+    such that the output `r` from random() leads to
+
+    \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
+
+    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
+
+    \param shape The shape of the nd-array (brace input allowed, e.g. `{2, 3, 4}`.
+    \param k The "shape" parameter.
+    \param lambda The "scale" parameter.
+    \return The sample of shape `shape`.
+    */
     template <class R, class I, std::size_t L>
     R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
     {
-        return this->weibull_impl(shape, k, lambda);
+        return this->weibull_impl<R>(shape, k, lambda);
     };
 
 private:
@@ -157,12 +228,18 @@ private:
     template <class R, class S>
     R weibull_impl(const S& shape, double k, double lambda)
     {
-        R r = this->random(shape);
-        return lambda * xt::pow(- xt::log(r - 1.0), k);
+        R r = this->random_impl<R>(shape);
+        return lambda * xt::pow(- xt::log(1.0 - r), 1.0 / k);
     };
 
 protected:
 
+    /**
+    Draw `n` random numbers and write them to list (input as pointer `data`).
+
+    \param data Pointer to the data (no bounds-check).
+    \param n Size of `data`.
+    */
     virtual void draw_list(double* data, size_t n)
     {
         for (size_t i = 0; i < n; ++i) {
@@ -172,7 +249,12 @@ protected:
 };
 
 /**
-Fully based on:
+Random number generate using the pcg32 algorithm.
+The class generate random 32-bit random numbers (of type `uint32_t`).
+In addition, they can be converted to nd-arrays of random floating-point numbers (according)
+using derived methods from Generate().
+
+The algorithm is full based on:
 
     The PCG random number generator was developed by Melissa O'Neill
     <oneill@pcg-random.org>
@@ -203,20 +285,14 @@ class pcg32 : public Generator
 {
 public:
 
-    pcg32()
-    {
-        this->seed();
-    };
+    /**
+    Constructor.
 
-    template <typename T>
-    pcg32(T initstate)
-    {
-        static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
-        this->seed(static_cast<uint64_t>(initstate));
-    };
-
-    template <typename T, typename S>
-    pcg32(T initstate, S initseq)
+    \param initstate State initiator.
+    \param initseq Sequence initiator.
+    */
+    template <typename T = uint64_t, typename S = uint64_t>
+    pcg32(T initstate = PRRNG_PCG32_INITSTATE, S initseq = PRRNG_PCG32_INITSEQ)
     {
         static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
         static_assert(sizeof(uint64_t) >= sizeof(S), "Down-casting not allowed.");
@@ -224,7 +300,10 @@ public:
     };
 
     /**
-    From: Melissa O'Neill, http://www.pcg-random.org.
+    \return Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
+    This advances the state of the generator by one increment.
+
+    \author Melissa O'Neill, http://www.pcg-random.org.
     */
     uint32_t operator()()
     {
@@ -235,15 +314,22 @@ public:
         return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
     };
 
+    /**
+    \return Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
+    This advances the state of the generator by one increment.
+
+    \note Wrapper around operator().
+    */
     uint32_t next_uint32()
     {
         return (*this)();
     }
 
     /**
-    Generate a uniformly distributed number, r, where 0 <= r < bound.
+    \param bound Bound on the return.
+    \return Draw new random number (uniformly distributed, `0 <= r <= bound`).
 
-    From: Taken from Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
     uint32_t next_uint32(uint32_t bound)
     {
@@ -279,15 +365,29 @@ public:
     }
 
     /**
-    Generate a double precision floating point value on the interval [0, 1)
+    \return Generate a single precision floating point value on the interval [0, 1).
+
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
+    */
+    float next_float() {
+        /* Trick from MTGP: generate an uniformly distributed
+           single precision number in [1,2) and subtract 1. */
+        union {
+            uint32_t u;
+            float f;
+        } x;
+        x.u = (next_uint32() >> 9) | 0x3f800000u;
+        return x.f - 1.0f;
+    }
+
+    /**
+    \return Generate a double precision floating point value on the interval [0, 1)
 
     \remark Since the underlying random number generator produces 32 bit output,
     only the first 32 mantissa bits will be filled (however, the resolution is still
-    finer than in \ref nextFloat(), which only uses 23 mantissa bits).
+    finer than in next_float(), which only uses 23 mantissa bits).
 
-    From: Taken from Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
-
-    \return Random number.
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
     double next_double()
     {
@@ -301,6 +401,13 @@ public:
         return x.d - 1.0;
     }
 
+    /**
+    \return The current "state" of the generator. If the same initseq() is used, this exact point
+    in the sequence can be restored with restore().
+
+    \tparam R use a different return-type. There are some internal checks if the type is able to
+    store the internal state of type `uint64_t`.
+    */
     template <typename R = uint64_t>
     R state()
     {
@@ -313,6 +420,12 @@ public:
         return static_cast<R>(m_state);
     };
 
+    /**
+    \return The state initiator that was used upon construction.
+
+    \tparam R use a different return-type. There are some internal checks if the type is able to
+    store the internal state of type `uint64_t`.
+    */
     template <typename R = uint64_t>
     R initstate()
     {
@@ -325,6 +438,12 @@ public:
         return static_cast<R>(m_initstate);
     };
 
+    /**
+    \return The sequence initiator that was used upon construction.
+
+    \tparam R use a different return-type. There are some internal checks if the type is able to
+    store the internal state of type `uint64_t`.
+    */
     template <typename R = uint64_t>
     R initseq()
     {
@@ -337,6 +456,12 @@ public:
         return static_cast<R>(m_initseq);
     };
 
+    /**
+    Restore a given state in the sequence. See state().
+
+    \tparam R use a different return-type. There are some internal checks if the type is able to
+    store the internal state of type `uint64_t`.
+    */
     template <typename T>
     void restore(T state)
     {
@@ -345,9 +470,9 @@ public:
     };
 
     /**
-    Compute the distance between two PCG32 pseudorandom number generators.
+    \return The distance between two PCG32 pseudorandom number generators.
 
-    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
     int64_t operator-(const pcg32 &other) const
     {
@@ -375,9 +500,12 @@ public:
     };
 
     /**
-    Compute the distance between two PCG32 pseudorandom number generators.
+    \return The distance between two PCG32 pseudorandom number generators.
 
-    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
+
+    \tparam R use a different return-type. There are some internal checks if the type is able to
+    store the internal state of type `int64_t`.
     */
     template <typename R = int64_t>
     R distance(const pcg32 &other)
@@ -395,11 +523,14 @@ public:
     }
 
     /**
-    Compute the distance between two states.
+    \return The distance between two states.
 
     \warning The increment of used to generate must be the same. There is no way of checking here!
 
-    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
+
+    \tparam R use a different return-type. There are some internal checks if the type is able to
+    store the internal state of type `int64_t`.
     */
     template <typename R = int64_t, typename T>
     R distance(T other_state)
@@ -437,11 +568,14 @@ public:
     /**
     Multi-step advance function (jump-ahead, jump-back).
 
-    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    \param distance Distance to jump ahead or jump back (depending on the sign).
+    This changes that state of the generator by the appropriate number of increments.
 
-    The method used here is based on Brown, "Random Number Generation
+    \note The method used here is based on Brown, "Random Number Generation
     with Arbitrary Stride", Transactions of the American Nuclear Society (Nov. 1994).
     The algorithm is very similar to fast exponentiation.
+
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
     template <typename T>
     void advance(T distance)
@@ -475,9 +609,12 @@ public:
     /**
     Draw uniformly distributed permutation and permute the given STL container.
 
-    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    \param begin
+    \param end
 
-    From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
+    \note From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
+
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
     template <typename Iterator>
     void shuffle(Iterator begin, Iterator end)
@@ -490,7 +627,9 @@ public:
     /**
     Equality operator.
 
-    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    \param other The generator to which to compare.
+
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
     bool operator==(const pcg32 &other) const
     {
@@ -500,7 +639,9 @@ public:
     /**
     Inequality operator.
 
-    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    \param other The generator to which to compare.
+
+    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
     bool operator!=(const pcg32 &other) const
     {
@@ -518,7 +659,7 @@ protected:
 
 private:
 
-    void seed(uint64_t initstate = 0x853c49e6748fea9bULL, uint64_t initseq = 0xda3e39cb94b95bdbULL)
+    void seed(uint64_t initstate, uint64_t initseq)
     {
         PRRNG_ASSERT(initstate >= 0);
         PRRNG_ASSERT(initseq >= 0);
