@@ -1,5 +1,8 @@
 /**
-Portable Reconstructible (Approximate!) Random Number Generator.
+Portable Reconstructible Random Number Generator.
+The idea is that a random sequence can be restored independent of platform or compiler.
+In addition, this library allows you to store a point in the sequence, and then later restore
+the sequence exactly from this point (in both directions actually).
 
 Note that the core of this code is taken from
 https://github.com/imneme/pcg-c-basic
@@ -13,6 +16,11 @@ This is just a wrapper.
 
 #ifndef PRRNG_H
 #define PRRNG_H
+
+/**
+Multiplicative factor for pcg32
+*/
+#define PRRNG_PCG32_MULT 6364136223846793005ULL
 
 #include <array>
 #include <xtensor/xtensor.hpp>
@@ -163,6 +171,34 @@ protected:
     }
 };
 
+/**
+The original code was licensed as follows:
+
+    The PCG random number generator was developed by Melissa O'Neill
+    <oneill@pcg-random.org>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+    For additional information about the PCG random number generation scheme,
+    including its license and other licensing options, visit
+
+        http://www.pcg-random.org
+
+Furthermore bits are code are taken from another wrapper:
+
+    Wenzel Jakob, February 2015
+    https://github.com/wjakob/pcg32
+*/
 class pcg32 : public Generator
 {
 public:
@@ -190,17 +226,74 @@ public:
     uint32_t operator()()
     {
         uint64_t oldstate = m_state;
-        m_state = oldstate * 6364136223846793005ULL + m_inc;
+        m_state = oldstate * PRRNG_PCG32_MULT + m_inc;
         uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
         uint32_t rot = oldstate >> 59u;
         return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
     };
 
+    uint32_t next_uint32()
+    {
+        return (*this)();
+    }
+
+    /**
+    Generate a double precision floating point value on the interval [0, 1)
+
+    \remark Since the underlying random number generator produces 32 bit output,
+    only the first 32 mantissa bits will be filled (however, the resolution is still
+    finer than in \ref nextFloat(), which only uses 23 mantissa bits).
+
+    \note Taken from Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+
+    \return Random number.
+    */
+    double next_double()
+    {
+        union {
+            uint64_t u;
+            double d;
+        } x;
+
+        x.u = ((uint64_t) next_uint32() << 20) | 0x3ff0000000000000ULL;
+
+        return x.d - 1.0;
+    }
+
     template <typename R = uint64_t>
     R state()
     {
-        static_assert(sizeof(R) >= sizeof(uint64_t), "Down-casting not allowed.");
+        static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_state)>::max,
+            "Down-casting not allowed.");
+
+        static_assert(std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_state)>::min,
+            "Down-casting not allowed.");
+
         return static_cast<R>(m_state);
+    };
+
+    template <typename R = uint64_t>
+    R initstate()
+    {
+        static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initstate)>::max,
+            "Down-casting not allowed.");
+
+        static_assert(std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_initstate)>::min,
+            "Down-casting not allowed.");
+
+        return static_cast<R>(m_initstate);
+    };
+
+    template <typename R = uint64_t>
+    R initseq()
+    {
+        static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initseq)>::max,
+            "Down-casting not allowed.");
+
+        static_assert(std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_initseq)>::min,
+            "Down-casting not allowed.");
+
+        return static_cast<R>(m_initseq);
     };
 
     template <typename T>
@@ -210,20 +303,125 @@ public:
         m_state = static_cast<uint64_t>(state);
     };
 
+    /**
+    Compute the distance between two PCG32 pseudorandom number generators.
+    */
+    int64_t operator-(const pcg32 &other) const
+    {
+        PRRNG_ASSERT(m_inc == other.m_inc);
+
+        uint64_t
+            cur_mult = PRRNG_PCG32_MULT,
+            cur_plus = m_inc,
+            cur_state = other.m_state,
+            the_bit = 1u,
+            distance = 0u;
+
+        while (m_state != cur_state) {
+            if ((m_state & the_bit) != (cur_state & the_bit)) {
+                cur_state = cur_state * cur_mult + cur_plus;
+                distance |= the_bit;
+            }
+            assert((m_state & the_bit) == (cur_state & the_bit));
+            the_bit <<= 1;
+            cur_plus = (cur_mult + 1ULL) * cur_plus;
+            cur_mult *= cur_mult;
+        }
+
+        return (int64_t) distance;
+    };
+
+    /**
+    Compute the distance between two PCG32 pseudorandom number generators.
+    */
+    template <typename R = int64_t>
+    R distance(const pcg32 &other)
+    {
+        static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
+
+        int64_t r = this->operator-(other);
+
+        #ifdef PRRNG_ENABLE_ASSERT
+        bool u = std::is_unsigned<R>::value;
+        PRRNG_ASSERT((r < 0 && !u) || r >= 0);
+        #endif
+
+        return static_cast<R>(r);
+    }
+
+    /**
+    Compute the distance between two states.
+
+    \warning The increment of used to generate must be the same. There is no way of checking here!
+    */
+    template <typename R = int64_t, typename T>
+    R distance(T other_state)
+    {
+        static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
+
+        uint64_t
+            cur_mult = PRRNG_PCG32_MULT,
+            cur_plus = m_inc,
+            cur_state = other_state,
+            the_bit = 1u,
+            distance = 0u;
+
+        while (m_state != cur_state) {
+            if ((m_state & the_bit) != (cur_state & the_bit)) {
+                cur_state = cur_state * cur_mult + cur_plus;
+                distance |= the_bit;
+            }
+            assert((m_state & the_bit) == (cur_state & the_bit));
+            the_bit <<= 1;
+            cur_plus = (cur_mult + 1ULL) * cur_plus;
+            cur_mult *= cur_mult;
+        }
+
+        int64_t r = (int64_t) distance;
+
+        #ifdef PRRNG_ENABLE_ASSERT
+        bool u = std::is_unsigned<R>::value;
+        PRRNG_ASSERT((r < 0 && !u) || r >= 0);
+        #endif
+
+        return static_cast<R>(r);
+    }
+
+    /**
+    Equality operator.
+    */
+    bool operator==(const pcg32 &other) const
+    {
+        return m_state == other.m_state && m_inc == other.m_inc;
+    };
+
+    /**
+    Inequality operator.
+    */
+    bool operator!=(const pcg32 &other) const
+    {
+        return m_state != other.m_state || m_inc != other.m_inc;
+    };
+
 protected:
 
     void draw_list(double* data, size_t n) override
     {
         for (size_t i = 0; i < n; ++i) {
-            data[i] = ((*this)()) * (1.0 / std::numeric_limits<uint32_t>::max());
+            data[i] = next_double();
         }
     }
-
 
 private:
 
     void init(uint64_t initstate = 0x853c49e6748fea9bULL, uint64_t initseq = 0xda3e39cb94b95bdbULL)
     {
+        PRRNG_ASSERT(initstate >= 0);
+        PRRNG_ASSERT(initseq >= 0);
+
+        m_initstate = initstate;
+        m_initseq = initseq;
+
         m_state = 0U;
         m_inc = (initseq << 1u) | 1u;
         (*this)();
@@ -233,8 +431,10 @@ private:
 
 private:
 
-    uint64_t m_state; ///< RNG state. All values are possible.
-    uint64_t m_inc;   ///< Controls which RNG sequence (stream) is selected. Must *always* be odd.
+    uint64_t m_initstate; ///< State initiator
+    uint64_t m_initseq;   ///< Sequence initiator
+    uint64_t m_state;     ///< RNG state. All values are possible.
+    uint64_t m_inc;       ///< Controls which RNG sequence (stream) is selected. Must *always* be odd.
 };
 
 } // namespace prrng
