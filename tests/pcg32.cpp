@@ -37,6 +37,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         prrng::pcg32 gen(std::time(0));
 
+        auto f = myget_n(gen, 100);
+
         auto state = gen.state<>();
         auto a = myget_n(gen, 100);
 

@@ -1,8 +1,40 @@
 import unittest
 import prrng
+import time
 import numpy as np
 
-class Test_random(unittest.TestCase):
+class Test_pcg32_basic(unittest.TestCase):
+
+    def test_seed(self):
+
+        seed = int(time.time())
+
+        gen_a = prrng.pcg32(seed)
+        a = gen_a.random([100])
+
+        gen_b = prrng.pcg32(seed)
+        b = gen_b.random([100])
+
+        self.assertTrue(np.allclose(a, b))
+
+
+    def test_restore(self):
+
+        seed = int(time.time())
+
+        gen = prrng.pcg32(seed)
+        gen.random([123])
+
+        state = gen.state()
+        a = gen.random([100])
+
+        gen.restore(state)
+        b = gen.random([100])
+
+        self.assertTrue(np.allclose(a, b))
+
+
+class Test_pcg32_random(unittest.TestCase):
 
     def test_historic(self):
 
