@@ -15,3 +15,7 @@ dependencies:
 
   # to run tests
   - catch2
+
+  # build docs
+  - doxygen
+  - mathjax
