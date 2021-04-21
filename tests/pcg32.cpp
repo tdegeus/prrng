@@ -24,24 +24,24 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         auto seed = std::time(0);
 
-        prrng::pcg32 first(seed);
-        auto a = myget_n(first, 100);
+        prrng::pcg32 gen_a(seed);
+        auto a = myget_n(gen_a, 100);
 
-        prrng::pcg32 second(seed);
-        auto b = myget_n(second, 100);
+        prrng::pcg32 gen_b(seed);
+        auto b = myget_n(gen_b, 100);
 
         REQUIRE(xt::all(xt::equal(a, b)));
     }
 
     SECTION("basic - restore")
     {
-        prrng::pcg32 draw(std::time(0));
+        prrng::pcg32 gen(std::time(0));
 
-        auto state = draw.state<>();
-        auto a = myget_n(draw, 100);
+        auto state = gen.state<>();
+        auto a = myget_n(gen, 100);
 
-        draw.restore(state);
-        auto b = myget_n(draw, 100);
+        gen.restore(state);
+        auto b = myget_n(gen, 100);
 
         REQUIRE(xt::all(xt::equal(a, b)));
     }
@@ -51,12 +51,12 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         size_t n = 345;
         auto seed = std::time(0);
 
-        prrng::pcg32 first(seed);
-        prrng::pcg32 second(seed);
+        prrng::pcg32 gen_a(seed);
+        prrng::pcg32 gen_b(seed);
 
-        auto a = myget_n(first, n);
-        auto m = first - second;
-        auto b = myget_n(second, m);
+        auto a = myget_n(gen_a, n);
+        auto m = gen_a - gen_b;
+        auto b = myget_n(gen_b, m);
 
         REQUIRE(static_cast<decltype(m)>(n) == m);
         REQUIRE(xt::all(xt::equal(a, b)));
@@ -67,14 +67,14 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         size_t n = 345;
         auto seed = std::time(0);
 
-        prrng::pcg32 draw(seed);
+        prrng::pcg32 gen(seed);
 
-        auto state = draw.state<>();
-        auto a = myget_n(draw, n);
-        auto m = draw.distance<>(state);
+        auto state = gen.state<>();
+        auto a = myget_n(gen, n);
+        auto m = gen.distance<>(state);
 
-        draw.restore(state);
-        auto b = myget_n(draw, m);
+        gen.restore(state);
+        auto b = myget_n(gen, m);
 
         REQUIRE(static_cast<decltype(m)>(n) == m);
         REQUIRE(xt::all(xt::equal(a, b)));
@@ -84,42 +84,42 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         auto seed = std::time(0);
 
-        prrng::pcg32 first(seed);
-        auto a = first.random<xt::xtensor<double, 1>>({100000});
+        prrng::pcg32 gen_a(seed);
+        auto a = gen_a.random<xt::xtensor<double, 1>>({100000});
 
-        prrng::pcg32 second(seed);
-        auto b = second.random<xt::xtensor<double, 1>>({100000});
+        prrng::pcg32 gen_b(seed);
+        auto b = gen_b.random<xt::xtensor<double, 1>>({100000});
 
         REQUIRE(xt::all(xt::equal(a, b)));
     }
 
     SECTION("random - restore")
     {
-        prrng::pcg32 draw(std::time(0));
+        prrng::pcg32 gen(std::time(0));
 
-        auto state = draw.state<>();
-        auto a = draw.random<xt::xtensor<double, 1>>({100000});
+        auto state = gen.state<>();
+        auto a = gen.random<xt::xtensor<double, 1>>({100000});
 
-        draw.restore(state);
-        auto b = draw.random<xt::xtensor<double, 1>>({100000});
+        gen.restore(state);
+        auto b = gen.random<xt::xtensor<double, 1>>({100000});
 
         REQUIRE(xt::all(xt::equal(a, b)));
     }
 
     SECTION("random - mean")
     {
-        prrng::pcg32 draw;
+        prrng::pcg32 gen;
 
-        auto a = draw.random<xt::xtensor<double, 1>>({100000});
+        auto a = gen.random<xt::xtensor<double, 1>>({100000});
         double m = xt::mean(a)();
         REQUIRE(std::abs((m - 0.5) / 0.5) < 1e-3);
     }
 
     SECTION("random - historic")
     {
-        prrng::pcg32 draw;
+        prrng::pcg32 gen;
 
-        auto a = draw.random<xt::xtensor<double, 1>>({100});
+        auto a = gen.random<xt::xtensor<double, 1>>({100});
 
         xt::xtensor<double, 1> b =
             { 0.108379,  0.90696 ,  0.406692,  0.875239,  0.694849,  0.7435  ,
