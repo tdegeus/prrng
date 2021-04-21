@@ -172,7 +172,7 @@ protected:
 };
 
 /**
-The original code was licensed as follows:
+Fully based on:
 
     The PCG random number generator was developed by Melissa O'Neill
     <oneill@pcg-random.org>
@@ -194,7 +194,7 @@ The original code was licensed as follows:
 
         http://www.pcg-random.org
 
-Furthermore bits are code are taken from another wrapper:
+Whereby most code is taken from the follow wrapper:
 
     Wenzel Jakob, February 2015
     https://github.com/wjakob/pcg32
@@ -205,14 +205,14 @@ public:
 
     pcg32()
     {
-        this->init();
+        this->seed();
     };
 
     template <typename T>
     pcg32(T initstate)
     {
         static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
-        this->init(static_cast<uint64_t>(initstate));
+        this->seed(static_cast<uint64_t>(initstate));
     };
 
     template <typename T, typename S>
@@ -220,9 +220,12 @@ public:
     {
         static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
         static_assert(sizeof(uint64_t) >= sizeof(S), "Down-casting not allowed.");
-        this->init(static_cast<uint64_t>(initstate), static_cast<uint64_t>(initseq));
+        this->seed(static_cast<uint64_t>(initstate), static_cast<uint64_t>(initseq));
     };
 
+    /**
+    From: Melissa O'Neill, http://www.pcg-random.org.
+    */
     uint32_t operator()()
     {
         uint64_t oldstate = m_state;
@@ -238,13 +241,51 @@ public:
     }
 
     /**
+    Generate a uniformly distributed number, r, where 0 <= r < bound.
+
+    From: Taken from Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    */
+    uint32_t next_uint32(uint32_t bound)
+    {
+        // To avoid bias, we need to make the range of the RNG a multiple of
+        // bound, which we do by dropping output less than a threshold.
+        // A naive scheme to calculate the threshold would be to do
+        //
+        //     uint32_t threshold = 0x100000000ull % bound;
+        //
+        // but 64-bit div/mod is slower than 32-bit div/mod (especially on
+        // 32-bit platforms).  In essence, we do
+        //
+        //     uint32_t threshold = (0x100000000ull-bound) % bound;
+        //
+        // because this version will calculate the same modulus, but the LHS
+        // value is less than 2^32.
+
+        uint32_t threshold = (~bound+1u) % bound;
+
+        // Uniformity guarantees that this loop will terminate.  In practice, it
+        // should usually terminate quickly; on average (assuming all bounds are
+        // equally likely), 82.25% of the time, we can expect it to require just
+        // one iteration.  In the worst case, someone passes a bound of 2^31 + 1
+        // (i.e., 2147483649), which invalidates almost 50% of the range.  In
+        // practice, bounds are typically small and only a tiny amount of the range
+        // is eliminated.
+        for (;;) {
+            uint32_t r = next_uint32();
+            if (r >= threshold) {
+                return r % bound;
+            }
+        }
+    }
+
+    /**
     Generate a double precision floating point value on the interval [0, 1)
 
     \remark Since the underlying random number generator produces 32 bit output,
     only the first 32 mantissa bits will be filled (however, the resolution is still
     finer than in \ref nextFloat(), which only uses 23 mantissa bits).
 
-    \note Taken from Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+    From: Taken from Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
 
     \return Random number.
     */
@@ -305,6 +346,8 @@ public:
 
     /**
     Compute the distance between two PCG32 pseudorandom number generators.
+
+    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
     */
     int64_t operator-(const pcg32 &other) const
     {
@@ -333,6 +376,8 @@ public:
 
     /**
     Compute the distance between two PCG32 pseudorandom number generators.
+
+    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
     */
     template <typename R = int64_t>
     R distance(const pcg32 &other)
@@ -353,6 +398,8 @@ public:
     Compute the distance between two states.
 
     \warning The increment of used to generate must be the same. There is no way of checking here!
+
+    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
     */
     template <typename R = int64_t, typename T>
     R distance(T other_state)
@@ -388,7 +435,62 @@ public:
     }
 
     /**
+    Multi-step advance function (jump-ahead, jump-back).
+
+    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+
+    The method used here is based on Brown, "Random Number Generation
+    with Arbitrary Stride", Transactions of the American Nuclear Society (Nov. 1994).
+    The algorithm is very similar to fast exponentiation.
+    */
+    template <typename T>
+    void advance(T distance)
+    {
+        static_assert(sizeof(int64_t) >= sizeof(T), "Down-casting not allowed.");
+
+        int64_t delta_ = static_cast<int64_t>(distance);
+
+        uint64_t
+            cur_mult = PRRNG_PCG32_MULT,
+            cur_plus = m_inc,
+            acc_mult = 1u,
+            acc_plus = 0u;
+
+        /* Even though delta is an unsigned integer, we can pass a signed
+           integer to go backwards, it just goes "the long way round". */
+        uint64_t delta = (uint64_t) delta_;
+
+        while (delta > 0) {
+            if (delta & 1) {
+                acc_mult *= cur_mult;
+                acc_plus = acc_plus * cur_mult + cur_plus;
+            }
+            cur_plus = (cur_mult + 1) * cur_plus;
+            cur_mult *= cur_mult;
+            delta /= 2;
+        }
+        m_state = acc_mult * m_state + acc_plus;
+    }
+
+    /**
+    Draw uniformly distributed permutation and permute the given STL container.
+
+    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
+
+    From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
+    */
+    template <typename Iterator>
+    void shuffle(Iterator begin, Iterator end)
+    {
+        for (Iterator it = end - 1; it > begin; --it) {
+            std::iter_swap(it, begin + next_uint32((uint32_t) (it - begin + 1)));
+        }
+    }
+
+    /**
     Equality operator.
+
+    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
     */
     bool operator==(const pcg32 &other) const
     {
@@ -397,6 +499,8 @@ public:
 
     /**
     Inequality operator.
+
+    From: Wenzel Jakob, February 2015, https://github.com/wjakob/pcg32.
     */
     bool operator!=(const pcg32 &other) const
     {
@@ -414,7 +518,7 @@ protected:
 
 private:
 
-    void init(uint64_t initstate = 0x853c49e6748fea9bULL, uint64_t initseq = 0xda3e39cb94b95bdbULL)
+    void seed(uint64_t initstate = 0x853c49e6748fea9bULL, uint64_t initseq = 0xda3e39cb94b95bdbULL)
     {
         PRRNG_ASSERT(initstate >= 0);
         PRRNG_ASSERT(initseq >= 0);

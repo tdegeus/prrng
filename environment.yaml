@@ -1,0 +1,17 @@
+channels:
+  - conda-forge
+dependencies:
+  # dependencies
+  - xtensor
+
+  # build tools
+  - cmake
+  - setuptools_scm
+
+  # Python API
+  - python
+  - numpy
+  - pyxtensor
+
+  # to run tests
+  - catch2
