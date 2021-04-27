@@ -75,7 +75,7 @@ Tip: use the environment variable ``SETUPTOOLS_SCM_PRETEND_VERSION``
 to overwrite the automatic version.
 */
 #ifndef PRRNG_VERSION
-#define PRRNG_VERSION "@prrng_VERSION@"
+#define PRRNG_VERSION "@PROJECT_VERSION@"
 #endif
 
 /**
