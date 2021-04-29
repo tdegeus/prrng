@@ -144,4 +144,16 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
         REQUIRE(xt::allclose(a, b, 1e-3, 1e-4));
     }
+
+    SECTION("nd_pcg32 - basic")
+    {
+        xt::xtensor<uint64_t, 1> seed = {0, 1, 3};
+        prrng::nd_pcg32 gen(seed);
+        auto s = gen[0].state<>();
+        std::cout << gen.random<xt::xtensor<double, 2>>({5}) << std::endl;
+        std::cout << gen.random<xt::xtensor<double, 2>>({5}) << std::endl;
+        gen[0].restore(s);
+        std::cout << gen.random<xt::xtensor<double, 2>>({5}) << std::endl;
+        std::cout << gen.random<xt::xtensor<double, 2>>({5}) << std::endl;
+    }
 }

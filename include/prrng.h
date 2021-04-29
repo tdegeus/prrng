@@ -37,6 +37,8 @@ Multiplicative factor for pcg32()
 
 #include <array>
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
 
 /**
 \cond
@@ -115,6 +117,29 @@ namespace detail {
         return ret;
     };
 
+    template <class S, class T>
+    inline std::vector<size_t> concatenate(const S& s, const T& t)
+    {
+        std::vector<size_t> r;
+        r.insert(r.begin(), s.begin(), s.end());
+        r.insert(r.end(), t.begin(), t.end());
+        return r;
+    }
+
+    template <class S>
+    inline size_t size(const S& shape)
+    {
+        using ST = typename S::value_type;
+        return std::accumulate(shape.cbegin(), shape.cend(), ST(1), std::multiplies<ST>());
+    }
+
+    template <class I, std::size_t L>
+    std::array<I, L> to_array(const I (&shape)[L])
+    {
+        std::array<I, L> r;
+        std::copy(&shape[0], &shape[0] + L, r.begin());
+        return r;
+    }
 }
 
 /**
@@ -126,6 +151,45 @@ inline std::string version()
 {
     return detail::unquote(std::string(QUOTE(PRRNG_VERSION)));
 };
+
+namespace detail
+{
+
+    template <class S, class T, typename = void>
+    struct shapes
+    {
+        static std::vector<size_t> concatenate(const T& t, const S& s)
+        {
+            std::vector<size_t> r(t.cbegin(), t.cend());
+            r.insert(r.end(), s.begin(), s.end());
+            return r;
+        }
+    };
+
+    template <class S, class T>
+    struct shapes<T, S, typename std::enable_if<xt::has_fixed_rank_t<T>::value &&
+                                                xt::has_fixed_rank_t<S>::value>::type>
+    {
+        constexpr static size_t rank = std::rank<T>::value + std::rank<S>::value;
+
+        static std::array<size_t, rank> concatenate(const T& t, const S& s)
+        {
+            std::array<size_t, rank> r;
+            std::copy(t.cbegin(), t.cend(), r.begin());
+            std::copy(s.cbegin(), s.cend(), r.begin() + std::rank<T>::value);
+            return r;
+        }
+    };
+
+    // template <class S>
+    // inline size_t size(const S& shape)
+    // {
+    //     using ST = typename S::value_type;
+    //     return std::accumulate(shape.cbegin(), shape.cend(), ST(1), std::multiplies<ST>());
+    // }
+
+} // namespace detail
+
 
 /**
 Base class of the pseudorandom number generators.
@@ -165,6 +229,9 @@ public:
     template <class R, class I, std::size_t L>
     R random(const I (&shape)[L])
     {
+        // size_t size = std::accumulate(&shape[0], &shape[L], 1, std::multiplies<size_t>());
+        // std::cout << size << std::endl;
+
         return this->random_impl<R>(shape);
     }
 
@@ -681,6 +748,275 @@ private:
     uint64_t m_state;     ///< RNG state. All values are possible.
     uint64_t m_inc;       ///< Controls which RNG sequence (stream) is selected. Must *always* be odd.
 };
+
+/**
+Grid of independent generators.
+*/
+class nd_Generator
+{
+public:
+
+    nd_Generator() = default;
+
+    virtual ~nd_Generator() = default;
+
+    /**
+    Return the size.
+    */
+    size_t size() const
+    {
+        return m_size;
+    }
+
+    /**
+    Check in bounds.
+    */
+    template <class T>
+    bool inbounds(const T& index)
+    {
+        if (index.size() != m_strides.size()) {
+            return false;
+        }
+
+        for (size_t i = 0; i < m_strides.size(); ++i) {
+            if (index[i] >= m_shape[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+    Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+
+    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
+    \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
+
+    \param shape The shape of the nd-array.
+    \return The sample of shape `shape`.
+    */
+    template <class R, class S>
+    R random(const S& shape)
+    {
+        // size_t size = std::accumulate(shape.cbegin(), shape.cend(), 1, std::multiplies<size_t>());
+        return this->random_impl<R>(shape);
+    }
+
+    /**
+    Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+
+    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
+
+    \param shape The shape of the nd-array (brace input allowed, e.g. `{2, 3, 4}`.
+    \return The sample of shape `shape`.
+    */
+    template <class R, class I, std::size_t L>
+    R random(const I (&shape)[L])
+    {
+        return this->random_impl<R>(detail::to_array(shape));
+    }
+
+    /**
+    Generate an nd-array of random numbers distributed according to Weibull distribution.
+    Internally, the output of random() is converted using the cumulative density
+
+    \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
+
+    such that the output `r` from random() leads to
+
+    \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
+
+    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
+    \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
+
+    \param shape The shape of the nd-array.
+    \param k The "shape" parameter.
+    \param lambda The "scale" parameter.
+    \return The sample of shape `shape`.
+    */
+    template <class R, class S>
+    R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
+    {
+        return this->weibull_impl<R>(shape, k, lambda);
+    };
+
+    /**
+    Generate an nd-array of random numbers distributed according to Weibull distribution.
+    Internally, the output of random() is converted using the cumulative density
+
+    \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
+
+    such that the output `r` from random() leads to
+
+    \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
+
+    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
+
+    \param shape The shape of the nd-array (brace input allowed, e.g. `{2, 3, 4}`.
+    \param k The "shape" parameter.
+    \param lambda The "scale" parameter.
+    \return The sample of shape `shape`.
+    */
+    template <class R, class I, std::size_t L>
+    R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
+    {
+        return this->weibull_impl<R>(detail::to_array(shape), k, lambda);
+    };
+
+private:
+
+    template <class R, class S>
+    R random_impl(const S& shape)
+    {
+        auto n = detail::size(shape);
+        R ret = xt::empty<double>(detail::concatenate(m_shape, shape));
+        this->draw_list(&ret.data()[0], n);
+        return ret;
+    };
+
+    template <class R, class S>
+    R weibull_impl(const S& shape, double k, double lambda)
+    {
+        R r = this->random_impl<R>(shape);
+        return lambda * xt::pow(- xt::log(1.0 - r), 1.0 / k);
+    };
+
+protected:
+
+    /**
+    Draw `n` random numbers and write them to list (input as pointer `data`).
+
+    \param data Pointer to the data (no bounds-check).
+    \param n Size of `data`.
+    */
+    virtual void draw_list(double* data, size_t n)
+    {
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = 0.5;
+        }
+    }
+
+protected:
+
+    size_t m_size = 0;
+    std::vector<size_t> m_shape;
+    std::vector<size_t> m_strides;
+};
+
+/**
+Grid of independent generators.
+*/
+class nd_pcg32 : public nd_Generator
+{
+public:
+
+    template <class T>
+    nd_pcg32(const T& initstate)
+    {
+        m_shape = std::vector<size_t>(initstate.shape().cbegin(), initstate.shape().cend());
+        m_strides = std::vector<size_t>(initstate.strides().cbegin(), initstate.strides().cend());
+        m_size = initstate.size();
+        m_gen.reserve(m_size);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            m_gen.push_back(pcg32(initstate.data()[i]));
+        }
+    }
+
+    template <class T, class U>
+    nd_pcg32(const T& initstate, const U& initseq)
+    {
+        PRRNG_ASSERT(xt::has_shape(initstate, initseq));
+
+        m_shape = std::vector<size_t>(initstate.shape().cbegin(), initstate.shape().cend());
+        m_strides = std::vector<size_t>(initstate.strides().cbegin(), initstate.strides().cend());
+        m_size = initstate.size();
+        m_gen.reserve(m_size);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            m_gen.push_back(pcg32(initstate.data()[i], initseq.data()[i]));
+        }
+    }
+
+    pcg32& operator[](size_t i)
+    {
+        PRRNG_ASSERT(i < m_size);
+
+        return m_gen[i];
+    }
+
+    template <class T>
+    pcg32& get(const T& index)
+    {
+        PRRNG_ASSERT(this->inbounds(index));
+        return m_gen[std::inner_product(index.begin(), index.end(), m_strides.begin(), 0)];
+    }
+
+    template <class R>
+    R state()
+    {
+        using value_type = typename R::value_type;
+        R ret = xt::empty<value_type>(m_shape);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            ret.data()[i] = m_gen[i].state<value_type>();
+        }
+
+        return ret;
+    }
+
+    template <class R>
+    R initstate()
+    {
+        using value_type = typename R::value_type;
+        R ret = xt::empty<value_type>(m_shape);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            ret.data()[i] = m_gen[i].initstate<value_type>();
+        }
+
+        return ret;
+    }
+
+    template <class R>
+    R initseq()
+    {
+        using value_type = typename R::value_type;
+        R ret = xt::empty<value_type>(m_shape);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            ret.data()[i] = m_gen[i].initseq<value_type>();
+        }
+
+        return ret;
+    }
+
+    template <class T>
+    void restore(const T& arg)
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            m_gen[i].restore(arg.data()[i]);
+        }
+    }
+
+protected:
+
+    void draw_list(double* data, size_t n) override
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            for (size_t j = 0; j < n; ++j) {
+                data[i * n + j] = m_gen[i].next_double();
+            }
+        }
+    }
+
+private:
+
+    std::vector<pcg32> m_gen;
+};
+
+
 
 } // namespace prrng
 
