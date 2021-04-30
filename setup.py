@@ -45,8 +45,6 @@ class CMakeBuild(build_ext):
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
 
         # Set Python_EXECUTABLE instead if you use PYBIND11_FINDPYTHON
-        # MYVERSION_INFO shows you how to pass a value into the C++ code
-        # from Python.
         cmake_args = [
             "-DBUILD_PYTHON=1"
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir),
@@ -112,7 +110,6 @@ setup(
     name = 'prrng',
     description = 'Portable Reconstructible Random Number Generator',
     long_description = 'Portable Reconstructible Random Number Generator',
-    keywords = 'random',
     version = get_version(),
     license = 'MIT',
     author = 'Tom de Geus',
