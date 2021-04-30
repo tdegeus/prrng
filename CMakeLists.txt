@@ -14,7 +14,7 @@ execute_process(
 message(STATUS "Building ${PROJECT_NAME} ${PROJECT_VERSION}")
 
 option(BUILD_TESTS "${PROJECT_NAME}: Build tests" OFF)
-option(BUILD_EXAMPLES "${PROJECT_NAME}: Build examples" OFF)
+option(BUILD_PYTHON "${PROJECT_NAME}: Build Python API" OFF)
 option(BUILD_DOCS "${PROJECT_NAME}: Build docs" OFF)
 
 string(TOUPPER "${PROJECT_NAME}" PROJECT_NAME_UPPER)
@@ -88,14 +88,20 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-# Examples
+# Python API
 
-# if(BUILD_EXAMPLES)
-#     enable_testing()
-#     add_subdirectory(examples)
-# endif()
+if(BUILD_PYTHON)
+    find_package(pybind11 CONFIG REQUIRED)
+    find_package(pyxtensor REQUIRED)
 
-# Build docs: include dependencies
+    pybind11_add_module(python python/main.cpp)
+    set_target_properties(python PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+    target_link_libraries(python PUBLIC ${PROJECT_NAME} pybind11::module pyxtensor)
+
+    target_compile_definitions(python PRIVATE VERSION_INFO=${PROJECT_VERSION})
+endif()
+
+# Documentation
 
 if(BUILD_DOCS)
     find_package(Doxygen REQUIRED)
