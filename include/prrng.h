@@ -36,9 +36,8 @@ Multiplicative factor for pcg32()
 #define PRRNG_PCG32_MULT 6364136223846793005ULL
 
 #include <array>
+#include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xio.hpp>
 
 /**
 \cond
@@ -124,6 +123,16 @@ namespace detail {
     };
 
     template <class T>
+    struct is_std_array : std::false_type
+    {
+    };
+
+    template <class T, size_t N>
+    struct is_std_array<std::array<T, N>> : std::true_type
+    {
+    };
+
+    template <class T>
     struct is_xtensor : std::false_type
     {
     };
@@ -145,7 +154,7 @@ namespace detail {
     template <size_t N, class T>
     struct check_rank<N, T, typename std::enable_if<is_xtensor<T>::value>::type>
     {
-        constexpr static bool value = N == xt::get_rank<T>::value;
+        constexpr static bool value = (N == xt::get_rank<T>::value);
     };
 
     /**
@@ -169,10 +178,10 @@ namespace detail {
     };
 
     template <class S>
-    struct concatenate<S, typename std::enable_if<std::is_array<S>::value>::type>
+    struct concatenate<S, typename std::enable_if<is_std_array<S>::value>::type>
     {
         template <class T>
-        inline auto two(const S& s, const T& t)
+        static auto two(const S& s, const T& t)
         {
             std::array<size_t, std::tuple_size<S>::value + std::tuple_size<T>::value> r;
             std::copy(s.cbegin(), s.cend(), r.begin());
