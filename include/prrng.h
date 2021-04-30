@@ -778,9 +778,9 @@ private:
 private:
 
     uint64_t m_initstate; ///< State initiator
-    uint64_t m_initseq;   ///< Sequence initiator
-    uint64_t m_state;     ///< RNG state. All values are possible.
-    uint64_t m_inc;       ///< Controls which RNG sequence (stream) is selected. Must *always* be odd.
+    uint64_t m_initseq; ///< Sequence initiator
+    uint64_t m_state; ///< RNG state. All values are possible.
+    uint64_t m_inc; ///< Controls which RNG sequence (stream) is selected. Must *always* be odd.
 };
 
 /**
@@ -978,8 +978,8 @@ protected:
 
 protected:
 
-    size_t m_size = 0;             ///< See size().
-    M m_shape;   ///< See shape().
+    size_t m_size = 0; ///< See size().
+    M m_shape; ///< See shape().
     M m_strides; ///< The strides of the array of generators.
 };
 
