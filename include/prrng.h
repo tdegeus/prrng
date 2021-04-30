@@ -110,6 +110,12 @@ namespace prrng {
 
 namespace detail {
 
+    /**
+    Remove " from string.
+
+    \param arg Input string.
+    \return String without "
+    */
     inline std::string unquote(const std::string& arg)
     {
         std::string ret = arg;
@@ -117,8 +123,15 @@ namespace detail {
         return ret;
     };
 
+    /**
+    Concatenate two object that have `begin()` and `end()` methods.
+
+    \param s First object (e.g. std::vector).
+    \param t Second object (e.g. std::vector).
+    \return Concatenated [t, s]
+    */
     template <class S, class T>
-    inline std::vector<size_t> concatenate(const S& s, const T& t)
+    inline std::vector<size_t> vector_concatenate(const S& s, const T& t)
     {
         std::vector<size_t> r;
         r.insert(r.begin(), s.begin(), s.end());
@@ -126,6 +139,12 @@ namespace detail {
         return r;
     }
 
+    /**
+    Compute 'size' from 'shape'.
+
+    \param shape Shape array.
+    \return Size
+    */
     template <class S>
     inline size_t size(const S& shape)
     {
@@ -133,6 +152,9 @@ namespace detail {
         return std::accumulate(shape.cbegin(), shape.cend(), ST(1), std::multiplies<ST>());
     }
 
+    /**
+    Return as std::array.
+    */
     template <class I, std::size_t L>
     std::array<I, L> to_array(const I (&shape)[L])
     {
@@ -151,45 +173,6 @@ inline std::string version()
 {
     return detail::unquote(std::string(QUOTE(PRRNG_VERSION)));
 };
-
-namespace detail
-{
-
-    template <class S, class T, typename = void>
-    struct shapes
-    {
-        static std::vector<size_t> concatenate(const T& t, const S& s)
-        {
-            std::vector<size_t> r(t.cbegin(), t.cend());
-            r.insert(r.end(), s.begin(), s.end());
-            return r;
-        }
-    };
-
-    template <class S, class T>
-    struct shapes<T, S, typename std::enable_if<xt::has_fixed_rank_t<T>::value &&
-                                                xt::has_fixed_rank_t<S>::value>::type>
-    {
-        constexpr static size_t rank = std::rank<T>::value + std::rank<S>::value;
-
-        static std::array<size_t, rank> concatenate(const T& t, const S& s)
-        {
-            std::array<size_t, rank> r;
-            std::copy(t.cbegin(), t.cend(), r.begin());
-            std::copy(s.cbegin(), s.cend(), r.begin() + std::rank<T>::value);
-            return r;
-        }
-    };
-
-    // template <class S>
-    // inline size_t size(const S& shape)
-    // {
-    //     using ST = typename S::value_type;
-    //     return std::accumulate(shape.cbegin(), shape.cend(), ST(1), std::multiplies<ST>());
-    // }
-
-} // namespace detail
-
 
 /**
 Base class of the pseudorandom number generators.
@@ -223,7 +206,7 @@ public:
 
     \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
 
-    \param shape The shape of the nd-array (brace input allowed, e.g. `{2, 3, 4}`.
+    \param shape The shape of the nd-array (brace input, e.g. `{2, 3}` allowed).
     \return The sample of shape `shape`.
     */
     template <class R, class I, std::size_t L>
@@ -271,7 +254,7 @@ public:
 
     \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
 
-    \param shape The shape of the nd-array (brace input allowed, e.g. `{2, 3, 4}`.
+    \param shape The shape of the nd-array (brace input, e.g. `{2, 3}` allowed).
     \param k The "shape" parameter.
     \param lambda The "scale" parameter.
     \return The sample of shape `shape`.
@@ -750,18 +733,22 @@ private:
 };
 
 /**
-Grid of independent generators.
+Base class of an array of pseudorandom number generators.
+This class provides common methods, but itself does not really do much.
+See the description of derived classed for information.
 */
-class nd_Generator
+class Generator_array
 {
 public:
 
-    nd_Generator() = default;
+    Generator_array() = default;
 
-    virtual ~nd_Generator() = default;
+    virtual ~Generator_array() = default;
 
     /**
-    Return the size.
+    Return the size of the array of generators.
+
+    \return unsigned int
     */
     size_t size() const
     {
@@ -769,10 +756,47 @@ public:
     }
 
     /**
-    Check in bounds.
+    Return the shape of the array of generators.
+
+    \return vector of unsigned ints
+    */
+    std::vector<size_t> shape() const
+    {
+        return m_shape;
+    }
+
+    /**
+    Return the shape of the array of generators along a specific axis.
+
+    \param axis The axis.
+    \return vector of unsigned ints
     */
     template <class T>
-    bool inbounds(const T& index)
+    size_t shape(T axis) const
+    {
+        return m_shape[axis];
+    }
+
+    /**
+    Return a flat index based on an array index specified as a list.
+
+    \param index Array index, e.g. as std::vector.
+    \return Flat index.
+    */
+    template <class T>
+    size_t flat_index(const T& index) const
+    {
+        PRRNG_ASSERT(this->inbounds(index));
+        return std::inner_product(index.begin(), index.end(), m_strides.begin(), 0);
+    }
+
+    /**
+    Check if an index is in bounds (and of the correct rank).
+
+    \return `false` if out-of-bounds, `true` otherwise.
+    */
+    template <class T>
+    bool inbounds(const T& index) const
     {
         if (index.size() != m_strides.size()) {
             return false;
@@ -788,37 +812,37 @@ public:
     }
 
     /**
-    Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+    Per generator, generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
 
     \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
     \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
 
-    \param shape The shape of the nd-array.
-    \return The sample of shape `shape`.
+    \param ishape The shape of the nd-array drawn per generator.
+    \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class R, class S>
-    R random(const S& shape)
+    R random(const S& ishape)
     {
-        // size_t size = std::accumulate(shape.cbegin(), shape.cend(), 1, std::multiplies<size_t>());
-        return this->random_impl<R>(shape);
+        return this->random_impl<R>(ishape);
     }
 
     /**
-    Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+    Per generator, generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
 
     \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
 
-    \param shape The shape of the nd-array (brace input allowed, e.g. `{2, 3, 4}`.
-    \return The sample of shape `shape`.
+    \param ishape The shape of the nd-array drawn per generator (brace input, e.g. `{2, 3}` allowed).
+    \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class R, class I, std::size_t L>
-    R random(const I (&shape)[L])
+    R random(const I (&ishape)[L])
     {
-        return this->random_impl<R>(detail::to_array(shape));
+        return this->random_impl<R>(detail::to_array(ishape));
     }
 
     /**
-    Generate an nd-array of random numbers distributed according to Weibull distribution.
+    Per generator, generate an nd-array of random numbers distributed
+    according to Weibull distribution.
     Internally, the output of random() is converted using the cumulative density
 
     \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
@@ -830,19 +854,20 @@ public:
     \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
     \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
 
-    \param shape The shape of the nd-array.
+    \param ishape The shape of the nd-array drawn per generator.
     \param k The "shape" parameter.
     \param lambda The "scale" parameter.
-    \return The sample of shape `shape`.
+    \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class R, class S>
-    R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
+    R weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
     {
-        return this->weibull_impl<R>(shape, k, lambda);
+        return this->weibull_impl<R>(ishape, k, lambda);
     };
 
     /**
-    Generate an nd-array of random numbers distributed according to Weibull distribution.
+    Per generator, generate an nd-array of random numbers distributed
+    according to Weibull distribution.
     Internally, the output of random() is converted using the cumulative density
 
     \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
@@ -853,32 +878,32 @@ public:
 
     \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
 
-    \param shape The shape of the nd-array (brace input allowed, e.g. `{2, 3, 4}`.
+    \param ishape The shape of the nd-array drawn per generator (brace input, e.g. `{2, 3}` allowed).
     \param k The "shape" parameter.
     \param lambda The "scale" parameter.
-    \return The sample of shape `shape`.
+    \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class R, class I, std::size_t L>
-    R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
+    R weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
     {
-        return this->weibull_impl<R>(detail::to_array(shape), k, lambda);
+        return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
     };
 
 private:
 
     template <class R, class S>
-    R random_impl(const S& shape)
+    R random_impl(const S& ishape)
     {
-        auto n = detail::size(shape);
-        R ret = xt::empty<double>(detail::concatenate(m_shape, shape));
+        auto n = detail::size(ishape);
+        R ret = xt::empty<double>(detail::vector_concatenate(m_shape, ishape));
         this->draw_list(&ret.data()[0], n);
         return ret;
     };
 
     template <class R, class S>
-    R weibull_impl(const S& shape, double k, double lambda)
+    R weibull_impl(const S& ishape, double k, double lambda)
     {
-        R r = this->random_impl<R>(shape);
+        R r = this->random_impl<R>(ishape);
         return lambda * xt::pow(- xt::log(1.0 - r), 1.0 / k);
     };
 
@@ -899,20 +924,45 @@ protected:
 
 protected:
 
-    size_t m_size = 0;
-    std::vector<size_t> m_shape;
-    std::vector<size_t> m_strides;
+    size_t m_size = 0;             ///< See size().
+    std::vector<size_t> m_shape;   ///< See shape().
+    std::vector<size_t> m_strides; ///< The strides of the array of generators.
 };
 
+
 /**
-Grid of independent generators.
+Array of independent generators.
+The idea is that each array-entry has its own random sequence, initiated by its own seed.
+An array of random numbers can then be generated whose shape if composed of the #shape,
+the shape of the array of generators, followed by the desired shape of the random sequence
+draw per generator.
+Let us consider an example. Suppose that we have a list of n = 5 generators,
+and we want to generate i = 8 random numbers for each generator.
+Then the output will be collected in a matrix of shape [n, i] = [5, 8] where each row
+corresponds to a generator and the columns for that row are the random sequence generated
+by that generator.
+Since this class is general, you can also imagine an array of [m, n, o, p] generators with
+a random sequence reshaped in a (row-major) array of shape [a, b, c, d, e].
+The output is then collected in an array of shape [m, n, o, p, a, b, c, d, e].
+
+Note that a reference to each generator can be obtained using the `[]` and `()` operators,
+e.g. `generators[flat_index]` and `generators(i, j, k, ...)`. All functions of pcg32()
+can be used for each reference.
+In addition, convenience functions state(), initstate(), initseq(), restore() are provided
+here to store/restore the state of the entire array of generators.
 */
-class nd_pcg32 : public nd_Generator
+class pcg32_array : public Generator_array
 {
 public:
 
+    /**
+    Constructor.
+
+    \param initstate State initiator for every item (accept default sequence initiator).
+    The shape of the argument determines the shape of the generator array.
+    */
     template <class T>
-    nd_pcg32(const T& initstate)
+    pcg32_array(const T& initstate)
     {
         m_shape = std::vector<size_t>(initstate.shape().cbegin(), initstate.shape().cend());
         m_strides = std::vector<size_t>(initstate.strides().cbegin(), initstate.strides().cend());
@@ -924,8 +974,15 @@ public:
         }
     }
 
+    /**
+    Constructor.
+
+    \param initstate State initiator for every item.
+    \param initseq Sequence initiator for every item.
+    The shape of these argument determines the shape of the generator array.
+    */
     template <class T, class U>
-    nd_pcg32(const T& initstate, const U& initseq)
+    pcg32_array(const T& initstate, const U& initseq)
     {
         PRRNG_ASSERT(xt::has_shape(initstate, initseq));
 
@@ -939,6 +996,24 @@ public:
         }
     }
 
+    /**
+    Return a reference to one generator, using an array index.
+
+    \param args Array index (number of arguments should correspond to the rank of the array).
+    \return Reference to underlying generator.
+    */
+    template <class... Args>
+    pcg32& operator()(Args... args)
+    {
+        return m_gen[this->get_item(0, 0, args...)];
+    }
+
+    /**
+    Return a reference to one generator, using a flat index.
+
+    \param i Flat index.
+    \return Reference to underlying generator.
+    */
     pcg32& operator[](size_t i)
     {
         PRRNG_ASSERT(i < m_size);
@@ -946,13 +1021,14 @@ public:
         return m_gen[i];
     }
 
-    template <class T>
-    pcg32& get(const T& index)
-    {
-        PRRNG_ASSERT(this->inbounds(index));
-        return m_gen[std::inner_product(index.begin(), index.end(), m_strides.begin(), 0)];
-    }
+    /**
+    Return the state of all generators.
+    See pcg32::state().
 
+    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
+
+    \return The state of each generator.
+    */
     template <class R>
     R state()
     {
@@ -966,6 +1042,14 @@ public:
         return ret;
     }
 
+    /**
+    Return the state initiator of all generators.
+    See pcg32::initstate().
+
+    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
+
+    \return The state initiator of each generator.
+    */
     template <class R>
     R initstate()
     {
@@ -979,6 +1063,14 @@ public:
         return ret;
     }
 
+    /**
+    Return the sequence initiator of all generators.
+    See pcg32::initseq().
+
+    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
+
+    \return The sequence initiator of each generator.
+    */
     template <class R>
     R initseq()
     {
@@ -992,6 +1084,14 @@ public:
         return ret;
     }
 
+    /**
+    Restore all generators from a state.
+    See pcg32::restore().
+
+    \tparam T The type of the input array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
+
+    \param arg The state of each generator.
+    */
     template <class T>
     void restore(const T& arg)
     {
@@ -1002,6 +1102,13 @@ public:
 
 protected:
 
+    /**
+    Draw `n` random numbers per array item, and write them to the correct position in `data`
+    (assuming row-major storage!).
+
+    \param data Pointer to the data (no bounds-check).
+    \param n The number of random numbers per generator.
+    */
     void draw_list(double* data, size_t n) override
     {
         for (size_t i = 0; i < m_size; ++i) {
@@ -1009,6 +1116,28 @@ protected:
                 data[i * n + j] = m_gen[i].next_double();
             }
         }
+    }
+
+private:
+
+    /**
+    implementation of `operator()`.
+    (Last call in recursion).
+    */
+    template <class T>
+    size_t get_item(size_t sum, size_t d, T arg)
+    {
+        return sum + arg * m_strides[d];
+    }
+
+    /**
+    implementation of `operator()`.
+    (Called recursively).
+    */
+    template <class T, class... Args>
+    size_t get_item(size_t sum, size_t d, T arg, Args... args)
+    {
+        return get_item(sum + arg * m_strides[d], d + 1, args...);
     }
 
 private:

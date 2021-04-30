@@ -63,6 +63,93 @@ class Test_pcg32_random(unittest.TestCase):
 
         self.assertTrue(np.allclose(a, b, 1e-3, 1e-4))
 
+
+class Test_pcg32_array(unittest.TestCase):
+
+    def test_list(self):
+
+        seed = np.arange(5)
+        gen = prrng.pcg32_array(seed)
+        state = gen.state()
+        a = gen.random([4, 5])
+        b = gen.random([4, 5])
+        self.assertTrue(not np.allclose(a, b));
+
+        # test "restore"
+
+        gen.restore(state)
+        self.assertTrue(np.allclose(a, gen.random([4, 5])))
+        self.assertTrue(not np.allclose(a, gen.random([4, 5])))
+
+        # test "__getitem__"
+
+        for i in range(gen.size()):
+            gen[i].restore(state[i])
+
+        self.assertTrue(np.allclose(a, gen.random([4, 5])))
+        self.assertTrue(not np.allclose(a, gen.random([4, 5])))
+
+        # test "initstate" and "initseq"
+
+        initstate = gen.initstate()
+        initseq = gen.initseq()
+
+        for i in range(gen.size()):
+            self.assertTrue(gen[i].initstate() == initstate[i])
+            self.assertTrue(gen[i].initseq() == initseq[i])
+
+        for i in range(gen.size()):
+            self.assertTrue(gen[i].initstate() == initstate[i])
+            self.assertTrue(gen[i].initseq() == initseq[i])
+
+    def test_array(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        state = gen.state()
+        a = gen.random([4, 5])
+        b = gen.random([4, 5])
+        self.assertTrue(not np.allclose(a, b));
+
+        # test "restore"
+
+        gen.restore(state)
+        self.assertTrue(np.allclose(a, gen.random([4, 5])))
+        self.assertTrue(not np.allclose(a, gen.random([4, 5])))
+
+        # test "__getitem__"
+
+        for i in range(gen.size()):
+            gen[i].restore(state.ravel()[i])
+
+        self.assertTrue(np.allclose(a, gen.random([4, 5])))
+        self.assertTrue(not np.allclose(a, gen.random([4, 5])))
+
+        # test "__getitem__"
+
+        for i in range(gen.shape(0)):
+            for j in range(gen.shape(1)):
+                gen[i, j].restore(state[i, j])
+
+        self.assertTrue(np.allclose(a, gen.random([4, 5])))
+        self.assertTrue(not np.allclose(a, gen.random([4, 5])))
+
+        # test "initstate" and "initseq"
+
+        initstate = gen.initstate()
+        initseq = gen.initseq()
+
+        for i in range(gen.shape(0)):
+            for j in range(gen.shape(1)):
+                self.assertTrue(gen[i, j].initstate() == initstate[i, j])
+                self.assertTrue(gen[i, j].initseq() == initseq[i, j])
+
+        for i in range(gen.shape(0)):
+            for j in range(gen.shape(1)):
+                self.assertTrue(gen[i, j].initstate() == initstate[i, j])
+                self.assertTrue(gen[i, j].initseq() == initseq[i, j])
+
+
 if __name__ == '__main__':
 
     unittest.main()

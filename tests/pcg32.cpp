@@ -145,15 +145,106 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         REQUIRE(xt::allclose(a, b, 1e-3, 1e-4));
     }
 
-    SECTION("nd_pcg32 - basic")
+    SECTION("pcg32_array - list")
     {
-        xt::xtensor<uint64_t, 1> seed = {0, 1, 3};
-        prrng::nd_pcg32 gen(seed);
-        auto s = gen[0].state<>();
-        std::cout << gen.random<xt::xtensor<double, 2>>({5}) << std::endl;
-        std::cout << gen.random<xt::xtensor<double, 2>>({5}) << std::endl;
-        gen[0].restore(s);
-        std::cout << gen.random<xt::xtensor<double, 2>>({5}) << std::endl;
-        std::cout << gen.random<xt::xtensor<double, 2>>({5}) << std::endl;
+        xt::xtensor<uint64_t, 1> seed = {0, 1, 2, 3, 4};
+        prrng::pcg32_array gen(seed);
+        auto state = gen.state<xt::xtensor<uint64_t, 1>>();
+        auto a = gen.random<xt::xtensor<double, 3>>({4, 5});
+        auto b = gen.random<xt::xtensor<double, 3>>({4, 5});
+        REQUIRE(!xt::allclose(a, b));
+
+        // test "restore"
+
+        gen.restore(state);
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+
+        // test "operator[]"
+
+        for (size_t i = 0; i < gen.size(); ++i) {
+            gen[i].restore(state(i));
+        }
+
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+
+        // test "operator()"
+
+        for (size_t i = 0; i < gen.size(); ++i) {
+            gen(i).restore(state(i));
+        }
+
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+
+        // test "initstate" and "initseq"
+
+        auto initstate = gen.initstate<xt::xtensor<uint64_t, 1>>();
+        auto initseq = gen.initseq<xt::xtensor<uint64_t, 1>>();
+
+        for (size_t i = 0; i < gen.size(); ++i) {
+            REQUIRE(gen[i].initstate<>() == initstate(i));
+            REQUIRE(gen[i].initseq<>() == initseq(i));
+        }
+
+        for (size_t i = 0; i < gen.size(); ++i) {
+            REQUIRE(gen(i).initstate<>() == initstate(i));
+            REQUIRE(gen(i).initseq<>() == initseq(i));
+        }
+    }
+
+    SECTION("pcg32_array - matrix")
+    {
+        xt::xtensor<uint64_t, 2> seed = {{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}};
+        prrng::pcg32_array gen(seed);
+        auto state = gen.state<xt::xtensor<uint64_t, 2>>();
+        auto a = gen.random<xt::xtensor<double, 4>>({4, 5});
+        auto b = gen.random<xt::xtensor<double, 4>>({4, 5});
+        REQUIRE(!xt::allclose(a, b));
+
+        // test "restore"
+
+        gen.restore(state);
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+
+        // test "operator[]"
+
+        for (size_t i = 0; i < gen.size(); ++i) {
+            gen[i].restore(state.data()[i]);
+        }
+
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+
+        // test "operator()"
+
+        for (size_t i = 0; i < gen.shape(0); ++i) {
+            for (size_t j = 0; j < gen.shape(1); ++j) {
+                gen(i, j).restore(state(i, j));
+            }
+        }
+
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+
+        // test "flat_index"
+
+        for (size_t i = 0; i < gen.shape(0); ++i) {
+            for (size_t j = 0; j < gen.shape(1); ++j) {
+                std::vector<size_t> index = {i, j};
+                REQUIRE(gen[gen.flat_index(index)] == gen(i, j));
+            }
+        }
+
+        // test "inbounds"
+
+        for (size_t i = 0; i < 2 * gen.shape(0); ++i) {
+            for (size_t j = 0; j < 2 * gen.shape(1); ++j) {
+                std::vector<size_t> index = {i, j};
+                REQUIRE(gen.inbounds(index) == (i < gen.shape(0) && j < gen.shape(1)));
+            }
+        }
     }
 }

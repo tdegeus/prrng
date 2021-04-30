@@ -12,6 +12,7 @@ PYBIND11_MODULE(prrng, m)
           "Return version string."
           "See :cpp:class:`prrng::version`.");
 
+
     py::class_<prrng::Generator>(m, "Generator")
 
         .def(py::init<>(),
@@ -36,6 +37,7 @@ PYBIND11_MODULE(prrng, m)
 
         .def("__repr__",
             [](const prrng::Generator&) { return "<prrng.Generator>"; });
+
 
     py::class_<prrng::pcg32, prrng::Generator>(m, "pcg32")
 
@@ -100,86 +102,96 @@ PYBIND11_MODULE(prrng, m)
         .def("__repr__",
             [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
-    py::class_<prrng::nd_Generator>(m, "nd_Generator")
+
+    py::class_<prrng::Generator_array>(m, "Generator_array")
 
         .def(py::init<>(),
              "Random number generator base class."
-             "See :cpp:class:`prrng::nd_Generator`.")
+             "See :cpp:class:`prrng::Generator_array`.")
+
+        .def("shape",
+             [](const prrng::Generator_array& s) { return s.shape(); },
+             "Shape of the array of generators."
+             "See :cpp:func:`prrng::Generator_array::shape`.")
+
+        .def("shape",
+             py::overload_cast<size_t>(&prrng::Generator_array::shape<size_t>, py::const_),
+             "Shape of the array of generators, along a certain axis."
+             "See :cpp:func:`prrng::Generator_array::shape`.",
+             py::arg("axis"))
 
         .def("size",
-             &prrng::nd_Generator::size,
+             &prrng::Generator_array::size,
              "Size of the array of generators."
-             "See :cpp:func:`prrng::nd_Generator::size`.")
+             "See :cpp:func:`prrng::Generator_array::size`.")
 
         .def("random",
              py::overload_cast<const std::vector<size_t>&>(
-                &prrng::nd_Generator::random<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::Generator_array::random<xt::xarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers."
-             "See :cpp:func:`prrng::nd_Generator::random`.",
-             py::arg("shape"))
+             "See :cpp:func:`prrng::Generator_array::random`.",
+             py::arg("ishape"))
 
         .def("weibull",
              py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::nd_Generator::weibull<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::Generator_array::weibull<xt::xarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers, distributed according to a weibull distribution."
-             "See :cpp:func:`prrng::nd_Generator::weibull`.",
-             py::arg("shape"),
+             "See :cpp:func:`prrng::Generator_array::weibull`.",
+             py::arg("ishape"),
              py::arg("k") = 1.0,
              py::arg("l") = 1.0)
 
         .def("__repr__",
-            [](const prrng::nd_Generator&) { return "<prrng.nd_Generator>"; });
+            [](const prrng::Generator_array&) { return "<prrng.Generator_array>"; });
 
-    py::class_<prrng::nd_pcg32, prrng::nd_Generator>(m, "nd_pcg32")
+
+    py::class_<prrng::pcg32_array, prrng::Generator_array>(m, "pcg32_array")
 
         .def(py::init<xt::xarray<uint64_t>>(),
              "Random number generator."
-             "See :cpp:class:`prrng::nd_pcg32`.",
+             "See :cpp:class:`prrng::pcg32_array`.",
              py::arg("initstate"))
 
         .def(py::init<xt::xarray<uint64_t>, xt::xarray<uint64_t>>(),
              "Random number generator."
-             "See :cpp:class:`prrng::nd_pcg32`.",
+             "See :cpp:class:`prrng::pcg32_array`.",
              py::arg("initstate"),
              py::arg("initseq"))
 
         // https://github.com/pybind/pybind11/blob/master/tests/test_sequences_and_iterators.cpp
 
-        .def("__getitem__", [](prrng::nd_pcg32& s, size_t i) {
+        .def("__getitem__", [](prrng::pcg32_array& s, size_t i) {
             if (i >= s.size()) throw py::index_error();
             return &s[i];
         }, py::return_value_policy::reference_internal)
 
-        .def("__getitem__", [](prrng::nd_pcg32& s, std::vector<size_t> index) {
+        .def("__getitem__", [](prrng::pcg32_array& s, std::vector<size_t> index) {
             if (!s.inbounds(index)) throw py::index_error();
-            return &s.get(index);
+            return &s[s.flat_index(index)];
         }, py::return_value_policy::reference_internal)
-        // .def(py::self - py::self)
-        // .def(py::self == py::self)
-        // .def(py::self != py::self)
 
         .def("state",
-             &prrng::nd_pcg32::state<xt::xarray<uint64_t>>,
+             &prrng::pcg32_array::state<xt::xarray<uint64_t>>,
              "current state."
-             "See :cpp:func:`prrng::nd_pcg32::state`.")
+             "See :cpp:func:`prrng::pcg32_array::state`.")
 
         .def("initstate",
-             &prrng::nd_pcg32::initstate<xt::xarray<uint64_t>>,
+             &prrng::pcg32_array::initstate<xt::xarray<uint64_t>>,
              "used initstate."
-             "See :cpp:func:`prrng::nd_pcg32::initstate`.")
+             "See :cpp:func:`prrng::pcg32_array::initstate`.")
 
         .def("initseq",
-             &prrng::nd_pcg32::initseq<xt::xarray<uint64_t>>,
+             &prrng::pcg32_array::initseq<xt::xarray<uint64_t>>,
              "used initseq."
-             "See :cpp:func:`prrng::nd_pcg32::initseq`.")
+             "See :cpp:func:`prrng::pcg32_array::initseq`.")
 
         .def("restore",
-             &prrng::nd_pcg32::restore<xt::xarray<uint64_t>>,
+             &prrng::pcg32_array::restore<xt::xarray<uint64_t>>,
              "restore state."
-             "See :cpp:func:`prrng::nd_pcg32::restore`.",
+             "See :cpp:func:`prrng::pcg32_array::restore`.",
              py::arg("state"))
 
         .def("__repr__",
-            [](const prrng::nd_pcg32&) { return "<prrng.nd_pcg32>"; });
+            [](const prrng::pcg32_array&) { return "<prrng.pcg32_array>"; });
 
 } // PYBIND11_MODULE
