@@ -974,25 +974,7 @@ protected:
 
 
 /**
-Array of independent generators.
-The idea is that each array-entry has its own random sequence, initiated by its own seed.
-An array of random numbers can then be generated whose shape if composed of the #shape,
-the shape of the array of generators, followed by the desired shape of the random sequence
-draw per generator.
-Let us consider an example. Suppose that we have a list of n = 5 generators,
-and we want to generate i = 8 random numbers for each generator.
-Then the output will be collected in a matrix of shape [n, i] = [5, 8] where each row
-corresponds to a generator and the columns for that row are the random sequence generated
-by that generator.
-Since this class is general, you can also imagine an array of [m, n, o, p] generators with
-a random sequence reshaped in a (row-major) array of shape [a, b, c, d, e].
-The output is then collected in an array of shape [m, n, o, p, a, b, c, d, e].
-
-Note that a reference to each generator can be obtained using the `[]` and `()` operators,
-e.g. `generators[flat_index]` and `generators(i, j, k, ...)`. All functions of pcg32()
-can be used for each reference.
-In addition, convenience functions state(), initstate(), initseq(), restore() are provided
-here to store/restore the state of the entire array of generators.
+Base class, see pcg32_array() for description.
 */
 template <class M>
 class pcg32Base_array : public GeneratorBase_array<M>
@@ -1149,12 +1131,33 @@ private:
 
 protected:
 
-    std::vector<pcg32> m_gen;
+    std::vector<pcg32> m_gen; ///< Underlying storage: one generator per array item
     using GeneratorBase_array<M>::m_size;
     using GeneratorBase_array<M>::m_shape;
     using GeneratorBase_array<M>::m_strides;
 };
 
+/**
+Array of independent generators.
+The idea is that each array-entry has its own random sequence, initiated by its own seed.
+An array of random numbers can then be generated whose shape if composed of the #shape,
+the shape of the array of generators, followed by the desired shape of the random sequence
+draw per generator.
+Let us consider an example. Suppose that we have a list of n = 5 generators,
+and we want to generate i = 8 random numbers for each generator.
+Then the output will be collected in a matrix of shape [n, i] = [5, 8] where each row
+corresponds to a generator and the columns for that row are the random sequence generated
+by that generator.
+Since this class is general, you can also imagine an array of [m, n, o, p] generators with
+a random sequence reshaped in a (row-major) array of shape [a, b, c, d, e].
+The output is then collected in an array of shape [m, n, o, p, a, b, c, d, e].
+
+Note that a reference to each generator can be obtained using the `[]` and `()` operators,
+e.g. `generators[flat_index]` and `generators(i, j, k, ...)`. All functions of pcg32()
+can be used for each reference.
+In addition, convenience functions state(), initstate(), initseq(), restore() are provided
+here to store/restore the state of the entire array of generators.
+*/
 class pcg32_array : public pcg32Base_array<std::vector<size_t>>
 {
 public:
