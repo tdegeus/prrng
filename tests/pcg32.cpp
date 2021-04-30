@@ -247,4 +247,58 @@ TEST_CASE("prrng::pgc32", "prrng.h")
             }
         }
     }
+
+    SECTION("pcg32_tensor - matrix")
+    {
+        xt::xtensor<uint64_t, 2> seed = {{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}};
+        prrng::pcg32_tensor<2> gen(seed);
+        auto state = gen.state<xt::xtensor<uint64_t, 2>>();
+        auto a = gen.random<xt::xtensor<double, 4>>({4, 5});
+        auto b = gen.random<xt::xtensor<double, 4>>({4, 5});
+        REQUIRE(!xt::allclose(a, b));
+
+        // test "restore"
+
+        gen.restore(state);
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+
+        // test "operator[]"
+
+        for (size_t i = 0; i < gen.size(); ++i) {
+            gen[i].restore(state.data()[i]);
+        }
+
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+
+        // test "operator()"
+
+        for (size_t i = 0; i < gen.shape(0); ++i) {
+            for (size_t j = 0; j < gen.shape(1); ++j) {
+                gen(i, j).restore(state(i, j));
+            }
+        }
+
+        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+
+        // test "flat_index"
+
+        for (size_t i = 0; i < gen.shape(0); ++i) {
+            for (size_t j = 0; j < gen.shape(1); ++j) {
+                std::vector<size_t> index = {i, j};
+                REQUIRE(gen[gen.flat_index(index)] == gen(i, j));
+            }
+        }
+
+        // test "inbounds"
+
+        for (size_t i = 0; i < 2 * gen.shape(0); ++i) {
+            for (size_t j = 0; j < 2 * gen.shape(1); ++j) {
+                std::vector<size_t> index = {i, j};
+                REQUIRE(gen.inbounds(index) == (i < gen.shape(0) && j < gen.shape(1)));
+            }
+        }
+    }
 }
