@@ -79,11 +79,11 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
 # ==========
 
 include("${PROJECT_NAME}Config.cmake")
+include(CTest)
 
 # Tests
 
 if(BUILD_TESTS)
-    include(CTest)
     enable_testing()
     add_subdirectory(tests)
 endif()
