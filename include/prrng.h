@@ -988,13 +988,13 @@ protected:
 Base class, see pcg32_array() for description.
 */
 template <class M>
-class pcg32Base_array : public GeneratorBase_array<M>
+class pcg32_arrayBase : public GeneratorBase_array<M>
 {
 public:
 
-    pcg32Base_array() = default;
+    pcg32_arrayBase() = default;
 
-    virtual ~pcg32Base_array() = default;
+    virtual ~pcg32_arrayBase() = default;
 
     /**
     Return a reference to one generator, using an array index.
@@ -1169,7 +1169,7 @@ can be used for each reference.
 In addition, convenience functions state(), initstate(), initseq(), restore() are provided
 here to store/restore the state of the entire array of generators.
 */
-class pcg32_array : public pcg32Base_array<std::vector<size_t>>
+class pcg32_array : public pcg32_arrayBase<std::vector<size_t>>
 {
 public:
     /**
@@ -1215,7 +1215,7 @@ public:
 
 protected:
 
-    using pcg32Base_array<std::vector<size_t>>::m_gen;
+    using pcg32_arrayBase<std::vector<size_t>>::m_gen;
     using GeneratorBase_array<std::vector<size_t>>::m_size;
     using GeneratorBase_array<std::vector<size_t>>::m_shape;
     using GeneratorBase_array<std::vector<size_t>>::m_strides;
@@ -1226,7 +1226,7 @@ protected:
 Fixed rank version of pcg32_array()
 */
 template <size_t N>
-class pcg32_tensor : public pcg32Base_array<std::array<size_t, N>>
+class pcg32_tensor : public pcg32_arrayBase<std::array<size_t, N>>
 {
 public:
 
@@ -1277,7 +1277,7 @@ public:
 
 protected:
 
-    using pcg32Base_array<std::array<size_t, N>>::m_gen;
+    using pcg32_arrayBase<std::array<size_t, N>>::m_gen;
     using GeneratorBase_array<std::array<size_t, N>>::m_size;
     using GeneratorBase_array<std::array<size_t, N>>::m_shape;
     using GeneratorBase_array<std::array<size_t, N>>::m_strides;
