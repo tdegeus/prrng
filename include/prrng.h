@@ -143,16 +143,16 @@ namespace detail {
     };
 
     /**
-    Check rank or arrays.
+    Check that an object has a certain fixed rank.
     */
     template <size_t N, class T, typename = void>
-    struct check_rank
+    struct check_fixed_rank
     {
-        constexpr static bool value = true;
+        constexpr static bool value = false;
     };
 
     template <size_t N, class T>
-    struct check_rank<N, T, typename std::enable_if<is_xtensor<T>::value>::type>
+    struct check_fixed_rank<N, T, typename std::enable_if<is_xtensor<T>::value>::type>
     {
         constexpr static bool value = (N == xt::get_rank<T>::value);
     };
@@ -787,6 +787,8 @@ private:
 Base class of an array of pseudorandom number generators.
 This class provides common methods, but itself does not really do much.
 See the description of derived classed for information.
+
+\tparam M Type to use storage of the shape and array vectors. E.g. `std::vector` or `std::array`
 */
 template <class M>
 class GeneratorBase_array
@@ -839,7 +841,7 @@ public:
     size_t flat_index(const T& index) const
     {
         PRRNG_ASSERT(this->inbounds(index));
-        return std::inner_product(index.begin(), index.end(), m_strides.begin(), 0);
+        return std::inner_product(index.cbegin(), index.cend(), m_strides.cbegin(), 0);
     }
 
     /**
@@ -1237,7 +1239,7 @@ public:
     template <class T>
     pcg32_tensor(const T& initstate)
     {
-        static_assert(detail::check_rank<N, T>::value, "Ranks to not match");
+        static_assert(detail::check_fixed_rank<N, T>::value, "Ranks to not match");
 
         std::copy(initstate.shape().cbegin(), initstate.shape().cend(), m_shape.begin());
         std::copy(initstate.strides().cbegin(), initstate.strides().cend(), m_strides.begin());
@@ -1259,7 +1261,7 @@ public:
     template <class T, class U>
     pcg32_tensor(const T& initstate, const U& initseq)
     {
-        static_assert(detail::check_rank<N, T>::value, "Ranks to not match");
+        static_assert(detail::check_fixed_rank<N, T>::value, "Ranks to not match");
 
         PRRNG_ASSERT(xt::has_shape(initstate, initseq));
 
