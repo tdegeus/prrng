@@ -13,33 +13,33 @@ PYBIND11_MODULE(prrng, m)
           "See :cpp:class:`prrng::version`.");
 
 
-    py::class_<prrng::Generator>(m, "Generator")
+    py::class_<prrng::GeneratorBase>(m, "GeneratorBase")
 
         .def(py::init<>(),
              "Random number generator base class."
-             "See :cpp:class:`prrng::Generator`.")
+             "See :cpp:class:`prrng::GeneratorBase`.")
 
         .def("random",
              py::overload_cast<const std::vector<size_t>&>(
-                &prrng::Generator::random<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::GeneratorBase::random<xt::xarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers."
-             "See :cpp:func:`prrng::Generator::random`.",
+             "See :cpp:func:`prrng::GeneratorBase::random`.",
              py::arg("shape"))
 
         .def("weibull",
              py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::Generator::weibull<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::GeneratorBase::weibull<xt::xarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers, distributed according to a weibull distribution."
-             "See :cpp:func:`prrng::Generator::weibull`.",
+             "See :cpp:func:`prrng::GeneratorBase::weibull`.",
              py::arg("shape"),
              py::arg("k") = 1.0,
              py::arg("l") = 1.0)
 
         .def("__repr__",
-            [](const prrng::Generator&) { return "<prrng.Generator>"; });
+            [](const prrng::GeneratorBase&) { return "<prrng.GeneratorBase>"; });
 
 
-    py::class_<prrng::pcg32, prrng::Generator>(m, "pcg32")
+    py::class_<prrng::pcg32, prrng::GeneratorBase>(m, "pcg32")
 
         .def(py::init<uint64_t, uint64_t>(),
              "Random number generator."
@@ -103,49 +103,49 @@ PYBIND11_MODULE(prrng, m)
             [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
 
-    py::class_<prrng::Generator_array<std::vector<size_t>>>(m, "Generator_array")
+    py::class_<prrng::GeneratorBase_array<std::vector<size_t>>>(m, "GeneratorBase_array")
 
         .def(py::init<>(),
              "Random number generator base class."
-             "See :cpp:class:`prrng::Generator_array`.")
+             "See :cpp:class:`prrng::GeneratorBase_array`.")
 
         .def("shape",
-             [](const prrng::Generator_array<std::vector<size_t>>& s) { return s.shape(); },
+             [](const prrng::GeneratorBase_array<std::vector<size_t>>& s) { return s.shape(); },
              "Shape of the array of generators."
-             "See :cpp:func:`prrng::Generator_array::shape`.")
+             "See :cpp:func:`prrng::GeneratorBase_array::shape`.")
 
         .def("shape",
-             py::overload_cast<size_t>(&prrng::Generator_array<std::vector<size_t>>::shape<size_t>, py::const_),
+             py::overload_cast<size_t>(&prrng::GeneratorBase_array<std::vector<size_t>>::shape<size_t>, py::const_),
              "Shape of the array of generators, along a certain axis."
-             "See :cpp:func:`prrng::Generator_array::shape`.",
+             "See :cpp:func:`prrng::GeneratorBase_array::shape`.",
              py::arg("axis"))
 
         .def("size",
-             &prrng::Generator_array<std::vector<size_t>>::size,
+             &prrng::GeneratorBase_array<std::vector<size_t>>::size,
              "Size of the array of generators."
-             "See :cpp:func:`prrng::Generator_array::size`.")
+             "See :cpp:func:`prrng::GeneratorBase_array::size`.")
 
         .def("random",
              py::overload_cast<const std::vector<size_t>&>(
-                &prrng::Generator_array<std::vector<size_t>>::random<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::GeneratorBase_array<std::vector<size_t>>::random<xt::xarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers."
-             "See :cpp:func:`prrng::Generator_array::random`.",
+             "See :cpp:func:`prrng::GeneratorBase_array::random`.",
              py::arg("ishape"))
 
         .def("weibull",
              py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::Generator_array<std::vector<size_t>>::weibull<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::GeneratorBase_array<std::vector<size_t>>::weibull<xt::xarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers, distributed according to a weibull distribution."
-             "See :cpp:func:`prrng::Generator_array::weibull`.",
+             "See :cpp:func:`prrng::GeneratorBase_array::weibull`.",
              py::arg("ishape"),
              py::arg("k") = 1.0,
              py::arg("l") = 1.0)
 
         .def("__repr__",
-            [](const prrng::Generator_array<std::vector<size_t>>&) { return "<prrng.Generator_array>"; });
+            [](const prrng::GeneratorBase_array<std::vector<size_t>>&) { return "<prrng.GeneratorBase_array>"; });
 
 
-    py::class_<prrng::pcg32_array, prrng::Generator_array<std::vector<size_t>>>(m, "pcg32_array")
+    py::class_<prrng::pcg32_array, prrng::GeneratorBase_array<std::vector<size_t>>>(m, "pcg32_array")
 
         .def(py::init<xt::xarray<uint64_t>>(),
              "Random number generator."

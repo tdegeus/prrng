@@ -123,6 +123,31 @@ namespace detail {
         return ret;
     };
 
+    template <class T>
+    struct is_xtensor : std::false_type
+    {
+    };
+
+    template <class T, size_t N>
+    struct is_xtensor<xt::xtensor<T, N>> : std::true_type
+    {
+    };
+
+    /**
+    Check rank or arrays.
+    */
+    template <size_t N, class T, typename = void>
+    struct check_rank
+    {
+        constexpr static bool value = true;
+    };
+
+    template <size_t N, class T>
+    struct check_rank<N, T, typename std::enable_if<is_xtensor<T>::value>::type>
+    {
+        constexpr static bool value = N == xt::get_rank<T>::value;
+    };
+
     /**
     Concatenate two objects that have `begin()` and `end()` methods.
 
@@ -195,13 +220,13 @@ inline std::string version()
 Base class of the pseudorandom number generators.
 This class provides common methods, but itself does not really do much.
 */
-class Generator
+class GeneratorBase
 {
 public:
 
-    Generator() = default;
+    GeneratorBase() = default;
 
-    virtual ~Generator() = default;
+    virtual ~GeneratorBase() = default;
 
     /**
     Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
@@ -348,7 +373,7 @@ Whereby most code is taken from the follow wrapper:
     Wenzel Jakob, February 2015
     https://github.com/wjakob/pcg32
 */
-class pcg32 : public Generator
+class pcg32 : public GeneratorBase
 {
 public:
 
@@ -755,13 +780,13 @@ This class provides common methods, but itself does not really do much.
 See the description of derived classed for information.
 */
 template <class M>
-class Generator_array
+class GeneratorBase_array
 {
 public:
 
-    Generator_array() = default;
+    GeneratorBase_array() = default;
 
-    virtual ~Generator_array() = default;
+    virtual ~GeneratorBase_array() = default;
 
     /**
     Return the size of the array of generators.
@@ -969,249 +994,14 @@ can be used for each reference.
 In addition, convenience functions state(), initstate(), initseq(), restore() are provided
 here to store/restore the state of the entire array of generators.
 */
-class pcg32_array : public Generator_array<std::vector<size_t>>
+template <class M>
+class pcg32Base_array : public GeneratorBase_array<M>
 {
 public:
 
-    /**
-    Constructor.
+    pcg32Base_array() = default;
 
-    \param initstate State initiator for every item (accept default sequence initiator).
-    The shape of the argument determines the shape of the generator array.
-    */
-    template <class T>
-    pcg32_array(const T& initstate)
-    {
-        m_shape = std::vector<size_t>(initstate.shape().cbegin(), initstate.shape().cend());
-        m_strides = std::vector<size_t>(initstate.strides().cbegin(), initstate.strides().cend());
-        m_size = initstate.size();
-        m_gen.reserve(m_size);
-
-        for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.data()[i]));
-        }
-    }
-
-    /**
-    Constructor.
-
-    \param initstate State initiator for every item.
-    \param initseq Sequence initiator for every item.
-    The shape of these argument determines the shape of the generator array.
-    */
-    template <class T, class U>
-    pcg32_array(const T& initstate, const U& initseq)
-    {
-        PRRNG_ASSERT(xt::has_shape(initstate, initseq));
-
-        m_shape = std::vector<size_t>(initstate.shape().cbegin(), initstate.shape().cend());
-        m_strides = std::vector<size_t>(initstate.strides().cbegin(), initstate.strides().cend());
-        m_size = initstate.size();
-        m_gen.reserve(m_size);
-
-        for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.data()[i], initseq.data()[i]));
-        }
-    }
-
-    /**
-    Return a reference to one generator, using an array index.
-
-    \param args Array index (number of arguments should correspond to the rank of the array).
-    \return Reference to underlying generator.
-    */
-    template <class... Args>
-    pcg32& operator()(Args... args)
-    {
-        return m_gen[this->get_item(0, 0, args...)];
-    }
-
-    /**
-    Return a reference to one generator, using a flat index.
-
-    \param i Flat index.
-    \return Reference to underlying generator.
-    */
-    pcg32& operator[](size_t i)
-    {
-        PRRNG_ASSERT(i < m_size);
-
-        return m_gen[i];
-    }
-
-    /**
-    Return the state of all generators.
-    See pcg32::state().
-
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-
-    \return The state of each generator.
-    */
-    template <class R>
-    R state()
-    {
-        using value_type = typename R::value_type;
-        R ret = xt::empty<value_type>(m_shape);
-
-        for (size_t i = 0; i < m_size; ++i) {
-            ret.data()[i] = m_gen[i].state<value_type>();
-        }
-
-        return ret;
-    }
-
-    /**
-    Return the state initiator of all generators.
-    See pcg32::initstate().
-
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-
-    \return The state initiator of each generator.
-    */
-    template <class R>
-    R initstate()
-    {
-        using value_type = typename R::value_type;
-        R ret = xt::empty<value_type>(m_shape);
-
-        for (size_t i = 0; i < m_size; ++i) {
-            ret.data()[i] = m_gen[i].initstate<value_type>();
-        }
-
-        return ret;
-    }
-
-    /**
-    Return the sequence initiator of all generators.
-    See pcg32::initseq().
-
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-
-    \return The sequence initiator of each generator.
-    */
-    template <class R>
-    R initseq()
-    {
-        using value_type = typename R::value_type;
-        R ret = xt::empty<value_type>(m_shape);
-
-        for (size_t i = 0; i < m_size; ++i) {
-            ret.data()[i] = m_gen[i].initseq<value_type>();
-        }
-
-        return ret;
-    }
-
-    /**
-    Restore all generators from a state.
-    See pcg32::restore().
-
-    \tparam T The type of the input array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-
-    \param arg The state of each generator.
-    */
-    template <class T>
-    void restore(const T& arg)
-    {
-        for (size_t i = 0; i < m_size; ++i) {
-            m_gen[i].restore(arg.data()[i]);
-        }
-    }
-
-protected:
-
-    /**
-    Draw `n` random numbers per array item, and write them to the correct position in `data`
-    (assuming row-major storage!).
-
-    \param data Pointer to the data (no bounds-check).
-    \param n The number of random numbers per generator.
-    */
-    void draw_list(double* data, size_t n) override
-    {
-        for (size_t i = 0; i < m_size; ++i) {
-            for (size_t j = 0; j < n; ++j) {
-                data[i * n + j] = m_gen[i].next_double();
-            }
-        }
-    }
-
-private:
-
-    /**
-    implementation of `operator()`.
-    (Last call in recursion).
-    */
-    template <class T>
-    size_t get_item(size_t sum, size_t d, T arg)
-    {
-        return sum + arg * m_strides[d];
-    }
-
-    /**
-    implementation of `operator()`.
-    (Called recursively).
-    */
-    template <class T, class... Args>
-    size_t get_item(size_t sum, size_t d, T arg, Args... args)
-    {
-        return get_item(sum + arg * m_strides[d], d + 1, args...);
-    }
-
-private:
-
-    std::vector<pcg32> m_gen;
-};
-
-
-/**
-Fixed rank version of pcg32_array()
-*/
-template <size_t N>
-class pcg32_tensor : public Generator_array<std::array<size_t, N>>
-{
-public:
-
-    /**
-    Constructor.
-
-    \param initstate State initiator for every item (accept default sequence initiator).
-    The shape of the argument determines the shape of the generator array.
-    */
-    template <class T>
-    pcg32_tensor(const T& initstate)
-    {
-        std::copy(initstate.shape().cbegin(), initstate.shape().cend(), m_shape.begin());
-        std::copy(initstate.strides().cbegin(), initstate.strides().cend(), m_strides.begin());
-        m_size = initstate.size();
-        m_gen.reserve(m_size);
-
-        for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.data()[i]));
-        }
-    }
-
-    /**
-    Constructor.
-
-    \param initstate State initiator for every item.
-    \param initseq Sequence initiator for every item.
-    The shape of these argument determines the shape of the generator array.
-    */
-    template <class T, class U>
-    pcg32_tensor(const T& initstate, const U& initseq)
-    {
-        PRRNG_ASSERT(xt::has_shape(initstate, initseq));
-
-        std::copy(initstate.shape().cbegin(), initstate.shape().cend(), m_shape.begin());
-        std::copy(initstate.strides().cbegin(), initstate.strides().cend(), m_strides.begin());
-        m_size = initstate.size();
-        m_gen.reserve(m_size);
-
-        for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.data()[i], initseq.data()[i]));
-        }
-    }
+    virtual ~pcg32Base_array() = default;
 
     /**
     Return a reference to one generator, using an array index.
@@ -1357,16 +1147,126 @@ private:
         return get_item(sum + arg * m_strides[d], d + 1, args...);
     }
 
-private:
+protected:
 
     std::vector<pcg32> m_gen;
+    using GeneratorBase_array<M>::m_size;
+    using GeneratorBase_array<M>::m_shape;
+    using GeneratorBase_array<M>::m_strides;
+};
+
+class pcg32_array : public pcg32Base_array<std::vector<size_t>>
+{
+public:
+    /**
+    Constructor.
+
+    \param initstate State initiator for every item (accept default sequence initiator).
+    The shape of the argument determines the shape of the generator array.
+    */
+    template <class T>
+    pcg32_array(const T& initstate)
+    {
+        m_shape = std::vector<size_t>(initstate.shape().cbegin(), initstate.shape().cend());
+        m_strides = std::vector<size_t>(initstate.strides().cbegin(), initstate.strides().cend());
+        m_size = initstate.size();
+        m_gen.reserve(m_size);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            m_gen.push_back(pcg32(initstate.data()[i]));
+        }
+    }
+
+    /**
+    Constructor.
+
+    \param initstate State initiator for every item.
+    \param initseq Sequence initiator for every item.
+    The shape of these argument determines the shape of the generator array.
+    */
+    template <class T, class U>
+    pcg32_array(const T& initstate, const U& initseq)
+    {
+        PRRNG_ASSERT(xt::has_shape(initstate, initseq));
+
+        m_shape = std::vector<size_t>(initstate.shape().cbegin(), initstate.shape().cend());
+        m_strides = std::vector<size_t>(initstate.strides().cbegin(), initstate.strides().cend());
+        m_size = initstate.size();
+        m_gen.reserve(m_size);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            m_gen.push_back(pcg32(initstate.data()[i], initseq.data()[i]));
+        }
+    }
 
 protected:
 
-    using Generator_array<std::array<size_t, N>>::m_size;
-    using Generator_array<std::array<size_t, N>>::m_shape;
-    using Generator_array<std::array<size_t, N>>::m_strides;
+    using pcg32Base_array<std::vector<size_t>>::m_gen;
+    using GeneratorBase_array<std::vector<size_t>>::m_size;
+    using GeneratorBase_array<std::vector<size_t>>::m_shape;
+    using GeneratorBase_array<std::vector<size_t>>::m_strides;
+};
 
+
+/**
+Fixed rank version of pcg32_array()
+*/
+template <size_t N>
+class pcg32_tensor : public pcg32Base_array<std::array<size_t, N>>
+{
+public:
+
+    /**
+    Constructor.
+
+    \param initstate State initiator for every item (accept default sequence initiator).
+    The shape of the argument determines the shape of the generator array.
+    */
+    template <class T>
+    pcg32_tensor(const T& initstate)
+    {
+        static_assert(detail::check_rank<N, T>::value, "Ranks to not match");
+
+        std::copy(initstate.shape().cbegin(), initstate.shape().cend(), m_shape.begin());
+        std::copy(initstate.strides().cbegin(), initstate.strides().cend(), m_strides.begin());
+        m_size = initstate.size();
+        m_gen.reserve(m_size);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            m_gen.push_back(pcg32(initstate.data()[i]));
+        }
+    }
+
+    /**
+    Constructor.
+
+    \param initstate State initiator for every item.
+    \param initseq Sequence initiator for every item.
+    The shape of these argument determines the shape of the generator array.
+    */
+    template <class T, class U>
+    pcg32_tensor(const T& initstate, const U& initseq)
+    {
+        static_assert(detail::check_rank<N, T>::value, "Ranks to not match");
+
+        PRRNG_ASSERT(xt::has_shape(initstate, initseq));
+
+        std::copy(initstate.shape().cbegin(), initstate.shape().cend(), m_shape.begin());
+        std::copy(initstate.strides().cbegin(), initstate.strides().cend(), m_strides.begin());
+        m_size = initstate.size();
+        m_gen.reserve(m_size);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            m_gen.push_back(pcg32(initstate.data()[i], initseq.data()[i]));
+        }
+    }
+
+protected:
+
+    using pcg32Base_array<std::array<size_t, N>>::m_gen;
+    using GeneratorBase_array<std::array<size_t, N>>::m_size;
+    using GeneratorBase_array<std::array<size_t, N>>::m_shape;
+    using GeneratorBase_array<std::array<size_t, N>>::m_strides;
 };
 
 
