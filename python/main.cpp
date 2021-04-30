@@ -103,38 +103,38 @@ PYBIND11_MODULE(prrng, m)
             [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
 
-    py::class_<prrng::Generator_array>(m, "Generator_array")
+    py::class_<prrng::Generator_array<std::vector<size_t>>>(m, "Generator_array")
 
         .def(py::init<>(),
              "Random number generator base class."
              "See :cpp:class:`prrng::Generator_array`.")
 
         .def("shape",
-             [](const prrng::Generator_array& s) { return s.shape(); },
+             [](const prrng::Generator_array<std::vector<size_t>>& s) { return s.shape(); },
              "Shape of the array of generators."
              "See :cpp:func:`prrng::Generator_array::shape`.")
 
         .def("shape",
-             py::overload_cast<size_t>(&prrng::Generator_array::shape<size_t>, py::const_),
+             py::overload_cast<size_t>(&prrng::Generator_array<std::vector<size_t>>::shape<size_t>, py::const_),
              "Shape of the array of generators, along a certain axis."
              "See :cpp:func:`prrng::Generator_array::shape`.",
              py::arg("axis"))
 
         .def("size",
-             &prrng::Generator_array::size,
+             &prrng::Generator_array<std::vector<size_t>>::size,
              "Size of the array of generators."
              "See :cpp:func:`prrng::Generator_array::size`.")
 
         .def("random",
              py::overload_cast<const std::vector<size_t>&>(
-                &prrng::Generator_array::random<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::Generator_array<std::vector<size_t>>::random<xt::xarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers."
              "See :cpp:func:`prrng::Generator_array::random`.",
              py::arg("ishape"))
 
         .def("weibull",
              py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::Generator_array::weibull<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::Generator_array<std::vector<size_t>>::weibull<xt::xarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers, distributed according to a weibull distribution."
              "See :cpp:func:`prrng::Generator_array::weibull`.",
              py::arg("ishape"),
@@ -142,10 +142,10 @@ PYBIND11_MODULE(prrng, m)
              py::arg("l") = 1.0)
 
         .def("__repr__",
-            [](const prrng::Generator_array&) { return "<prrng.Generator_array>"; });
+            [](const prrng::Generator_array<std::vector<size_t>>&) { return "<prrng.Generator_array>"; });
 
 
-    py::class_<prrng::pcg32_array, prrng::Generator_array>(m, "pcg32_array")
+    py::class_<prrng::pcg32_array, prrng::Generator_array<std::vector<size_t>>>(m, "pcg32_array")
 
         .def(py::init<xt::xarray<uint64_t>>(),
              "Random number generator."
