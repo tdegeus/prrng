@@ -17,15 +17,15 @@ jobs:
         runs-on: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - runs-on: ubuntu-latest
-            config: -DBUILD_TESTS=1 -DBUILD_DOCS=1
+            config: -DBUILD_TESTS=1 -DBUILD_PYTHON=1 -DBUILD_DOCS=1
             conda: environment.yaml
             prop: tests
           - runs-on: macos-latest
-            config: -DBUILD_TESTS=1
+            config: -DBUILD_TESTS=1 -DBUILD_PYTHON=1
             conda: environment.yaml
             prop: tests
           - runs-on: windows-latest
-            config: -DBUILD_TESTS=1
+            config: -DBUILD_TESTS=1 -DBUILD_PYTHON=1
             conda: environment.yaml
             prop: tests
 
@@ -72,18 +72,19 @@ jobs:
         conda install -c conda-forge clang_win-64 ninja
         cmake -Bbuild -G Ninja ${{ matrix.config }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
-    - name: Build C++ ${{ matrix.prop }}
+    - name: Build ${{ matrix.prop }}
       working-directory: build
       run: cmake --build .
 
-    - name: Run C++ ${{ matrix.prop }}
+    - name: Run tests (C++) ${{ matrix.prop }}
       working-directory: build
       run: ctest --output-on-failure
 
-    - name: Build and install Python module
-      run: python -m pip install . -vvv
+    - name: Install ${{ matrix.prop }}
+      working-directory: install
+      run: cmake --build .
 
-    - name: Run Python tests
+    - name: Run tests (Python)
       working-directory: tests
       run: python pcg32.py
 
