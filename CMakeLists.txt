@@ -91,14 +91,30 @@ endif()
 # Python API
 
 if(BUILD_PYTHON)
+    execute_process(
+        COMMAND python -c "import sys; print(sys.executable)"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE PYTHON_EXECUTABLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
     find_package(pybind11 CONFIG REQUIRED)
     find_package(pyxtensor REQUIRED)
 
-    pybind11_add_module(python python/main.cpp)
-    set_target_properties(python PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-    target_link_libraries(python PUBLIC ${PROJECT_NAME} pybind11::module pyxtensor)
+    pybind11_add_module(python_api python/main.cpp)
+    set_target_properties(python_api PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+    target_link_libraries(python_api PUBLIC ${PROJECT_NAME} pybind11::module pyxtensor)
 
-    target_compile_definitions(python PRIVATE VERSION_INFO=${PROJECT_VERSION})
+    target_compile_definitions(python_api PRIVATE VERSION_INFO=${PROJECT_VERSION})
+
+    execute_process(
+        COMMAND python -c "import site; print(site.getsitepackages()[0])"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE PYTHON_LIBRARY_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    install(TARGETS python_api
+        COMPONENT python
+        LIBRARY DESTINATION "${PYTHON_LIBRARY_DIR}")
 endif()
 
 # Documentation
