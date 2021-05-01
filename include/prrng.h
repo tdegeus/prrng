@@ -11,7 +11,7 @@ This is just a wrapper.
 
 \file prrng.h
 \copyright Copyright 2021. Tom de Geus. All rights reserved.
-\license This project is released under the MIT License.
+\par license This project is released under the MIT License.
 */
 
 #ifndef PRRNG_H

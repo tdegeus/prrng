@@ -5,6 +5,10 @@ cmake_minimum_required(VERSION 3.1..3.19)
 
 project(prrng)
 
+option(BUILD_TESTS "${PROJECT_NAME}: Build tests" OFF)
+option(BUILD_PYTHON "${PROJECT_NAME}: Build Python API" OFF)
+option(BUILD_DOCS "${PROJECT_NAME}: Build docs" OFF)
+
 execute_process(
     COMMAND python -c "from setuptools_scm import get_version; print(get_version())"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -12,10 +16,6 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 message(STATUS "Building ${PROJECT_NAME} ${PROJECT_VERSION}")
-
-option(BUILD_TESTS "${PROJECT_NAME}: Build tests" OFF)
-option(BUILD_PYTHON "${PROJECT_NAME}: Build Python API" OFF)
-option(BUILD_DOCS "${PROJECT_NAME}: Build docs" OFF)
 
 string(TOUPPER "${PROJECT_NAME}" PROJECT_NAME_UPPER)
 
@@ -113,7 +113,6 @@ if(BUILD_DOCS)
     set(DOXYGEN_JAVADOC_AUTOBRIEF YES)
     set(DOXYGEN_MACRO_EXPANSION YES)
     set(DOXYGEN_SOURCE_BROWSER YES)
-    set(DOXYGEN_GENERATE_XML YES)
     set(DOXYGEN_QUIET YES)
     set(DOXYGEN_WARN_IF_UNDOCUMENTED YES)
     set(DOXYGEN_WARN_AS_ERROR YES)
@@ -121,11 +120,6 @@ if(BUILD_DOCS)
     set(DOXYGEN_HTML_EXTRA_STYLESHEET
         "${CMAKE_CURRENT_SOURCE_DIR}/docs/doxystyle/doxygen-awesome.css"
         "${CMAKE_CURRENT_SOURCE_DIR}/docs/doxystyle/custom.css")
-
-    set(DOXYGEN_ALIASES
-        "rst=\\verbatim embed:rst:leading-asterisk"
-        "endrst=\\endverbatim"
-        "license=@par License:")
 
     set(DOXYGEN_STRIP_FROM_INC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
     set(DOXYGEN_STRIP_FROM_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
