@@ -95,7 +95,6 @@ endif()
 # Python API
 
 if(BUILD_PYTHON)
-
     if (NOT PYTHON_EXECUTABLE)
         execute_process(
             COMMAND python -c "import sys; print(sys.executable)"
