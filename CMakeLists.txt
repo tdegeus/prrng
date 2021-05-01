@@ -78,6 +78,10 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
 # Add builds
 # ==========
 
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+endif()
+
 include("${PROJECT_NAME}Config.cmake")
 include(CTest)
 
@@ -91,11 +95,14 @@ endif()
 # Python API
 
 if(BUILD_PYTHON)
-    execute_process(
-        COMMAND python -c "import sys; print(sys.executable)"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE PYTHON_EXECUTABLE
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if (NOT PYTHON_EXECUTABLE)
+        execute_process(
+            COMMAND python -c "import sys; print(sys.executable)"
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE PYTHON_EXECUTABLE
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
 
     find_package(pybind11 CONFIG REQUIRED)
     find_package(pyxtensor REQUIRED)
@@ -106,11 +113,13 @@ if(BUILD_PYTHON)
 
     target_compile_definitions(python_api PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
-    execute_process(
-        COMMAND python -c "import site; print(site.getsitepackages()[0])"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE PYTHON_LIBRARY_DIR
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (NOT PYTHON_LIBRARY_DIR)
+        execute_process(
+            COMMAND python -c "import site; print(site.getsitepackages()[0])"
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE PYTHON_LIBRARY_DIR
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
 
     install(TARGETS python_api
         COMPONENT python
