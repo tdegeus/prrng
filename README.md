@@ -10,4 +10,17 @@ Portable Reconstructible (Pseudo) Random Number Generator.
 
 Documentation: https://tdegeus.github.io/prrng
 
+## Credits
 
+This library is a wrapper around [imneme/pcg-c-basic](https://github.com/imneme/pcg-c-basic), see also [pcg-random.org](http://www.pcg-random.org), and uses some features from [wjakob/pcg32](https://github.com/wjakob/pcg32).
+
+## Overview
+
+The idea is to provide a random number generator the can return nd-distributions of random numbers. 
+In addition a bunch of random number generators can be collected in an nd-array, 
+such that a composite array of random numbers is returned.
+
+The key feature of this library is that is implements both the random number generator,
+as well as the distributions, and provides a Python API.
+In this way, given a certain seed, the same distribution can be generated from both C++ and Python,
+on all platforms and for all compilers.
