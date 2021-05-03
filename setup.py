@@ -115,6 +115,7 @@ setup(
     author = 'Tom de Geus',
     author_email = 'tom@geus.me',
     url = 'https://github.com/tdegeus/prrng',
+    setup_requires = ['setuptools_scm'],
     ext_modules = [CMakeExtension("prrng")],
     cmdclass = {"build_ext": CMakeBuild},
     zip_safe = False,
