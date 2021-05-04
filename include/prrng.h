@@ -152,13 +152,13 @@ namespace detail {
     };
 
     template <size_t N, class T>
-    struct check_fixed_rank<N, T, typename std::enable_if<is_xtensor<T>::value>::type>
+    struct check_fixed_rank<N, T, typename std::enable_if_t<is_xtensor<T>::value>>
     {
         constexpr static bool value = (N == xt::get_rank<T>::value);
     };
 
     template <size_t N, class T>
-    struct check_fixed_rank<N, T, typename std::enable_if<is_std_array<T>::value>::type>
+    struct check_fixed_rank<N, T, typename std::enable_if_t<is_std_array<T>::value>>
     {
         constexpr static bool value = (N == std::tuple_size<T>::value);
     };
@@ -182,7 +182,7 @@ namespace detail {
     };
 
     template <typename R, class S>
-    struct return_type<R, S, typename std::enable_if<is_std_array<S>::value>::type>
+    struct return_type<R, S, typename std::enable_if_t<is_std_array<S>::value>>
     {
         using type = typename xt::xtensor<R, std::tuple_size<S>::value>;
     };
@@ -197,8 +197,8 @@ namespace detail {
     };
 
     template <typename R, class S, class T>
-    struct composite_return_type<R, S, T, typename std::enable_if<is_std_array<S>::value &&
-                                                                  is_std_array<T>::value>::type>
+    struct composite_return_type<R, S, T, typename std::enable_if_t<is_std_array<S>::value &&
+                                                                    is_std_array<T>::value>>
     {
         constexpr static size_t N = std::tuple_size<S>::value + std::tuple_size<T>::value;
         using type = typename xt::xtensor<R, N>;
@@ -224,8 +224,8 @@ namespace detail {
     };
 
     template <class S, class T>
-    struct concatenate<S, T, typename std::enable_if<is_std_array<S>::value &&
-                                                     is_std_array<T>::value>::type>
+    struct concatenate<S, T, typename std::enable_if_t<is_std_array<S>::value &&
+                                                       is_std_array<T>::value>>
     {
         static auto two(const S& s, const T& t)
         {
@@ -1471,7 +1471,7 @@ namespace detail {
     };
 
     template <class T>
-    struct auto_pcg32<T, typename std::enable_if<xt::has_fixed_rank_t<T>::value>::type>
+    struct auto_pcg32<T, typename std::enable_if_t<xt::has_fixed_rank_t<T>::value>>
     {
         static auto get(const T& initseq)
         {
@@ -1486,7 +1486,7 @@ namespace detail {
     };
 
     template <class T>
-    struct auto_pcg32<T, typename std::enable_if<std::is_integral<T>::value>::type>
+    struct auto_pcg32<T, typename std::enable_if_t<std::is_integral<T>::value>>
     {
         static auto get(const T& initseq)
         {
