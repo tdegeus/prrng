@@ -28,7 +28,7 @@ int main()
 {
     auto seed = std::time(0);
     prrng::pcg32 generator(seed);
-    auto a = generator.random<xt::xtensor<double, 2>>({10, 40});
+    auto a = generator.random({10, 40});
     return 0;
 }
 ```
@@ -44,10 +44,10 @@ One of the hallmark features of the pcg32 generator is that the state of the ran
 int main()
 {
     prrng::pcg32 generator();
-    auto state = generator.state<>();
-    auto a = generator.random<xt::xtensor<double, 2>>({10, 40});
+    auto state = generator.state();
+    auto a = generator.random({10, 40});
     generator.restore(state);
-    auto b = generator.random<xt::xtensor<double, 2>>({10, 40});
+    auto b = generator.random({10, 40});
     assert(xt::allclose(a, b));
     return 0;
 }
@@ -90,10 +90,10 @@ int main()
 {
     xt::xtensor<uint64_t, 2> seed = {{0, 1, 2}, {3, 4, 5}};
     prrng::pcg32_array generator(seed);
-    auto state = generator.state<xt::xtensor<uint64_t, 2>>();
-    auto a = generator.random<xt::xtensor<double, 4>>({4, 5}); // shape {2, 3, 4, 5}
+    auto state = generator.state();
+    auto a = generator.random({4, 5}); // shape {2, 3, 4, 5}
     generator.restore(state);
-    auto b = generator.random<xt::xtensor<double, 4>>({4, 5}); 
+    auto b = generator.random({4, 5}); 
     assert(xt::allclose(a, b));
     return 0;
 }
