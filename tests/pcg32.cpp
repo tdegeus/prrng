@@ -39,7 +39,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
         auto f = myget_n(gen, 100);
 
-        auto state = gen.state<>();
+        auto state = gen.state();
         auto a = myget_n(gen, 100);
 
         gen.restore(state);
@@ -58,9 +58,11 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
         auto a = myget_n(gen_a, n);
         auto m = gen_a - gen_b;
+        auto d = gen_a.distance(gen_b);
         auto b = myget_n(gen_b, m);
 
         REQUIRE(static_cast<decltype(m)>(n) == m);
+        REQUIRE(static_cast<decltype(d)>(n) == d);
         REQUIRE(xt::all(xt::equal(a, b)));
     }
 
@@ -71,9 +73,9 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
         prrng::pcg32 gen(seed);
 
-        auto state = gen.state<>();
+        auto state = gen.state();
         auto a = myget_n(gen, n);
-        auto m = gen.distance<>(state);
+        auto m = gen.distance(state);
 
         gen.restore(state);
         auto b = myget_n(gen, m);
@@ -82,15 +84,99 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         REQUIRE(xt::all(xt::equal(a, b)));
     }
 
+    SECTION("random - return type")
+    {
+        prrng::pcg32 generator;
+
+        std::array<size_t, 2> fixed_shape = {10, 20};
+        std::vector<size_t> shape = {10, 20};
+
+        auto a = generator.random({10, 20});
+        auto b = generator.random(fixed_shape);
+        auto c = generator.random(shape);
+
+        auto d = generator.random<xt::xtensor<double, 2>>({10, 20});
+        auto e = generator.random<xt::xtensor<double, 2>>(fixed_shape);
+        auto f = generator.random<xt::xtensor<double, 2>>(shape);
+
+        auto g = generator.random<xt::xarray<double>>({10, 20});
+        auto h = generator.random<xt::xarray<double>>(fixed_shape);
+        auto i = generator.random<xt::xarray<double>>(shape);
+
+        static_assert(std::is_same<decltype(a), xt::xtensor<double, 2>>::value, "X");
+        static_assert(std::is_same<decltype(b), xt::xtensor<double, 2>>::value, "X");
+        static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+        static_assert(std::is_same<decltype(d), xt::xtensor<double, 2>>::value, "X");
+        static_assert(std::is_same<decltype(e), xt::xtensor<double, 2>>::value, "X");
+        static_assert(std::is_same<decltype(f), xt::xtensor<double, 2>>::value, "X");
+
+        static_assert(std::is_same<decltype(g), xt::xarray<double>>::value, "X");
+        static_assert(std::is_same<decltype(h), xt::xarray<double>>::value, "X");
+        static_assert(std::is_same<decltype(i), xt::xarray<double>>::value, "X");
+
+        REQUIRE(xt::has_shape(a, shape));
+        REQUIRE(xt::has_shape(b, shape));
+        REQUIRE(xt::has_shape(c, shape));
+        REQUIRE(xt::has_shape(d, shape));
+        REQUIRE(xt::has_shape(e, shape));
+        REQUIRE(xt::has_shape(f, shape));
+        REQUIRE(xt::has_shape(g, shape));
+        REQUIRE(xt::has_shape(h, shape));
+        REQUIRE(xt::has_shape(i, shape));
+    }
+
+    SECTION("weibull - return type")
+    {
+        prrng::pcg32 generator;
+
+        std::array<size_t, 2> fixed_shape = {10, 20};
+        std::vector<size_t> shape = {10, 20};
+
+        auto a = generator.weibull({10, 20});
+        auto b = generator.weibull(fixed_shape);
+        auto c = generator.weibull(shape);
+
+        auto d = generator.weibull<xt::xtensor<double, 2>>({10, 20});
+        auto e = generator.weibull<xt::xtensor<double, 2>>(fixed_shape);
+        auto f = generator.weibull<xt::xtensor<double, 2>>(shape);
+
+        auto g = generator.weibull<xt::xarray<double>>({10, 20});
+        auto h = generator.weibull<xt::xarray<double>>(fixed_shape);
+        auto i = generator.weibull<xt::xarray<double>>(shape);
+
+        static_assert(std::is_same<decltype(a), xt::xtensor<double, 2>>::value, "X");
+        static_assert(std::is_same<decltype(b), xt::xtensor<double, 2>>::value, "X");
+        static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+        static_assert(std::is_same<decltype(d), xt::xtensor<double, 2>>::value, "X");
+        static_assert(std::is_same<decltype(e), xt::xtensor<double, 2>>::value, "X");
+        static_assert(std::is_same<decltype(f), xt::xtensor<double, 2>>::value, "X");
+
+        static_assert(std::is_same<decltype(g), xt::xarray<double>>::value, "X");
+        static_assert(std::is_same<decltype(h), xt::xarray<double>>::value, "X");
+        static_assert(std::is_same<decltype(i), xt::xarray<double>>::value, "X");
+
+        REQUIRE(xt::has_shape(a, shape));
+        REQUIRE(xt::has_shape(b, shape));
+        REQUIRE(xt::has_shape(c, shape));
+        REQUIRE(xt::has_shape(d, shape));
+        REQUIRE(xt::has_shape(e, shape));
+        REQUIRE(xt::has_shape(f, shape));
+        REQUIRE(xt::has_shape(g, shape));
+        REQUIRE(xt::has_shape(h, shape));
+        REQUIRE(xt::has_shape(i, shape));
+    }
+
     SECTION("random - seed")
     {
         auto seed = std::time(0);
 
         prrng::pcg32 gen_a(seed);
-        auto a = gen_a.random<xt::xtensor<double, 1>>({100000});
+        auto a = gen_a.random({100000});
 
         prrng::pcg32 gen_b(seed);
-        auto b = gen_b.random<xt::xtensor<double, 1>>({100000});
+        auto b = gen_b.random({100000});
 
         REQUIRE(xt::all(xt::equal(a, b)));
     }
@@ -99,11 +185,11 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         prrng::pcg32 gen(std::time(0));
 
-        auto state = gen.state<>();
-        auto a = gen.random<xt::xtensor<double, 1>>({100000});
+        auto state = gen.state();
+        auto a = gen.random({100000});
 
         gen.restore(state);
-        auto b = gen.random<xt::xtensor<double, 1>>({100000});
+        auto b = gen.random({100000});
 
         REQUIRE(xt::all(xt::equal(a, b)));
     }
@@ -112,7 +198,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         prrng::pcg32 gen;
 
-        auto a = gen.random<xt::xtensor<double, 1>>({100000});
+        auto a = gen.random({100000});
         double m = xt::mean(a)();
         REQUIRE(std::abs((m - 0.5) / 0.5) < 1e-3);
     }
@@ -121,7 +207,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         prrng::pcg32 gen;
 
-        auto a = gen.random<xt::xtensor<double, 1>>({100});
+        auto a = gen.random({100});
 
         xt::xtensor<double, 1> b =
             { 0.108379,  0.90696 ,  0.406692,  0.875239,  0.694849,  0.7435  ,
@@ -184,13 +270,13 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         auto initseq = gen.initseq<xt::xtensor<uint64_t, 1>>();
 
         for (size_t i = 0; i < gen.size(); ++i) {
-            REQUIRE(gen[i].initstate<>() == initstate(i));
-            REQUIRE(gen[i].initseq<>() == initseq(i));
+            REQUIRE(gen[i].initstate() == initstate(i));
+            REQUIRE(gen[i].initseq() == initseq(i));
         }
 
         for (size_t i = 0; i < gen.size(); ++i) {
-            REQUIRE(gen(i).initstate<>() == initstate(i));
-            REQUIRE(gen(i).initseq<>() == initseq(i));
+            REQUIRE(gen(i).initstate() == initstate(i));
+            REQUIRE(gen(i).initseq() == initseq(i));
         }
     }
 

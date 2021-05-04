@@ -157,6 +157,53 @@ namespace detail {
         constexpr static bool value = (N == xt::get_rank<T>::value);
     };
 
+    template <size_t N, class T>
+    struct check_fixed_rank<N, T, typename std::enable_if<is_std_array<T>::value>::type>
+    {
+        constexpr static bool value = (N == std::tuple_size<T>::value);
+    };
+
+    /**
+    Get default return type
+    */
+    template <size_t N>
+    struct return_type_fixed
+    {
+        using type = typename xt::xtensor<double, N>;
+    };
+
+    /**
+    Get default return type
+    */
+    template <class S, typename = void>
+    struct return_type
+    {
+        using type = typename xt::xarray<double>;
+    };
+
+    template <class S>
+    struct return_type<S, typename std::enable_if<is_std_array<S>::value>::type>
+    {
+        using type = typename xt::xtensor<double, std::tuple_size<S>::value>;
+    };
+
+    /**
+    Get default return type
+    */
+    template <class S, class T, typename = void>
+    struct composite_return_type
+    {
+        using type = typename xt::xarray<double>;
+    };
+
+    template <class S, class T>
+    struct composite_return_type<S, T, typename std::enable_if<is_std_array<S>::value &&
+                                                               is_std_array<T>::value>::type>
+    {
+        constexpr static size_t N = std::tuple_size<S>::value + std::tuple_size<T>::value;
+        using type = typename xt::xtensor<double, N>;
+    };
+
     /**
     Concatenate two objects that have `begin()` and `end()` methods.
 
@@ -240,11 +287,18 @@ public:
     /**
     Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
 
-    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
-    \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
-
     \param shape The shape of the nd-array.
     \return The sample of shape `shape`.
+    */
+    template <class S>
+    auto random(const S& shape) -> typename detail::return_type<S>::type
+    {
+        using R = typename detail::return_type<S>::type;
+        return this->random_impl<R>(shape);
+    }
+
+    /**
+    \copydoc random(const S&)
     */
     template <class R, class S>
     R random(const S& shape)
@@ -253,19 +307,21 @@ public:
     }
 
     /**
-    Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+    \copydoc random(const S&)
+    */
+    template <class I, std::size_t L>
+    auto random(const I (&shape)[L]) -> typename detail::return_type_fixed<L>::type
+    {
+        using R = typename detail::return_type_fixed<L>::type;
+        return this->random_impl<R>(shape);
+    }
 
-    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
-
-    \param shape The shape of the nd-array (brace input, e.g. `{2, 3}` allowed).
-    \return The sample of shape `shape`.
+    /**
+    \copydoc random(const S&)
     */
     template <class R, class I, std::size_t L>
     R random(const I (&shape)[L])
     {
-        // size_t size = std::accumulate(&shape[0], &shape[L], 1, std::multiplies<size_t>());
-        // std::cout << size << std::endl;
-
         return this->random_impl<R>(shape);
     }
 
@@ -279,13 +335,21 @@ public:
 
     \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
 
-    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
-    \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
-
     \param shape The shape of the nd-array.
     \param k The "shape" parameter.
     \param lambda The "scale" parameter.
     \return The sample of shape `shape`.
+    */
+    template <class S>
+    auto weibull(const S& shape, double k = 1.0, double lambda = 1.0)
+    -> typename detail::return_type<S>::type
+    {
+        using R = typename detail::return_type<S>::type;
+        return this->weibull_impl<R>(shape, k, lambda);
+    };
+
+    /**
+    \copydoc weibull(const S&, double, double)
     */
     template <class R, class S>
     R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
@@ -294,21 +358,18 @@ public:
     };
 
     /**
-    Generate an nd-array of random numbers distributed according to Weibull distribution.
-    Internally, the output of random() is converted using the cumulative density
+    \copydoc weibull(const S&, double, double)
+    */
+    template <class I, std::size_t L>
+    auto weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
+    -> typename detail::return_type_fixed<L>::type
+    {
+        using R = typename detail::return_type_fixed<L>::type;
+        return this->weibull_impl<R>(shape, k, lambda);
+    };
 
-    \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
-
-    such that the output `r` from random() leads to
-
-    \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
-
-    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
-
-    \param shape The shape of the nd-array (brace input, e.g. `{2, 3}` allowed).
-    \param k The "shape" parameter.
-    \param lambda The "scale" parameter.
-    \return The sample of shape `shape`.
+    /**
+    \copydoc weibull(const S&, double, double)
     */
     template <class R, class I, std::size_t L>
     R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
@@ -401,8 +462,10 @@ public:
     };
 
     /**
-    \return Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
+    Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
     This advances the state of the generator by one increment.
+
+    \return Next random number in sequence.
 
     \author Melissa O'Neill, http://www.pcg-random.org.
     */
@@ -416,8 +479,10 @@ public:
     };
 
     /**
-    \return Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
+    Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
     This advances the state of the generator by one increment.
+
+    \return Next random number in sequence.
 
     \note Wrapper around operator().
     */
@@ -427,8 +492,10 @@ public:
     }
 
     /**
+    Draw new random number (uniformly distributed, `0 <= r <= bound`).
+
     \param bound Bound on the return.
-    \return Draw new random number (uniformly distributed, `0 <= r <= bound`).
+    \return Next random number in sequence.
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
@@ -466,7 +533,9 @@ public:
     }
 
     /**
-    \return Generate a single precision floating point value on the interval [0, 1).
+    Generate a single precision floating point value on the interval [0, 1).
+
+    \return Next random number in sequence.
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
@@ -482,7 +551,9 @@ public:
     }
 
     /**
-    \return Generate a double precision floating point value on the interval [0, 1)
+    Generate a double precision floating point value on the interval [0, 1).
+
+    \return Next random number in sequence.
 
     \remark Since the underlying random number generator produces 32 bit output,
     only the first 32 mantissa bits will be filled (however, the resolution is still
@@ -503,13 +574,23 @@ public:
     }
 
     /**
-    \return The current "state" of the generator. If the same initseq() is used, this exact point
+    The current "state" of the generator. If the same initseq() is used, this exact point
     in the sequence can be restored with restore().
+
+    \return State of the generator.
+    */
+    uint64_t state()
+    {
+        return m_state;
+    };
+
+    /**
+    \copydoc state()
 
     \tparam R use a different return-type. There are some internal checks if the type is able to
     store the internal state of type `uint64_t`.
     */
-    template <typename R = uint64_t>
+    template <typename R>
     R state()
     {
         static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_state)>::max,
@@ -522,12 +603,22 @@ public:
     };
 
     /**
-    \return The state initiator that was used upon construction.
+    The state initiator that was used upon construction.
+
+    \return initiator.
+    */
+    uint64_t initstate()
+    {
+        return m_initstate;
+    };
+
+    /**
+    \copydoc initstate()
 
     \tparam R use a different return-type. There are some internal checks if the type is able to
     store the internal state of type `uint64_t`.
     */
-    template <typename R = uint64_t>
+    template <typename R>
     R initstate()
     {
         static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initstate)>::max,
@@ -540,12 +631,22 @@ public:
     };
 
     /**
-    \return The sequence initiator that was used upon construction.
+    The sequence initiator that was used upon construction.
+
+    \return initiator.
+    */
+    uint64_t initseq()
+    {
+        return m_initseq;
+    };
+
+    /**
+    \copydoc initseq()
 
     \tparam R use a different return-type. There are some internal checks if the type is able to
     store the internal state of type `uint64_t`.
     */
-    template <typename R = uint64_t>
+    template <typename R>
     R initseq()
     {
         static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initseq)>::max,
@@ -571,9 +672,7 @@ public:
     };
 
     /**
-    \return The distance between two PCG32 pseudorandom number generators.
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
+    \copydoc distance(const pcg32 &)
     */
     int64_t operator-(const pcg32 &other) const
     {
@@ -601,14 +700,24 @@ public:
     };
 
     /**
-    \return The distance between two PCG32 pseudorandom number generators.
+    The distance between two PCG32 pseudorandom number generators.
+
+    \return Distance.
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
+    */
+    int64_t distance(const pcg32 &other)
+    {
+        return this->operator-(other);
+    }
+
+    /**
+    \copydoc distance(const pcg32 &)
 
     \tparam R use a different return-type. There are some internal checks if the type is able to
     store the internal state of type `int64_t`.
     */
-    template <typename R = int64_t>
+    template <typename R>
     R distance(const pcg32 &other)
     {
         static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
@@ -624,20 +733,17 @@ public:
     }
 
     /**
-    \return The distance between two states.
+    The distance between two states.
+
+    \return Distance.
 
     \warning The increment of used to generate must be the same. There is no way of checking here!
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-
-    \tparam R use a different return-type. There are some internal checks if the type is able to
-    store the internal state of type `int64_t`.
     */
-    template <typename R = int64_t, typename T>
-    R distance(T other_state)
+    template <typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
+    int64_t distance(T other_state)
     {
-        static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
-
         uint64_t
             cur_mult = PRRNG_PCG32_MULT,
             cur_plus = m_inc,
@@ -656,7 +762,21 @@ public:
             cur_mult *= cur_mult;
         }
 
-        int64_t r = (int64_t) distance;
+        return (int64_t) distance;
+    }
+
+    /**
+    \copydoc distance(T)
+
+    \tparam R use a different return-type. There are some internal checks if the type is able to
+    store the internal state of type `int64_t`.
+    */
+    template <typename R, typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
+    R distance(T other_state)
+    {
+        static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
+
+        int64_t r = this->distance(other_state);
 
         #ifdef PRRNG_ENABLE_ASSERT
         bool u = std::is_unsigned<R>::value;
@@ -868,11 +988,19 @@ public:
     /**
     Per generator, generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
 
-    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
-    \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
-
     \param ishape The shape of the nd-array drawn per generator.
     \return The array of arrays of samples: [#shape, `ishape`]
+    */
+    template <class S>
+    auto random(const S& ishape)
+    -> typename detail::composite_return_type<M, S>::type
+    {
+        using R = typename detail::composite_return_type<M, S>::type;
+        return this->random_impl<R>(ishape);
+    }
+
+    /**
+    \copydoc random(const S&)
     */
     template <class R, class S>
     R random(const S& ishape)
@@ -881,12 +1009,18 @@ public:
     }
 
     /**
-    Per generator, generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+    \copydoc random(const S&)
+    */
+    template <class I, std::size_t L>
+    auto random(const I (&ishape)[L])
+    -> typename detail::composite_return_type<M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<M, std::array<size_t, L>>::type;
+        return this->random_impl<R>(detail::to_array(ishape));
+    }
 
-    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
-
-    \param ishape The shape of the nd-array drawn per generator (brace input, e.g. `{2, 3}` allowed).
-    \return The array of arrays of samples: [#shape, `ishape`]
+    /**
+    \copydoc random(const S&)
     */
     template <class R, class I, std::size_t L>
     R random(const I (&ishape)[L])
@@ -905,13 +1039,21 @@ public:
 
     \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
 
-    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
-    \tparam S The type of `shape`, e.g. `std::array<size_t, 3>`.
-
     \param ishape The shape of the nd-array drawn per generator.
     \param k The "shape" parameter.
     \param lambda The "scale" parameter.
     \return The array of arrays of samples: [#shape, `ishape`]
+    */
+    template <class S>
+    auto weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
+    -> typename detail::composite_return_type<M, S>::type
+    {
+        using R = typename detail::composite_return_type<M, S>::type;
+        return this->weibull_impl<R>(ishape, k, lambda);
+    };
+
+    /**
+    \copydoc weibull(const S&, double, double)
     */
     template <class R, class S>
     R weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
@@ -920,22 +1062,18 @@ public:
     };
 
     /**
-    Per generator, generate an nd-array of random numbers distributed
-    according to Weibull distribution.
-    Internally, the output of random() is converted using the cumulative density
+    \copydoc weibull(const S&, double, double)
+    */
+    template <class I, std::size_t L>
+    auto weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
+    -> typename detail::composite_return_type<M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<M, std::array<size_t, L>>::type;
+        return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
+    };
 
-    \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
-
-    such that the output `r` from random() leads to
-
-    \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
-
-    \tparam R The type of the output array, e.g. `xt::xtensor<double, 3>`.
-
-    \param ishape The shape of the nd-array drawn per generator (brace input, e.g. `{2, 3}` allowed).
-    \param k The "shape" parameter.
-    \param lambda The "scale" parameter.
-    \return The array of arrays of samples: [#shape, `ishape`]
+    /**
+    \copydoc weibull(const S&, double, double)
     */
     template <class R, class I, std::size_t L>
     R weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
