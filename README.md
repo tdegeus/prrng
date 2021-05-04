@@ -112,8 +112,3 @@ Also this feature is included in the Python API, allowing to get a reproducible 
 *   The code itself.
 *   The unit tests, under [tests](./tests).
 *   The examples, under [examples](./examples).
-
-The key feature of this library is that is implements both the random number generator,
-as well as the distributions, and provides a Python API.
-In this way, given a certain seed, the same distribution can be generated from both C++ and Python,
-on all platforms and for all compilers.
