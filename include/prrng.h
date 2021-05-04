@@ -103,7 +103,7 @@ The advantage is that:
 #endif
 
 /**
-Portable Reconstructible (Approximate!) Random Number Generator
+Portable Reconstructible (Pseudo!) Random Number Generator
 */
 namespace prrng {
 
@@ -298,6 +298,7 @@ public:
 
     /**
     \copydoc random(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class S>
     R random(const S& shape)
@@ -317,6 +318,7 @@ public:
 
     /**
     \copydoc random(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R random(const I (&shape)[L])
@@ -349,6 +351,7 @@ public:
 
     /**
     \copydoc weibull(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class S>
     R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
@@ -369,6 +372,7 @@ public:
 
     /**
     \copydoc weibull(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
@@ -1000,6 +1004,7 @@ public:
 
     /**
     \copydoc random(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class S>
     R random(const S& ishape)
@@ -1020,6 +1025,7 @@ public:
 
     /**
     \copydoc random(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R random(const I (&ishape)[L])
@@ -1053,6 +1059,7 @@ public:
 
     /**
     \copydoc weibull(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class S>
     R weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
@@ -1073,6 +1080,7 @@ public:
 
     /**
     \copydoc weibull(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
