@@ -166,42 +166,42 @@ namespace detail {
     /**
     Get default return type
     */
-    template <size_t N>
+    template <typename R, size_t N>
     struct return_type_fixed
     {
-        using type = typename xt::xtensor<double, N>;
+        using type = typename xt::xtensor<R, N>;
     };
 
     /**
     Get default return type
     */
-    template <class S, typename = void>
+    template <typename R, class S, typename = void>
     struct return_type
     {
-        using type = typename xt::xarray<double>;
+        using type = typename xt::xarray<R>;
     };
 
-    template <class S>
-    struct return_type<S, typename std::enable_if<is_std_array<S>::value>::type>
+    template <typename R, class S>
+    struct return_type<R, S, typename std::enable_if<is_std_array<S>::value>::type>
     {
-        using type = typename xt::xtensor<double, std::tuple_size<S>::value>;
+        using type = typename xt::xtensor<R, std::tuple_size<S>::value>;
     };
 
     /**
     Get default return type
     */
-    template <class S, class T, typename = void>
+    template <typename R, class S, class T, typename = void>
     struct composite_return_type
     {
-        using type = typename xt::xarray<double>;
+        using type = typename xt::xarray<R>;
     };
 
-    template <class S, class T>
-    struct composite_return_type<S, T, typename std::enable_if<is_std_array<S>::value &&
-                                                               is_std_array<T>::value>::type>
+    template <typename R, class S, class T>
+    struct composite_return_type<R, S, T, typename std::enable_if<is_std_array<S>::value &&
+                                                                  is_std_array<T>::value>::type>
     {
         constexpr static size_t N = std::tuple_size<S>::value + std::tuple_size<T>::value;
-        using type = typename xt::xtensor<double, N>;
+        using type = typename xt::xtensor<R, N>;
     };
 
     /**
@@ -211,10 +211,9 @@ namespace detail {
     \param t Second object (e.g. std::vector).
     \return Concatenated [t, s]
     */
-    template <class S, typename = void>
+    template <class S, class T, typename = void>
     struct concatenate
     {
-        template <class T>
         static auto two(const S& s, const T& t)
         {
             std::vector<size_t> r;
@@ -224,10 +223,10 @@ namespace detail {
         }
     };
 
-    template <class S>
-    struct concatenate<S, typename std::enable_if<is_std_array<S>::value>::type>
+    template <class S, class T>
+    struct concatenate<S, T, typename std::enable_if<is_std_array<S>::value &&
+                                                     is_std_array<T>::value>::type>
     {
-        template <class T>
         static auto two(const S& s, const T& t)
         {
             std::array<size_t, std::tuple_size<S>::value + std::tuple_size<T>::value> r;
@@ -291,9 +290,9 @@ public:
     \return The sample of shape `shape`.
     */
     template <class S>
-    auto random(const S& shape) -> typename detail::return_type<S>::type
+    auto random(const S& shape) -> typename detail::return_type<double, S>::type
     {
-        using R = typename detail::return_type<S>::type;
+        using R = typename detail::return_type<double, S>::type;
         return this->random_impl<R>(shape);
     }
 
@@ -310,9 +309,9 @@ public:
     \copydoc random(const S&)
     */
     template <class I, std::size_t L>
-    auto random(const I (&shape)[L]) -> typename detail::return_type_fixed<L>::type
+    auto random(const I (&shape)[L]) -> typename detail::return_type_fixed<double, L>::type
     {
-        using R = typename detail::return_type_fixed<L>::type;
+        using R = typename detail::return_type_fixed<double, L>::type;
         return this->random_impl<R>(shape);
     }
 
@@ -342,9 +341,9 @@ public:
     */
     template <class S>
     auto weibull(const S& shape, double k = 1.0, double lambda = 1.0)
-    -> typename detail::return_type<S>::type
+    -> typename detail::return_type<double, S>::type
     {
-        using R = typename detail::return_type<S>::type;
+        using R = typename detail::return_type<double, S>::type;
         return this->weibull_impl<R>(shape, k, lambda);
     };
 
@@ -362,9 +361,9 @@ public:
     */
     template <class I, std::size_t L>
     auto weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
-    -> typename detail::return_type_fixed<L>::type
+    -> typename detail::return_type_fixed<double, L>::type
     {
-        using R = typename detail::return_type_fixed<L>::type;
+        using R = typename detail::return_type_fixed<double, L>::type;
         return this->weibull_impl<R>(shape, k, lambda);
     };
 
@@ -993,9 +992,9 @@ public:
     */
     template <class S>
     auto random(const S& ishape)
-    -> typename detail::composite_return_type<M, S>::type
+    -> typename detail::composite_return_type<double, M, S>::type
     {
-        using R = typename detail::composite_return_type<M, S>::type;
+        using R = typename detail::composite_return_type<double, M, S>::type;
         return this->random_impl<R>(ishape);
     }
 
@@ -1013,9 +1012,9 @@ public:
     */
     template <class I, std::size_t L>
     auto random(const I (&ishape)[L])
-    -> typename detail::composite_return_type<M, std::array<size_t, L>>::type
+    -> typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
-        using R = typename detail::composite_return_type<M, std::array<size_t, L>>::type;
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
         return this->random_impl<R>(detail::to_array(ishape));
     }
 
@@ -1046,9 +1045,9 @@ public:
     */
     template <class S>
     auto weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
-    -> typename detail::composite_return_type<M, S>::type
+    -> typename detail::composite_return_type<double, M, S>::type
     {
-        using R = typename detail::composite_return_type<M, S>::type;
+        using R = typename detail::composite_return_type<double, M, S>::type;
         return this->weibull_impl<R>(ishape, k, lambda);
     };
 
@@ -1066,9 +1065,9 @@ public:
     */
     template <class I, std::size_t L>
     auto weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
-    -> typename detail::composite_return_type<M, std::array<size_t, L>>::type
+    -> typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
-        using R = typename detail::composite_return_type<M, std::array<size_t, L>>::type;
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
         return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
     };
 
@@ -1087,7 +1086,7 @@ private:
     R random_impl(const S& ishape)
     {
         auto n = detail::size(ishape);
-        R ret = xt::empty<double>(detail::concatenate<M>::two(m_shape, ishape));
+        R ret = xt::empty<double>(detail::concatenate<M, S>::two(m_shape, ishape));
         this->draw_list(&ret.data()[0], n);
         return ret;
     };
@@ -1163,9 +1162,18 @@ public:
     Return the state of all generators.
     See pcg32::state().
 
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-
     \return The state of each generator.
+    */
+    auto state() -> typename detail::return_type<uint64_t, M>::type
+    {
+        using R = typename detail::return_type<uint64_t, M>::type;
+        return this->state<R>();
+    }
+
+    /**
+    \copydoc state()
+
+    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
     */
     template <class R>
     R state()
@@ -1184,7 +1192,16 @@ public:
     Return the state initiator of all generators.
     See pcg32::initstate().
 
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
+    \return The state initiator of each generator.
+    */
+    auto initstate() -> typename detail::return_type<uint64_t, M>::type
+    {
+        using R = typename detail::return_type<uint64_t, M>::type;
+        return this->initstate<R>();
+    }
+
+    /**
+    \copydoc initstate()
 
     \return The state initiator of each generator.
     */
@@ -1205,9 +1222,18 @@ public:
     Return the sequence initiator of all generators.
     See pcg32::initseq().
 
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-
     \return The sequence initiator of each generator.
+    */
+    auto initseq() -> typename detail::return_type<uint64_t, M>::type
+    {
+        using R = typename detail::return_type<uint64_t, M>::type;
+        return this->initseq<R>();
+    }
+
+    /**
+    \copydoc initseq()
+
+    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
     */
     template <class R>
     R initseq()
@@ -1421,7 +1447,63 @@ protected:
     using GeneratorBase_array<std::array<size_t, N>>::m_strides;
 };
 
+namespace detail {
 
+    template <class T, typename = void>
+    struct auto_pcg32
+    {
+        static auto get(const T& initseq)
+        {
+            return pcg32_array(initseq);
+        }
+
+        template <class S>
+        static auto get(const T& initseq, const S& initstate)
+        {
+            return pcg32_array(initseq, initstate);
+        }
+    };
+
+    template <class T>
+    struct auto_pcg32<T, typename std::enable_if<xt::has_fixed_rank_t<T>::value>::type>
+    {
+        static auto get(const T& initseq)
+        {
+            return pcg32_tensor<xt::get_rank<T>::value>(initseq);
+        }
+
+        template <class S>
+        static auto get(const T& initseq, const S& initstate)
+        {
+            return pcg32_tensor<xt::get_rank<T>::value>(initseq, initstate);
+        }
+    };
+
+    template <class T>
+    struct auto_pcg32<T, typename std::enable_if<std::is_integral<T>::value>::type>
+    {
+        static auto get(const T& initseq)
+        {
+            return pcg32(initseq);
+        }
+
+        template <class S>
+        static auto get(const T& initseq, const S& initstate)
+        {
+            return pcg32(*initseq, *initstate);
+        }
+    };
+
+} // namespace detail
+
+/**
+Return a pcg32(), a pcg32_array(), or a pcg32_tensor() based on input.
+*/
+template <class T>
+inline auto auto_pcg32(const T& initseq)
+{
+    return detail::auto_pcg32<T>::get(initseq);
+}
 
 } // namespace prrng
 

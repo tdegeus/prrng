@@ -91,39 +91,47 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         std::array<size_t, 2> fixed_shape = {10, 20};
         std::vector<size_t> shape = {10, 20};
 
-        auto a = generator.random({10, 20});
-        auto b = generator.random(fixed_shape);
-        auto c = generator.random(shape);
+        {
+            auto a = generator.random({10, 20});
+            auto b = generator.random(fixed_shape);
+            auto c = generator.random(shape);
 
-        auto d = generator.random<xt::xtensor<double, 2>>({10, 20});
-        auto e = generator.random<xt::xtensor<double, 2>>(fixed_shape);
-        auto f = generator.random<xt::xtensor<double, 2>>(shape);
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
 
-        auto g = generator.random<xt::xarray<double>>({10, 20});
-        auto h = generator.random<xt::xarray<double>>(fixed_shape);
-        auto i = generator.random<xt::xarray<double>>(shape);
+            REQUIRE(xt::has_shape(a, shape));
+            REQUIRE(xt::has_shape(b, shape));
+            REQUIRE(xt::has_shape(c, shape));
+        }
 
-        static_assert(std::is_same<decltype(a), xt::xtensor<double, 2>>::value, "X");
-        static_assert(std::is_same<decltype(b), xt::xtensor<double, 2>>::value, "X");
-        static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+        {
+            auto a = generator.random<xt::xtensor<double, 2>>({10, 20});
+            auto b = generator.random<xt::xtensor<double, 2>>(fixed_shape);
+            auto c = generator.random<xt::xtensor<double, 2>>(shape);
 
-        static_assert(std::is_same<decltype(d), xt::xtensor<double, 2>>::value, "X");
-        static_assert(std::is_same<decltype(e), xt::xtensor<double, 2>>::value, "X");
-        static_assert(std::is_same<decltype(f), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xtensor<double, 2>>::value, "X");
 
-        static_assert(std::is_same<decltype(g), xt::xarray<double>>::value, "X");
-        static_assert(std::is_same<decltype(h), xt::xarray<double>>::value, "X");
-        static_assert(std::is_same<decltype(i), xt::xarray<double>>::value, "X");
+            REQUIRE(xt::has_shape(a, shape));
+            REQUIRE(xt::has_shape(b, shape));
+            REQUIRE(xt::has_shape(c, shape));
+        }
 
-        REQUIRE(xt::has_shape(a, shape));
-        REQUIRE(xt::has_shape(b, shape));
-        REQUIRE(xt::has_shape(c, shape));
-        REQUIRE(xt::has_shape(d, shape));
-        REQUIRE(xt::has_shape(e, shape));
-        REQUIRE(xt::has_shape(f, shape));
-        REQUIRE(xt::has_shape(g, shape));
-        REQUIRE(xt::has_shape(h, shape));
-        REQUIRE(xt::has_shape(i, shape));
+        {
+            auto a = generator.random<xt::xarray<double>>({10, 20});
+            auto b = generator.random<xt::xarray<double>>(fixed_shape);
+            auto c = generator.random<xt::xarray<double>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, shape));
+            REQUIRE(xt::has_shape(b, shape));
+            REQUIRE(xt::has_shape(c, shape));
+        }
     }
 
     SECTION("weibull - return type")
@@ -133,39 +141,47 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         std::array<size_t, 2> fixed_shape = {10, 20};
         std::vector<size_t> shape = {10, 20};
 
-        auto a = generator.weibull({10, 20});
-        auto b = generator.weibull(fixed_shape);
-        auto c = generator.weibull(shape);
+        {
+            auto a = generator.weibull({10, 20});
+            auto b = generator.weibull(fixed_shape);
+            auto c = generator.weibull(shape);
 
-        auto d = generator.weibull<xt::xtensor<double, 2>>({10, 20});
-        auto e = generator.weibull<xt::xtensor<double, 2>>(fixed_shape);
-        auto f = generator.weibull<xt::xtensor<double, 2>>(shape);
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
 
-        auto g = generator.weibull<xt::xarray<double>>({10, 20});
-        auto h = generator.weibull<xt::xarray<double>>(fixed_shape);
-        auto i = generator.weibull<xt::xarray<double>>(shape);
+            REQUIRE(xt::has_shape(a, shape));
+            REQUIRE(xt::has_shape(b, shape));
+            REQUIRE(xt::has_shape(c, shape));
+        }
 
-        static_assert(std::is_same<decltype(a), xt::xtensor<double, 2>>::value, "X");
-        static_assert(std::is_same<decltype(b), xt::xtensor<double, 2>>::value, "X");
-        static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+        {
+            auto a = generator.weibull<xt::xtensor<double, 2>>({10, 20});
+            auto b = generator.weibull<xt::xtensor<double, 2>>(fixed_shape);
+            auto c = generator.weibull<xt::xtensor<double, 2>>(shape);
 
-        static_assert(std::is_same<decltype(d), xt::xtensor<double, 2>>::value, "X");
-        static_assert(std::is_same<decltype(e), xt::xtensor<double, 2>>::value, "X");
-        static_assert(std::is_same<decltype(f), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 2>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xtensor<double, 2>>::value, "X");
 
-        static_assert(std::is_same<decltype(g), xt::xarray<double>>::value, "X");
-        static_assert(std::is_same<decltype(h), xt::xarray<double>>::value, "X");
-        static_assert(std::is_same<decltype(i), xt::xarray<double>>::value, "X");
+            REQUIRE(xt::has_shape(a, shape));
+            REQUIRE(xt::has_shape(b, shape));
+            REQUIRE(xt::has_shape(c, shape));
+        }
 
-        REQUIRE(xt::has_shape(a, shape));
-        REQUIRE(xt::has_shape(b, shape));
-        REQUIRE(xt::has_shape(c, shape));
-        REQUIRE(xt::has_shape(d, shape));
-        REQUIRE(xt::has_shape(e, shape));
-        REQUIRE(xt::has_shape(f, shape));
-        REQUIRE(xt::has_shape(g, shape));
-        REQUIRE(xt::has_shape(h, shape));
-        REQUIRE(xt::has_shape(i, shape));
+        {
+            auto a = generator.weibull<xt::xarray<double>>({10, 20});
+            auto b = generator.weibull<xt::xarray<double>>(fixed_shape);
+            auto c = generator.weibull<xt::xarray<double>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, shape));
+            REQUIRE(xt::has_shape(b, shape));
+            REQUIRE(xt::has_shape(c, shape));
+        }
     }
 
     SECTION("random - seed")
@@ -229,6 +245,218 @@ TEST_CASE("prrng::pgc32", "prrng.h")
               0.989077,  0.308017,  0.273916,  0.766872};
 
         REQUIRE(xt::allclose(a, b, 1e-3, 1e-4));
+    }
+
+    SECTION("pcg32_array - return type")
+    {
+        xt::xtensor<uint64_t, 2> seed = {{0, 1, 2}, {3, 4, 5}};
+        prrng::pcg32_array generators(seed);
+
+        auto state = generators.state();
+        auto initstate = generators.initstate();
+        auto initseq = generators.initseq();
+
+        static_assert(std::is_same<decltype(state), xt::xarray<uint64_t>>::value, "X");
+        static_assert(std::is_same<decltype(initstate), xt::xarray<uint64_t>>::value, "X");
+        static_assert(std::is_same<decltype(initseq), xt::xarray<uint64_t>>::value, "X");
+
+        std::array<size_t, 2> fixed_shape = {4, 5};
+        std::vector<size_t> shape = {4, 5};
+        std::vector<size_t> ret_shape = {2, 3, 4, 5};
+
+        // random
+
+        {
+            auto a = generators.random({4, 5});
+            auto b = generators.random(fixed_shape);
+            auto c = generators.random(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        {
+            auto a = generators.random<xt::xarray<double>>({4, 5});
+            auto b = generators.random<xt::xarray<double>>(fixed_shape);
+            auto c = generators.random<xt::xarray<double>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        {
+            auto a = generators.random<xt::xtensor<double, 4>>({4, 5});
+            auto b = generators.random<xt::xtensor<double, 4>>(fixed_shape);
+            auto c = generators.random<xt::xtensor<double, 4>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xtensor<double, 4>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        // weibull
+
+        {
+            auto a = generators.weibull({4, 5});
+            auto b = generators.weibull(fixed_shape);
+            auto c = generators.weibull(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        {
+            auto a = generators.weibull<xt::xarray<double>>({4, 5});
+            auto b = generators.weibull<xt::xarray<double>>(fixed_shape);
+            auto c = generators.weibull<xt::xarray<double>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        {
+            auto a = generators.weibull<xt::xtensor<double, 4>>({4, 5});
+            auto b = generators.weibull<xt::xtensor<double, 4>>(fixed_shape);
+            auto c = generators.weibull<xt::xtensor<double, 4>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xtensor<double, 4>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+    }
+
+    SECTION("pcg32_tensor - return type")
+    {
+        xt::xtensor<uint64_t, 2> seed = {{0, 1, 2}, {3, 4, 5}};
+        prrng::pcg32_tensor<2> generators(seed);
+
+        auto state = generators.state();
+        auto initstate = generators.initstate();
+        auto initseq = generators.initseq();
+
+        static_assert(std::is_same<decltype(state), xt::xtensor<uint64_t, 2>>::value, "X");
+        static_assert(std::is_same<decltype(initstate), xt::xtensor<uint64_t, 2>>::value, "X");
+        static_assert(std::is_same<decltype(initseq), xt::xtensor<uint64_t, 2>>::value, "X");
+
+        std::array<size_t, 2> fixed_shape = {4, 5};
+        std::vector<size_t> shape = {4, 5};
+        std::vector<size_t> ret_shape = {2, 3, 4, 5};
+
+        // random
+
+        {
+            auto a = generators.random({4, 5});
+            auto b = generators.random(fixed_shape);
+            auto c = generators.random(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        {
+            auto a = generators.random<xt::xarray<double>>({4, 5});
+            auto b = generators.random<xt::xarray<double>>(fixed_shape);
+            auto c = generators.random<xt::xarray<double>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        {
+            auto a = generators.random<xt::xtensor<double, 4>>({4, 5});
+            auto b = generators.random<xt::xtensor<double, 4>>(fixed_shape);
+            auto c = generators.random<xt::xtensor<double, 4>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xtensor<double, 4>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        // weibull
+
+        {
+            auto a = generators.weibull({4, 5});
+            auto b = generators.weibull(fixed_shape);
+            auto c = generators.weibull(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        {
+            auto a = generators.weibull<xt::xarray<double>>({4, 5});
+            auto b = generators.weibull<xt::xarray<double>>(fixed_shape);
+            auto c = generators.weibull<xt::xarray<double>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xarray<double>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xarray<double>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
+
+        {
+            auto a = generators.weibull<xt::xtensor<double, 4>>({4, 5});
+            auto b = generators.weibull<xt::xtensor<double, 4>>(fixed_shape);
+            auto c = generators.weibull<xt::xtensor<double, 4>>(shape);
+
+            static_assert(std::is_same<decltype(a), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(b), xt::xtensor<double, 4>>::value, "X");
+            static_assert(std::is_same<decltype(c), xt::xtensor<double, 4>>::value, "X");
+
+            REQUIRE(xt::has_shape(a, ret_shape));
+            REQUIRE(xt::has_shape(b, ret_shape));
+            REQUIRE(xt::has_shape(c, ret_shape));
+        }
     }
 
     SECTION("pcg32_array - list")
@@ -386,5 +614,22 @@ TEST_CASE("prrng::pgc32", "prrng.h")
                 REQUIRE(gen.inbounds(index) == (i < gen.shape(0) && j < gen.shape(1)));
             }
         }
+    }
+
+    SECTION("auto_pcg32")
+    {
+        auto a = prrng::auto_pcg32(0);
+        auto b = prrng::auto_pcg32(xt::xarray<uint64_t>{0, 1, 2});
+        auto c = prrng::auto_pcg32(xt::xtensor<uint64_t, 1>{0, 1, 2});
+        auto d = prrng::auto_pcg32(xt::xtensor<uint64_t, 2>{{0, 1, 2}, {3, 4, 5}});
+
+        static_assert(std::is_same<decltype(a), prrng::pcg32>::value, "X");
+        static_assert(std::is_same<decltype(b), prrng::pcg32_array>::value, "X");
+        static_assert(std::is_same<decltype(c), prrng::pcg32_tensor<1>>::value, "X");
+        static_assert(std::is_same<decltype(d), prrng::pcg32_tensor<2>>::value, "X");
+
+        REQUIRE(xt::has_shape(b.state(), {3}));
+        REQUIRE(xt::has_shape(c.state(), {3}));
+        REQUIRE(xt::has_shape(d.state(), {2, 3}));
     }
 }
