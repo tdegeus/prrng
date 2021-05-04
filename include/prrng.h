@@ -1122,7 +1122,7 @@ protected:
 
 
 /**
-Base class, see pcg32_array() for description.
+Base class, see pcg32_array for description.
 */
 template <class M>
 class pcg32_arrayBase : public GeneratorBase_array<M>
@@ -1365,7 +1365,7 @@ public:
     template <class T, class U>
     pcg32_array(const T& initstate, const U& initseq)
     {
-        PRRNG_ASSERT(xt::has_shape(initstate, initseq));
+        PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
 
         m_shape = std::vector<size_t>(initstate.shape().cbegin(), initstate.shape().cend());
         m_strides = std::vector<size_t>(initstate.strides().cbegin(), initstate.strides().cend());
@@ -1385,9 +1385,8 @@ protected:
     using GeneratorBase_array<std::vector<size_t>>::m_strides;
 };
 
-
 /**
-Fixed rank version of pcg32_array()
+Fixed rank version of pcg32_array
 */
 template <size_t N>
 class pcg32_tensor : public pcg32_arrayBase<std::array<size_t, N>>
@@ -1426,8 +1425,7 @@ public:
     pcg32_tensor(const T& initstate, const U& initseq)
     {
         static_assert(detail::check_fixed_rank<N, T>::value, "Ranks to not match");
-
-        PRRNG_ASSERT(xt::has_shape(initstate, initseq));
+        PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
 
         std::copy(initstate.shape().cbegin(), initstate.shape().cend(), m_shape.begin());
         std::copy(initstate.strides().cbegin(), initstate.strides().cend(), m_strides.begin());
@@ -1490,19 +1488,35 @@ namespace detail {
         template <class S>
         static auto get(const T& initseq, const S& initstate)
         {
-            return pcg32(*initseq, *initstate);
+            return pcg32(initseq, initstate);
         }
     };
 
 } // namespace detail
 
 /**
-Return a pcg32(), a pcg32_array(), or a pcg32_tensor() based on input.
+Return a pcg32, a pcg32_array, or a pcg32_tensor based on input.
+
+\param initstate The sequence initiator.
+\return The allocated generator.
 */
 template <class T>
-inline auto auto_pcg32(const T& initseq)
+inline auto auto_pcg32(const T& initstate)
 {
-    return detail::auto_pcg32<T>::get(initseq);
+    return detail::auto_pcg32<T>::get(initstate);
+}
+
+/**
+Return a pcg32, a pcg32_array, or a pcg32_tensor based on input.
+
+\param initstate The sequence initiator.
+\param initseq The sequence initiator.
+\return The allocated generator.
+*/
+template <class T, class S>
+inline auto auto_pcg32(const T& initstate, const S& initseq)
+{
+    return detail::auto_pcg32<T>::get(initstate, initseq);
 }
 
 } // namespace prrng

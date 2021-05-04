@@ -616,7 +616,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         }
     }
 
-    SECTION("auto_pcg32")
+    SECTION("auto_pcg32 - type")
     {
         auto a = prrng::auto_pcg32(0);
         auto b = prrng::auto_pcg32(xt::xarray<uint64_t>{0, 1, 2});
@@ -631,5 +631,58 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         REQUIRE(xt::has_shape(b.state(), {3}));
         REQUIRE(xt::has_shape(c.state(), {3}));
         REQUIRE(xt::has_shape(d.state(), {2, 3}));
+    }
+
+    SECTION("auto_pcg32 - pcg32")
+    {
+        auto seed = std::time(0);
+
+        {
+            auto a = prrng::auto_pcg32(seed);
+            auto b = prrng::pcg32(seed);
+            REQUIRE(xt::allclose(a.random({10, 20}), b.random({10, 20})));
+        }
+
+        {
+            auto a = prrng::auto_pcg32(seed, seed + 1);
+            auto b = prrng::pcg32(seed, seed + 1);
+            REQUIRE(xt::allclose(a.random({10, 20}), b.random({10, 20})));
+        }
+    }
+
+    SECTION("auto_pcg32 - pcg32_array")
+    {
+        auto s = std::time(0);
+        xt::xarray<size_t> seed = s + xt::arange<size_t>(20);
+
+        {
+            auto a = prrng::auto_pcg32(seed);
+            auto b = prrng::pcg32_array(seed);
+            REQUIRE(xt::allclose(a.random({10, 20}), b.random({10, 20})));
+        }
+
+        {
+            auto a = prrng::auto_pcg32(seed, xt::eval(seed + 1));
+            auto b = prrng::pcg32_array(seed, xt::eval(seed + 1));
+            REQUIRE(xt::allclose(a.random({10, 20}), b.random({10, 20})));
+        }
+    }
+
+    SECTION("auto_pcg32 - pcg32_tensor")
+    {
+        auto s = std::time(0);
+        xt::xtensor<size_t, 1> seed = s + xt::arange<size_t>(20);
+
+        {
+            auto a = prrng::auto_pcg32(seed);
+            auto b = prrng::pcg32_tensor<1>(seed);
+            REQUIRE(xt::allclose(a.random({10, 20}), b.random({10, 20})));
+        }
+
+        {
+            auto a = prrng::auto_pcg32(seed, xt::eval(seed + 1));
+            auto b = prrng::pcg32_tensor<1>(seed, xt::eval(seed + 1));
+            REQUIRE(xt::allclose(a.random({10, 20}), b.random({10, 20})));
+        }
     }
 }
