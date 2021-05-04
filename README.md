@@ -35,7 +35,7 @@ int main()
 
 ### pcg32
 
-One of the hallmark features of the pcg32 generator is that storing the state of the random generator (the position in random sequence set by the seed) can be saved and restored at any point
+One of the hallmark features of the pcg32 generator is that the state of the random generator (the position in random sequence set by the seed) can be saved and restored at any point
 
 ```cpp
 #include <xtensor/xtensor.h>
@@ -55,9 +55,9 @@ int main()
 
 In addition one can advance and reverse in the random sequence, and compute the number of random numbers between two states.
 
-**Important:** A very important and hallmark features of pcg32 is that, internally, types of fixed bit-size are used. Notably the state is (re)stored as `uint64_t`. This makes that restoring can be 
-uniquely done on any system and any compiler, or any platform.
-As a convenience the output can be recast by specifying a template parameter, while static assertions shield you from loosing data. For example `auto state = generator.state<size_t>();` would be allowed, but `auto state = generator.state<int>();` would not.
+**Important:** A very important and hallmark features of pcg32 is that, internally, types of fixed bit size are used. Notably the state is (re)stored as `uint64_t`. This makes that restoring can be 
+uniquely done on any system and any compiler, on any platform (as long as you save the `uint64_t` properly, naturally).
+As a convenience the output can be recast by specifying a template parameter, while static assertions shield you from losing data. For example, `auto state = generator.state<size_t>();` would be allowed, but `auto state = generator.state<int>();` would not.
 
 ### Python API
 
@@ -103,8 +103,8 @@ int main()
 
 Each random generator can return a random sequence according to a certain distribution.
 The most basic behaviour is to just convert a random integer to a random double `[0, 1]`, 
-as was already done in the examples using `generator.rando<...>(...)`. 
-Also this feature is include in the Python API, allowing also to get a reproducible distribution.
+as was already done in the examples using `generator.random<...>(...)`. 
+Also this feature is included in the Python API, allowing to get a reproducible distribution.
 
 ### More information
 
