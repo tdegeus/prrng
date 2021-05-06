@@ -3,6 +3,7 @@ channels:
 dependencies:
   # dependencies
   - xtensor
+  - gcem
 
   # build tools
   - cmake

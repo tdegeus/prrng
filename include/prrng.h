@@ -38,6 +38,7 @@ Multiplicative factor for pcg32()
 #include <array>
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
+#include <gcem.hpp>
 
 /**
 \cond
@@ -359,6 +360,7 @@ References:
 
 -   https://en.wikipedia.org/wiki/Gamma_distribution
 -   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/gamma.hpp
+-   https://github.com/kthohr/gcem/blob/master/include/gcem_incl/incomplete_gamma_inv.hpp
 */
 class gamma_distribution
 {
@@ -374,6 +376,55 @@ public:
     {
         m_shape = k;
         m_scale = theta;
+    }
+
+    /**
+    Return the probability density function.
+
+    \param x Coordinates.
+    \return probability density for each `x`.
+    */
+    template <class T>
+    T pdf(const T& x)
+    {
+        double p = 1.0 / (std::tgamma(m_shape) * std::pow(m_scale, m_shape));
+        return p * xt::pow(x, m_shape - 1.0) * xt::exp(- x / m_scale);
+    }
+
+    /**
+    Return the cumulative density function.
+
+    \param x Coordinates.
+    \return cumulative density for each `x`.
+    */
+    template <class T>
+    T cdf(const T& x)
+    {
+        T ret = xt::empty_like(x);
+
+        for (size_t i = 0; i < ret.size(); ++i) {
+            ret.data()[i] = m_scale * gcem::incomplete_gamma(m_shape, x.data()[i] / m_scale);
+        }
+
+        return ret;
+    }
+
+    /**
+    Return the quantile (the inverse of the cumulative density function).
+
+    \param p Probability [0, 1].
+    \return quantile for each `p`.
+    */
+    template <class T>
+    T quantile(const T& p)
+    {
+        T ret = xt::empty_like(p);
+
+        for (size_t i = 0; i < ret.size(); ++i) {
+            ret.data()[i] = m_scale * gcem::incomplete_gamma_inv(m_shape, p.data()[i]);
+        }
+
+        return ret;
     }
 
 private:
@@ -491,6 +542,53 @@ public:
         return this->weibull_impl<R>(shape, k, lambda);
     };
 
+    /**
+    Generate an nd-array of random numbers distributed according to Gamma distribution.
+
+    \param shape The shape of the nd-array.
+    \param k The "shape" parameter.
+    \param theta The "scale" parameter.
+    \return The sample of shape `shape`.
+    */
+    template <class S>
+    auto gamma(const S& shape, double k = 1.0, double theta = 1.0)
+    -> typename detail::return_type<double, S>::type
+    {
+        using R = typename detail::return_type<double, S>::type;
+        return this->gamma_impl<R>(shape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S>
+    R gamma(const S& shape, double k = 1.0, double theta = 1.0)
+    {
+        return this->gamma_impl<R>(shape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    */
+    template <class I, std::size_t L>
+    auto gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
+    -> typename detail::return_type_fixed<double, L>::type
+    {
+        using R = typename detail::return_type_fixed<double, L>::type;
+        return this->gamma_impl<R>(shape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L>
+    R gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
+    {
+        return this->gamma_impl<R>(shape, k, theta);
+    };
+
 private:
 
     template <class R, class S>
@@ -506,6 +604,13 @@ private:
     {
         R r = this->random_impl<R>(shape);
         return weibull_distribution(k, lambda).quantile(r);
+    };
+
+    template <class R, class S>
+    R gamma_impl(const S& shape, double k, double theta)
+    {
+        R r = this->random_impl<R>(shape);
+        return gamma_distribution(k, theta).quantile(r);
     };
 
 protected:
@@ -1199,6 +1304,54 @@ public:
         return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
     };
 
+    /**
+    Per generator, generate an nd-array of random numbers distributed
+    according to Gamma distribution.
+
+    \param ishape The shape of the nd-array drawn per generator.
+    \param k The "shape" parameter.
+    \param theta The "scale" parameter.
+    \return The array of arrays of samples: [#shape, `ishape`]
+    */
+    template <class S>
+    auto gamma(const S& ishape, double k = 1.0, double theta = 1.0)
+    -> typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->gamma_impl<R>(ishape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S>
+    R gamma(const S& ishape, double k = 1.0, double theta = 1.0)
+    {
+        return this->gamma_impl<R>(ishape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    */
+    template <class I, std::size_t L>
+    auto gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
+    -> typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L>
+    R gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
+    {
+        return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
+    };
+
 private:
 
     template <class R, class S>
@@ -1215,6 +1368,13 @@ private:
     {
         R r = this->random_impl<R>(ishape);
         return weibull_distribution(k, lambda).quantile(r);
+    };
+
+    template <class R, class S>
+    R gamma_impl(const S& ishape, double k, double theta)
+    {
+        R r = this->random_impl<R>(ishape);
+        return gamma_distribution(k, theta).quantile(r);
     };
 
 protected:
