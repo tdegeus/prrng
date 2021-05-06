@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.1..3.19)
 
 project(prrng)
 
+option(BUILD_ALL "${PROJECT_NAME}: Build tests, Python API & docs" OFF)
 option(BUILD_TESTS "${PROJECT_NAME}: Build tests" OFF)
 option(BUILD_PYTHON "${PROJECT_NAME}: Build Python API" OFF)
 option(BUILD_DOCS "${PROJECT_NAME}: Build docs" OFF)
@@ -83,14 +84,14 @@ include(CTest)
 
 # Tests
 
-if(BUILD_TESTS)
+if(BUILD_TESTS OR BUILD_ALL)
     enable_testing()
     add_subdirectory(tests)
 endif()
 
 # Python API
 
-if(BUILD_PYTHON)
+if(BUILD_PYTHON OR BUILD_ALL)
     find_package(pybind11 CONFIG REQUIRED)
     find_package(pyxtensor REQUIRED)
 
@@ -103,7 +104,7 @@ endif()
 
 # Documentation
 
-if(BUILD_DOCS)
+if(BUILD_DOCS OR BUILD_ALL)
     find_package(Doxygen REQUIRED)
 
     set(DOXYGEN_EXCLUDE_SYMBOLS detail)
