@@ -272,6 +272,117 @@ inline std::string version()
 };
 
 /**
+Weibull distribution.
+
+References:
+
+-   https://en.wikipedia.org/wiki/Weibull_distribution
+-   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/weibull.hpp
+*/
+class weibull_distribution
+{
+public:
+
+    /**
+    Constructor.
+
+    \param k Shape parameter.
+    \param lambda Scale parameter.
+    */
+    weibull_distribution(double k = 1.0, double lambda = 1.0)
+    {
+        m_shape = k;
+        m_scale = lambda;
+    }
+
+    /**
+    Return the probability density function.
+
+    \param x Coordinates.
+    \return probability density for each `x`.
+    */
+    template <class T>
+    T pdf(const T& x)
+    {
+        T ret = xt::exp(-xt::pow(x / m_scale, m_shape));
+        ret *= xt::pow(x / m_scale, m_shape - 1.0) * m_shape / m_scale;
+
+        if (xt::any(xt::equal(x, 0))) {
+            if (m_shape == 1) {
+                ret = xt::where(xt::equal(x, 0), 1.0 / m_scale, ret);
+            }
+            else if (m_shape > 1) {
+                ret = xt::where(xt::equal(x, 0), 0.0, ret);
+            }
+            else {
+                throw std::runtime_error("[prrng::weibull_distribution::pdf] Overflow error");
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+    Return the cumulative density function.
+
+    \param x Coordinates.
+    \return cumulative density for each `x`.
+    */
+    template <class T>
+    T cdf(const T& x)
+    {
+        return xt::expm1(-xt::pow(x / m_scale, m_shape));
+    }
+
+    /**
+    Return the quantile (the inverse of the probability density function).
+
+    \param r Random numbers [0, 1].
+    \return quantile for each `r`.
+    */
+    template <class T>
+    T quantile(const T& r)
+    {
+        return m_scale * xt::pow(-xt::log1p(-r), 1.0 / m_shape);
+    }
+
+private:
+
+    double m_shape;
+    double m_scale;
+};
+
+/**
+Gamma distribution.
+
+References:
+
+-   https://en.wikipedia.org/wiki/Gamma_distribution
+-   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/gamma.hpp
+*/
+class gamma_distribution
+{
+public:
+
+    /**
+    Constructor.
+
+    \param k Shape parameter.
+    \param theta Scale parameter.
+    */
+    gamma_distribution(double k, double theta)
+    {
+        m_shape = k;
+        m_scale = theta;
+    }
+
+private:
+
+    double m_shape;
+    double m_scale;
+};
+
+/**
 Base class of the pseudorandom number generators.
 This class provides common methods, but itself does not really do much.
 */
@@ -394,7 +505,7 @@ private:
     R weibull_impl(const S& shape, double k, double lambda)
     {
         R r = this->random_impl<R>(shape);
-        return lambda * xt::pow(- xt::log(1.0 - r), 1.0 / k);
+        return weibull_distribution(k, lambda).quantile(r);
     };
 
 protected:
@@ -1103,7 +1214,7 @@ private:
     R weibull_impl(const S& ishape, double k, double lambda)
     {
         R r = this->random_impl<R>(ishape);
-        return lambda * xt::pow(- xt::log(1.0 - r), 1.0 / k);
+        return weibull_distribution(k, lambda).quantile(r);
     };
 
 protected:

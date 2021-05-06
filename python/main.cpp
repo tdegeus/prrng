@@ -13,6 +13,36 @@ PYBIND11_MODULE(prrng, m)
           "See :cpp:class:`prrng::version`.");
 
 
+    py::class_<prrng::weibull_distribution>(m, "weibull_distribution")
+
+        .def(py::init<double, double>(),
+             "Weibull distribution."
+             "See :cpp:class:`prrng::weibull_distribution`.",
+             py::arg("k") = 1.0,
+             py::arg("l") = 1.0)
+
+        .def("pdf",
+             &prrng::weibull_distribution::pdf<xt::xtensor<double, 1>>,
+             "Probability density distribution."
+             "See :cpp:func:`prrng::weibull_distribution::pdf`.",
+             py::arg("x"))
+
+        .def("cdf",
+             &prrng::weibull_distribution::cdf<xt::xtensor<double, 1>>,
+             "Cumulative density distribution."
+             "See :cpp:func:`prrng::weibull_distribution::cdf`.",
+             py::arg("x"))
+
+        .def("quantile",
+             &prrng::weibull_distribution::quantile<xt::xarray<double>>,
+             "Quantile (inverse of cumulative density distribution)."
+             "See :cpp:func:`prrng::weibull_distribution::quantile`.",
+             py::arg("r"))
+
+        .def("__repr__",
+            [](const prrng::weibull_distribution&) { return "<prrng.weibull_distribution>"; });
+
+
     py::class_<prrng::GeneratorBase>(m, "GeneratorBase")
 
         .def(py::init<>(),
