@@ -1378,6 +1378,8 @@ public:
     template <class T>
     void advance(const T& arg)
     {
+        PRRNG_ASSERT(xt::has_shape(arg, this->shape()));
+
         for (size_t i = 0; i < m_size; ++i) {
             m_gen[i].advance(arg.data()[i]);
         }
@@ -1394,6 +1396,8 @@ public:
     template <class T>
     void restore(const T& arg)
     {
+        PRRNG_ASSERT(xt::has_shape(arg, this->shape()));
+
         for (size_t i = 0; i < m_size; ++i) {
             m_gen[i].restore(arg.data()[i]);
         }
