@@ -335,15 +335,15 @@ public:
     }
 
     /**
-    Return the quantile (the inverse of the probability density function).
+    Return the quantile (the inverse of the cumulative density function).
 
-    \param r Random numbers [0, 1].
-    \return quantile for each `r`.
+    \param p Probability [0, 1].
+    \return quantile for each `p`.
     */
     template <class T>
-    T quantile(const T& r)
+    T quantile(const T& p)
     {
-        return m_scale * xt::pow(-xt::log1p(-r), 1.0 / m_shape);
+        return m_scale * xt::pow(-xt::log1p(-p), 1.0 / m_shape);
     }
 
 private:
