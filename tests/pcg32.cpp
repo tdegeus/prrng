@@ -562,6 +562,35 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         }
     }
 
+    SECTION("pcg32_array - matrix - state/restore/advance")
+    {
+        xt::xtensor<uint64_t, 2> seed = {{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}};
+
+        prrng::pcg32_array gen(seed);
+        prrng::pcg32_array regen(seed);
+
+        auto a = gen.random({4, 5});
+        auto b = gen.random({4, 5});
+        auto c = gen.random({4, 5});
+        auto s = gen.state();
+        auto d = gen.random({4, 5});
+
+        regen.restore(s);
+        REQUIRE(xt::allclose(d, regen.random({4, 5})));
+
+        regen.restore(s);
+        regen.advance(xt::eval(- 4 * 5 * xt::ones<int>(regen.shape())));
+        REQUIRE(xt::allclose(c, regen.random({4, 5})));
+
+        regen.restore(s);
+        regen.advance(xt::eval(- 2 * 4 * 5 * xt::ones<int>(regen.shape())));
+        REQUIRE(xt::allclose(b, regen.random({4, 5})));
+
+        regen.restore(s);
+        regen.advance(xt::eval(- 3 * 4 * 5 * xt::ones<int>(regen.shape())));
+        REQUIRE(xt::allclose(a, regen.random({4, 5})));
+    }
+
     SECTION("pcg32_tensor - matrix")
     {
         xt::xtensor<uint64_t, 2> seed = {{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}};
