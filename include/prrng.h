@@ -1257,7 +1257,23 @@ public:
     }
 
     /**
-    Restore all generators from a state.
+    Advance generators.
+    See pcg32::advance().
+
+    \tparam T The type of the input array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`
+
+    \param arg The distance (positive or negative) by which to advance each generator.
+    */
+    template <class T>
+    void advance(const T& arg)
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            m_gen[i].advance(arg.data()[i]);
+        }
+    }
+
+    /**
+    Restore generators from a state.
     See pcg32::restore().
 
     \tparam T The type of the input array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
