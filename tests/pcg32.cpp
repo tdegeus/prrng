@@ -463,16 +463,16 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         xt::xtensor<uint64_t, 1> seed = {0, 1, 2, 3, 4};
         prrng::pcg32_array gen(seed);
-        auto state = gen.state<xt::xtensor<uint64_t, 1>>();
-        auto a = gen.random<xt::xtensor<double, 3>>({4, 5});
-        auto b = gen.random<xt::xtensor<double, 3>>({4, 5});
+        auto state = gen.state();
+        auto a = gen.random({4, 5});
+        auto b = gen.random({4, 5});
         REQUIRE(!xt::allclose(a, b));
 
         // test "restore"
 
         gen.restore(state);
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "operator[]"
 
@@ -480,8 +480,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
             gen[i].restore(state(i));
         }
 
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "operator()"
 
@@ -489,13 +489,13 @@ TEST_CASE("prrng::pgc32", "prrng.h")
             gen(i).restore(state(i));
         }
 
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 3>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "initstate" and "initseq"
 
-        auto initstate = gen.initstate<xt::xtensor<uint64_t, 1>>();
-        auto initseq = gen.initseq<xt::xtensor<uint64_t, 1>>();
+        auto initstate = gen.initstate();
+        auto initseq = gen.initseq();
 
         for (size_t i = 0; i < gen.size(); ++i) {
             REQUIRE(gen[i].initstate() == initstate(i));
@@ -512,16 +512,16 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         xt::xtensor<uint64_t, 2> seed = {{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}};
         prrng::pcg32_array gen(seed);
-        auto state = gen.state<xt::xtensor<uint64_t, 2>>();
-        auto a = gen.random<xt::xtensor<double, 4>>({4, 5});
-        auto b = gen.random<xt::xtensor<double, 4>>({4, 5});
+        auto state = gen.state();
+        auto a = gen.random({4, 5});
+        auto b = gen.random({4, 5});
         REQUIRE(!xt::allclose(a, b));
 
         // test "restore"
 
         gen.restore(state);
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "operator[]"
 
@@ -529,8 +529,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
             gen[i].restore(state.data()[i]);
         }
 
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "operator()"
 
@@ -540,8 +540,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
             }
         }
 
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "flat_index"
 
@@ -595,16 +595,16 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         xt::xtensor<uint64_t, 2> seed = {{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}};
         prrng::pcg32_tensor<2> gen(seed);
-        auto state = gen.state<xt::xtensor<uint64_t, 2>>();
-        auto a = gen.random<xt::xtensor<double, 4>>({4, 5});
-        auto b = gen.random<xt::xtensor<double, 4>>({4, 5});
+        auto state = gen.state();
+        auto a = gen.random({4, 5});
+        auto b = gen.random({4, 5});
         REQUIRE(!xt::allclose(a, b));
 
         // test "restore"
 
         gen.restore(state);
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "operator[]"
 
@@ -612,8 +612,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
             gen[i].restore(state.data()[i]);
         }
 
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "operator()"
 
@@ -623,8 +623,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
             }
         }
 
-        REQUIRE(xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
-        REQUIRE(!xt::allclose(a, gen.random<xt::xtensor<double, 4>>({4, 5})));
+        REQUIRE(xt::allclose(a, gen.random({4, 5})));
+        REQUIRE(!xt::allclose(a, gen.random({4, 5})));
 
         // test "flat_index"
 
