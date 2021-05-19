@@ -29,6 +29,18 @@ endif()
 
 find_dependency(xtensor)
 
+# Use Boost (for inverse Gamma function)
+
+if(NOT TARGET prrng::use_boost)
+    add_library(prrng::use_boost INTERFACE IMPORTED)
+    find_package(Boost QUIET)
+    if (Boost_FOUND)
+        message(STATUS "Boost available, use prrng::use_boost to use Boost in prrng")
+        target_link_libraries(prrng::use_boost INTERFACE Boost::boost)
+        target_compile_definitions(prrng::use_boost INTERFACE PRRNG_USE_BOOST)
+    endif()
+endif()
+
 # Define support target "prrng::compiler_warnings"
 
 if(NOT TARGET prrng::compiler_warnings)

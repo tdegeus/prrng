@@ -39,6 +39,37 @@ Multiplicative factor for pcg32()
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 
+
+#ifndef PRRNG_USE_BOOST
+/**
+If this macro is defined before including prrng:
+
+    #define PRRNG_USE_BOOST
+    #include <prrng.h>
+
+then Boost is used to compute the inverse Gamma function.
+Without it, the Gamma distribution does not work and returns NaNs.
+
+Note that one can switch-off Boost explicitly by:
+
+    #define PRRNG_USE_BOOST 0
+    #include <prrng.h>
+
+Likewise one can be explicit in enabling it:
+
+    #define PRRNG_USE_BOOST 1
+    #include <prrng.h>
+*/
+#define PRRNG_USE_BOOST 0
+#elif PRRNG_USE_BOOST != 0
+#define PRRNG_USE_BOOST 1
+#endif
+
+#if PRRNG_USE_BOOST
+#include <boost/math/special_functions/gamma.hpp>
+#include <xtensor/xvectorize.hpp>
+#endif
+
 /**
 \cond
 */
@@ -376,6 +407,76 @@ public:
         m_scale = theta;
     }
 
+    /**
+    Return the probability density function.
+    Only available when compiled with PRRNG_USE_BOOST
+    (e.g. using the CMake target `prrng::use_bost`).
+
+    \param x Coordinates.
+    \return probability density for each `x`.
+    */
+    template <class T>
+    T pdf(const T& x)
+    {
+        using value_type = typename T::value_type;
+
+        #if PRRNG_USE_BOOST
+            auto f = xt::vectorize(boost::math::gamma_p_derivative<value_type, value_type>);
+            T ret = f(m_shape, x / m_scale);
+            return xt::where(xt::equal(x, 0), 0.0, ret);
+        #else
+            T ret = x;
+            ret.fill(std::numeric_limits<value_type>::quiet_NaN());
+            return ret;
+        #endif
+    }
+
+    /**
+    Return the cumulative density function.
+    Only available when compiled with PRRNG_USE_BOOST
+    (e.g. using the CMake target `prrng::use_bost`).
+
+    \param x Coordinates.
+    \return cumulative density for each `x`.
+    */
+    template <class T>
+    T cdf(const T& x)
+    {
+        using value_type = typename T::value_type;
+
+        #if PRRNG_USE_BOOST
+            auto f = xt::vectorize(boost::math::gamma_p<value_type, value_type>);
+            return f(m_shape, x / m_scale);
+        #else
+            auto ret = x;
+            ret.fill(std::numeric_limits<value_type>::quiet_NaN());
+            return ret;
+        #endif
+    }
+
+    /**
+    Return the quantile (the inverse of the cumulative density function).
+    Only available when compiled with PRRNG_USE_BOOST
+    (e.g. using the CMake target `prrng::use_bost`).
+
+    \param p Probability [0, 1].
+    \return quantile for each `p`.
+    */
+    template <class T>
+    T quantile(const T& p)
+    {
+        using value_type = typename T::value_type;
+
+        #if PRRNG_USE_BOOST
+            auto f = xt::vectorize(boost::math::gamma_p_inv<value_type, value_type>);
+            return m_scale * f(m_shape, p);
+        #else
+            auto ret = p;
+            ret.fill(std::numeric_limits<value_type>::quiet_NaN());
+            return ret;
+        #endif
+    }
+
 private:
 
     double m_shape;
@@ -438,7 +539,7 @@ public:
     }
 
     /**
-    Generate an nd-array of random numbers distributed according to Weibull distribution.
+    Generate an nd-array of random numbers distributed according to a Weibull distribution.
     Internally, the output of random() is converted using the cumulative density
 
     \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
@@ -491,6 +592,55 @@ public:
         return this->weibull_impl<R>(shape, k, lambda);
     };
 
+    /**
+    Generate an nd-array of random numbers distributed according to a Gamma distribution.
+    Only available when compiled with PRRNG_USE_BOOST
+    (e.g. using the CMake target `prrng::use_bost`).
+
+    \param shape The shape of the nd-array.
+    \param k The "shape" parameter.
+    \param theta The "scale" parameter.
+    \return The sample of shape `shape`.
+    */
+    template <class S>
+    auto gamma(const S& shape, double k = 1.0, double theta = 1.0)
+    -> typename detail::return_type<double, S>::type
+    {
+        using R = typename detail::return_type<double, S>::type;
+        return this->gamma_impl<R>(shape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S>
+    R gamma(const S& shape, double k = 1.0, double theta = 1.0)
+    {
+        return this->gamma_impl<R>(shape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    */
+    template <class I, std::size_t L>
+    auto gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
+    -> typename detail::return_type_fixed<double, L>::type
+    {
+        using R = typename detail::return_type_fixed<double, L>::type;
+        return this->gamma_impl<R>(shape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L>
+    R gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
+    {
+        return this->gamma_impl<R>(shape, k, theta);
+    };
+
 private:
 
     template <class R, class S>
@@ -506,6 +656,13 @@ private:
     {
         R r = this->random_impl<R>(shape);
         return weibull_distribution(k, lambda).quantile(r);
+    };
+
+    template <class R, class S>
+    R gamma_impl(const S& shape, double k, double theta)
+    {
+        R r = this->random_impl<R>(shape);
+        return gamma_distribution(k, theta).quantile(r);
     };
 
 protected:
@@ -1146,7 +1303,7 @@ public:
 
     /**
     Per generator, generate an nd-array of random numbers distributed
-    according to Weibull distribution.
+    according to a Weibull distribution.
     Internally, the output of random() is converted using the cumulative density
 
     \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
@@ -1199,6 +1356,56 @@ public:
         return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
     };
 
+    /**
+    Per generator, generate an nd-array of random numbers distributed
+    according to a Gamma distribution.
+    Only available when compiled with PRRNG_USE_BOOST
+    (e.g. using the CMake target `prrng::use_bost`).
+
+    \param ishape The shape of the nd-array drawn per generator.
+    \param k The "shape" parameter.
+    \param theta The "scale" parameter.
+    \return The array of arrays of samples: [#shape, `ishape`]
+    */
+    template <class S>
+    auto gamma(const S& ishape, double k = 1.0, double theta = 1.0)
+    -> typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->gamma_impl<R>(ishape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S>
+    R gamma(const S& ishape, double k = 1.0, double theta = 1.0)
+    {
+        return this->gamma_impl<R>(ishape, k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    */
+    template <class I, std::size_t L>
+    auto gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
+    -> typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
+    };
+
+    /**
+    \copydoc gamma(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L>
+    R gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
+    {
+        return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
+    };
+
 private:
 
     template <class R, class S>
@@ -1215,6 +1422,13 @@ private:
     {
         R r = this->random_impl<R>(ishape);
         return weibull_distribution(k, lambda).quantile(r);
+    };
+
+    template <class R, class S>
+    R gamma_impl(const S& ishape, double k, double theta)
+    {
+        R r = this->random_impl<R>(ishape);
+        return gamma_distribution(k, theta).quantile(r);
     };
 
 protected:

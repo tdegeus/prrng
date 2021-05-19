@@ -4,6 +4,9 @@ dependencies:
   # dependencies
   - xtensor
 
+  # optional dependencies
+  - boost
+
   # build tools
   - cmake
   - ninja

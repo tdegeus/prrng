@@ -98,7 +98,8 @@ if(BUILD_PYTHON OR BUILD_ALL)
 
     pybind11_add_module(python python/main.cpp)
     set_target_properties(python PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-    target_link_libraries(python PUBLIC ${PROJECT_NAME} pybind11::module xtensor-python Python::NumPy)
+    target_link_libraries(python PUBLIC ${PROJECT_NAME}
+        pybind11::module xtensor-python Python::NumPy prrng::use_boost)
 
     target_compile_definitions(python PRIVATE VERSION_INFO=${PROJECT_VERSION})
 endif()
