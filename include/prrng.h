@@ -650,7 +650,7 @@ private:
             "Return value_type must be double");
 
         R ret = xt::empty<typename R::value_type>(shape);
-        this->draw_list(&ret.data()[0], ret.size());
+        this->draw_list(&ret.front(), ret.size());
         return ret;
     };
 
@@ -1419,7 +1419,7 @@ private:
 
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
-        this->draw_list(&ret.data()[0], n);
+        this->draw_list(&ret.front(), n);
         return ret;
     };
 
@@ -1521,7 +1521,7 @@ public:
         R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
-            ret.data()[i] = m_gen[i].template state<value_type>();
+            ret.flat(i) = m_gen[i].template state<value_type>();
         }
 
         return ret;
@@ -1551,7 +1551,7 @@ public:
         R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
-            ret.data()[i] = m_gen[i].template initstate<value_type>();
+            ret.flat(i) = m_gen[i].template initstate<value_type>();
         }
 
         return ret;
@@ -1581,7 +1581,7 @@ public:
         R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
-            ret.data()[i] = m_gen[i].template initseq<value_type>();
+            ret.flat(i) = m_gen[i].template initseq<value_type>();
         }
 
         return ret;
@@ -1599,7 +1599,7 @@ public:
     void advance(const T& arg)
     {
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen[i].advance(arg.data()[i]);
+            m_gen[i].advance(arg.flat(i));
         }
     }
 
@@ -1615,7 +1615,7 @@ public:
     void restore(const T& arg)
     {
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen[i].restore(arg.data()[i]);
+            m_gen[i].restore(arg.flat(i));
         }
     }
 
@@ -1706,7 +1706,7 @@ public:
         m_gen.reserve(m_size);
 
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.data()[i]));
+            m_gen.push_back(pcg32(initstate.flat(i)));
         }
     }
 
@@ -1728,7 +1728,7 @@ public:
         m_gen.reserve(m_size);
 
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.data()[i], initseq.data()[i]));
+            m_gen.push_back(pcg32(initstate.flat(i), initseq.flat(i)));
         }
     }
 
@@ -1765,7 +1765,7 @@ public:
         m_gen.reserve(m_size);
 
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.data()[i]));
+            m_gen.push_back(pcg32(initstate.flat(i)));
         }
     }
 
@@ -1788,7 +1788,7 @@ public:
         m_gen.reserve(m_size);
 
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.data()[i], initseq.data()[i]));
+            m_gen.push_back(pcg32(initstate.flat(i), initseq.flat(i)));
         }
     }
 
