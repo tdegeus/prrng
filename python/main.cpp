@@ -1,9 +1,16 @@
-#include <pyxtensor/pyxtensor.hpp>
-#include <pybind11/operators.h>
 #include <prrng.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/operators.h>
+#include <pybind11/stl.h>
+#define FORCE_IMPORT_ARRAY
+#include <xtensor-python/pyarray.hpp>
+#include <xtensor-python/pytensor.hpp>
+
+namespace py = pybind11;
 
 PYBIND11_MODULE(prrng, m)
 {
+    xt::import_numpy();
 
     m.doc() = "Portable Reconstructible Random Number Generator";
 
@@ -22,19 +29,19 @@ PYBIND11_MODULE(prrng, m)
              py::arg("l") = 1.0)
 
         .def("pdf",
-             &prrng::weibull_distribution::pdf<xt::xtensor<double, 1>>,
+             &prrng::weibull_distribution::pdf<xt::pytensor<double, 1>>,
              "Probability density distribution."
              "See :cpp:func:`prrng::weibull_distribution::pdf`.",
              py::arg("x"))
 
         .def("cdf",
-             &prrng::weibull_distribution::cdf<xt::xtensor<double, 1>>,
+             &prrng::weibull_distribution::cdf<xt::pytensor<double, 1>>,
              "Cumulative density distribution."
              "See :cpp:func:`prrng::weibull_distribution::cdf`.",
              py::arg("x"))
 
         .def("quantile",
-             &prrng::weibull_distribution::quantile<xt::xarray<double>>,
+             &prrng::weibull_distribution::quantile<xt::pyarray<double>>,
              "Quantile (inverse of cumulative density distribution)."
              "See :cpp:func:`prrng::weibull_distribution::quantile`.",
              py::arg("r"))
@@ -51,14 +58,14 @@ PYBIND11_MODULE(prrng, m)
 
         .def("random",
              py::overload_cast<const std::vector<size_t>&>(
-                &prrng::GeneratorBase::random<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::GeneratorBase::random<xt::pyarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers."
              "See :cpp:func:`prrng::GeneratorBase::random`.",
              py::arg("shape"))
 
         .def("weibull",
              py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::GeneratorBase::weibull<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::GeneratorBase::weibull<xt::pyarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers, distributed according to a weibull distribution."
              "See :cpp:func:`prrng::GeneratorBase::weibull`.",
              py::arg("shape"),
@@ -124,7 +131,7 @@ PYBIND11_MODULE(prrng, m)
 
         .def("random",
              py::overload_cast<const std::vector<size_t>&>(
-                &prrng::pcg32::random<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::pcg32::random<xt::pyarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers."
              "See :cpp:func:`prrng::pcg32::random`.",
              py::arg("shape"))
@@ -157,14 +164,14 @@ PYBIND11_MODULE(prrng, m)
 
         .def("random",
              py::overload_cast<const std::vector<size_t>&>(
-                &prrng::GeneratorBase_array<std::vector<size_t>>::random<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::GeneratorBase_array<std::vector<size_t>>::random<xt::pyarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers."
              "See :cpp:func:`prrng::GeneratorBase_array::random`.",
              py::arg("ishape"))
 
         .def("weibull",
              py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::GeneratorBase_array<std::vector<size_t>>::weibull<xt::xarray<double>, std::vector<size_t>>),
+                &prrng::GeneratorBase_array<std::vector<size_t>>::weibull<xt::pyarray<double>, std::vector<size_t>>),
              "ndarray of random number numbers, distributed according to a weibull distribution."
              "See :cpp:func:`prrng::GeneratorBase_array::weibull`.",
              py::arg("ishape"),
@@ -177,12 +184,12 @@ PYBIND11_MODULE(prrng, m)
 
     py::class_<prrng::pcg32_array, prrng::GeneratorBase_array<std::vector<size_t>>>(m, "pcg32_array")
 
-        .def(py::init<xt::xarray<uint64_t>>(),
+        .def(py::init<xt::pyarray<uint64_t>>(),
              "Random number generator."
              "See :cpp:class:`prrng::pcg32_array`.",
              py::arg("initstate"))
 
-        .def(py::init<xt::xarray<uint64_t>, xt::xarray<uint64_t>>(),
+        .def(py::init<xt::pyarray<uint64_t>, xt::pyarray<uint64_t>>(),
              "Random number generator."
              "See :cpp:class:`prrng::pcg32_array`.",
              py::arg("initstate"),
@@ -201,22 +208,22 @@ PYBIND11_MODULE(prrng, m)
         }, py::return_value_policy::reference_internal)
 
         .def("state",
-             &prrng::pcg32_array::state<xt::xarray<uint64_t>>,
+             &prrng::pcg32_array::state<xt::pyarray<uint64_t>>,
              "current state."
              "See :cpp:func:`prrng::pcg32_array::state`.")
 
         .def("initstate",
-             &prrng::pcg32_array::initstate<xt::xarray<uint64_t>>,
+             &prrng::pcg32_array::initstate<xt::pyarray<uint64_t>>,
              "used initstate."
              "See :cpp:func:`prrng::pcg32_array::initstate`.")
 
         .def("initseq",
-             &prrng::pcg32_array::initseq<xt::xarray<uint64_t>>,
+             &prrng::pcg32_array::initseq<xt::pyarray<uint64_t>>,
              "used initseq."
              "See :cpp:func:`prrng::pcg32_array::initseq`.")
 
         .def("restore",
-             &prrng::pcg32_array::restore<xt::xarray<uint64_t>>,
+             &prrng::pcg32_array::restore<xt::pyarray<uint64_t>>,
              "restore state."
              "See :cpp:func:`prrng::pcg32_array::restore`.",
              py::arg("state"))
