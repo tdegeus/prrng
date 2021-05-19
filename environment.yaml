@@ -12,7 +12,7 @@ dependencies:
   # Python API
   - python
   - numpy
-  - pyxtensor
+  - xtensor-python
 
   # to run tests
   - catch2
