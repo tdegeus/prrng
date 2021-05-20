@@ -50,6 +50,36 @@ PYBIND11_MODULE(prrng, m)
             [](const prrng::weibull_distribution&) { return "<prrng.weibull_distribution>"; });
 
 
+    py::class_<prrng::gamma_distribution>(m, "gamma_distribution")
+
+        .def(py::init<double, double>(),
+             "Weibull distribution."
+             "See :cpp:class:`prrng::gamma_distribution`.",
+             py::arg("k") = 1.0,
+             py::arg("theta") = 1.0)
+
+        .def("pdf",
+             &prrng::gamma_distribution::pdf<xt::pytensor<double, 1>>,
+             "Probability density distribution."
+             "See :cpp:func:`prrng::gamma_distribution::pdf`.",
+             py::arg("x"))
+
+        .def("cdf",
+             &prrng::gamma_distribution::cdf<xt::pytensor<double, 1>>,
+             "Cumulative density distribution."
+             "See :cpp:func:`prrng::gamma_distribution::cdf`.",
+             py::arg("x"))
+
+        .def("quantile",
+             &prrng::gamma_distribution::quantile<xt::pyarray<double>>,
+             "Quantile (inverse of cumulative density distribution)."
+             "See :cpp:func:`prrng::gamma_distribution::quantile`.",
+             py::arg("r"))
+
+        .def("__repr__",
+            [](const prrng::gamma_distribution&) { return "<prrng.gamma_distribution>"; });
+
+
     py::class_<prrng::GeneratorBase>(m, "GeneratorBase")
 
         .def(py::init<>(),
@@ -71,6 +101,15 @@ PYBIND11_MODULE(prrng, m)
              py::arg("shape"),
              py::arg("k") = 1.0,
              py::arg("l") = 1.0)
+
+        .def("gamma",
+             py::overload_cast<const std::vector<size_t>&, double, double>(
+                &prrng::GeneratorBase::gamma<xt::pyarray<double>, std::vector<size_t>>),
+             "ndarray of random number numbers, distributed according to a gamma distribution."
+             "See :cpp:func:`prrng::GeneratorBase::gamma`.",
+             py::arg("shape"),
+             py::arg("k") = 1.0,
+             py::arg("theta") = 1.0)
 
         .def("__repr__",
             [](const prrng::GeneratorBase&) { return "<prrng.GeneratorBase>"; });
@@ -177,6 +216,15 @@ PYBIND11_MODULE(prrng, m)
              py::arg("ishape"),
              py::arg("k") = 1.0,
              py::arg("l") = 1.0)
+
+        .def("gamma",
+             py::overload_cast<const std::vector<size_t>&, double, double>(
+                &prrng::GeneratorBase_array<std::vector<size_t>>::gamma<xt::pyarray<double>, std::vector<size_t>>),
+             "ndarray of random number numbers, distributed according to a gamma distribution."
+             "See :cpp:func:`prrng::GeneratorBase_array::gamma`.",
+             py::arg("ishape"),
+             py::arg("k") = 1.0,
+             py::arg("theta") = 1.0)
 
         .def("__repr__",
             [](const prrng::GeneratorBase_array<std::vector<size_t>>&) { return "<prrng.GeneratorBase_array>"; });
