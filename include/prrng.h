@@ -646,7 +646,10 @@ private:
     template <class R, class S>
     R random_impl(const S& shape)
     {
-        R ret = xt::empty<double>(shape);
+        static_assert(std::is_same<typename R::value_type, double>::value,
+            "Return value_type must be double");
+
+        R ret = xt::empty<typename R::value_type>(shape);
         this->draw_list(&ret.data()[0], ret.size());
         return ret;
     };
@@ -1411,8 +1414,11 @@ private:
     template <class R, class S>
     R random_impl(const S& ishape)
     {
+        static_assert(std::is_same<typename R::value_type, double>::value,
+            "Return value_type must be double");
+
         auto n = detail::size(ishape);
-        R ret = xt::empty<double>(detail::concatenate<M, S>::two(m_shape, ishape));
+        R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
         this->draw_list(&ret.data()[0], n);
         return ret;
     };
@@ -1512,7 +1518,7 @@ public:
     R state()
     {
         using value_type = typename R::value_type;
-        R ret = xt::empty<value_type>(m_shape);
+        R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
             ret.data()[i] = m_gen[i].template state<value_type>();
@@ -1542,7 +1548,7 @@ public:
     R initstate()
     {
         using value_type = typename R::value_type;
-        R ret = xt::empty<value_type>(m_shape);
+        R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
             ret.data()[i] = m_gen[i].template initstate<value_type>();
@@ -1572,7 +1578,7 @@ public:
     R initseq()
     {
         using value_type = typename R::value_type;
-        R ret = xt::empty<value_type>(m_shape);
+        R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
             ret.data()[i] = m_gen[i].template initseq<value_type>();
