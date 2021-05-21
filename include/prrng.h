@@ -362,7 +362,7 @@ public:
     template <class T>
     T cdf(const T& x)
     {
-        return xt::expm1(-xt::pow(x / m_scale, m_shape));
+        return -xt::expm1(-xt::pow(x / m_scale, m_shape));
     }
 
     /**
