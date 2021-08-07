@@ -55,14 +55,14 @@ int main()
 
 In addition one can advance and reverse in the random sequence, and compute the number of random numbers between two states.
 
-**Important:** A very important and hallmark features of pcg32 is that, internally, types of fixed bit size are used. Notably the state is (re)stored as `uint64_t`. This makes that restoring can be 
+**Important:** A very important and hallmark features of pcg32 is that, internally, types of fixed bit size are used. Notably the state is (re)stored as `uint64_t`. This makes that restoring can be
 uniquely done on any system and any compiler, on any platform (as long as you save the `uint64_t` properly, naturally).
 As a convenience the output can be recast by specifying a template parameter, while static assertions shield you from losing data. For example, `auto state = generator.state<size_t>();` would be allowed, but `auto state = generator.state<int>();` would not.
 
 ### Python API
 
 A Python API is provided allowing one to obtain the same random sequence from C++ and Python when the same seed is used.
-In fact, a generator can be stored and restored in any of the two languages. 
+In fact, a generator can be stored and restored in any of the two languages.
 Example:
 
 ```python
@@ -78,7 +78,7 @@ assert np.allclose(a, b)
 
 ### Array of tensors
 
-In addition a bunch of random number generators can be collected in an nd-array, 
+In addition a bunch of random number generators can be collected in an nd-array,
 such that a composite array of random numbers is returned.
 Example:
 
@@ -93,7 +93,7 @@ int main()
     auto state = generator.state();
     auto a = generator.random({4, 5}); // shape {2, 3, 4, 5}
     generator.restore(state);
-    auto b = generator.random({4, 5}); 
+    auto b = generator.random({4, 5});
     assert(xt::allclose(a, b));
     return 0;
 }
@@ -102,8 +102,8 @@ int main()
 ### Random distributions
 
 Each random generator can return a random sequence according to a certain distribution.
-The most basic behaviour is to just convert a random integer to a random double `[0, 1]`, 
-as was already done in the examples using `generator.random<...>(...)`. 
+The most basic behaviour is to just convert a random integer to a random double `[0, 1]`,
+as was already done in the examples using `generator.random<...>(...)`.
 Also this feature is included in the Python API, allowing to get a reproducible distribution.
 
 ### More information
@@ -112,3 +112,18 @@ Also this feature is included in the Python API, allowing to get a reproducible 
 *   The code itself.
 *   The unit tests, under [tests](./tests).
 *   The examples, under [examples](./examples).
+
+## Change-log
+
+### v0.6.0
+
+*   [Python] setup.py: support cross-compilation, allowing customization
+*   [CMake] allowing simd
+*   [CMake] Avoiding setuptools_scm dependency if SETUPTOOLS_SCM_PRETEND_VERSION is defined
+*   [CI] Minor updates
+*   [docs] Updating doxystyle
+*   [docs] Building docs on release
+*   Using new operators xtensor
+*   Minor style update
+*   Fixing weibull_distribution::cdf. Plotting CDF
+*   [CMake] Minor updates
