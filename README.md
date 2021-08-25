@@ -9,6 +9,40 @@ Portable Reconstructible (Pseudo) Random Number Generator.
 
 Documentation: https://tdegeus.github.io/prrng
 
+## Contents
+
+<!-- MarkdownTOC -->
+
+- [Overview](#overview)
+    - [Credits](#credits)
+    - [Basic example](#basic-example)
+    - [pcg32](#pcg32)
+    - [Python API](#python-api)
+    - [Array of tensors](#array-of-tensors)
+    - [Random distributions](#random-distributions)
+    - [More information](#more-information)
+- [Implementation](#implementation)
+    - [C++ and Python](#c-and-python)
+    - [Installation](#installation)
+        - [C++ headers](#c-headers)
+            - [Using conda](#using-conda)
+            - [From source](#from-source)
+        - [Python module](#python-module)
+            - [Using conda](#using-conda-1)
+            - [From source](#from-source-1)
+    - [Compiling user-code](#compiling-user-code)
+        - [Using CMake](#using-cmake)
+            - [Example](#example)
+            - [Targets](#targets)
+            - [Optimisation](#optimisation)
+        - [By hand](#by-hand)
+        - [Using pkg-config](#using-pkg-config)
+- [Change-log](#change-log)
+    - [v0.6.1](#v061)
+    - [v0.6.0](#v060)
+
+<!-- /MarkdownTOC -->
+
 ## Overview
 
 ### Credits
@@ -113,7 +147,162 @@ Also this feature is included in the Python API, allowing to get a reproducible 
 *   The unit tests, under [tests](./tests).
 *   The examples, under [examples](./examples).
 
+## Implementation
+
+### C++ and Python
+
+The code is a C++ header-only library (see [installation notes](#c-headers)),
+but a Python module is also provided (see [installation notes](#python-module)).
+The interfaces are identical except:
+
++   All *xtensor* objects (`xt::xtensor<...>`) are *NumPy* arrays in Python.
++   All `::` in C++ are `.` in Python.
+
+### Installation
+
+#### C++ headers
+
+##### Using conda
+
+```bash
+conda install -c conda-forge prrng
+```
+
+##### From source
+
+```bash
+# Download prrng
+git checkout https://github.com/tdegeus/prrng.git
+cd prrng
+
+# Install headers, CMake and pkg-config support
+cmake .
+make install
+```
+
+#### Python module
+
+##### Using conda
+
+```bash
+conda install -c conda-forge python-prrng
+```
+
+Note that *xsimd* and hardware optimisation are **not enabled**.
+To enable them you have to compile on your system, as is discussed next.
+
+##### From source
+
+>   You need *xtensor*, *xtensor-python* and optionally *xsimd* as prerequisites.
+>   In addition *scikit-build* is needed to control the build from Python.
+>   The easiest is to use *conda* to get the prerequisites:
+>
+>   ```bash
+>   conda install -c conda-forge xtensor-python
+>   conda install -c conda-forge xsimd
+>   conda install -c conda-forge scikit-build
+>   ```
+>
+>   If you then compile and install with the same environment
+>   you should be good to go.
+>   Otherwise, a bit of manual labour might be needed to
+>   treat the dependencies.
+
+```bash
+# Download prrng
+git checkout https://github.com/tdegeus/prrng.git
+cd prrng
+
+# Compile and install the Python module
+# (-vv can be omitted as is controls just the verbosity)
+python setup.py install --build-type Release -vv
+
+# OR, Compile and install the Python module with hardware optimisation
+# (with scikit-build CMake options can just be added as command-line arguments)
+python setup.py install --build-type Release -DUSE_SIMDD=1 -vv
+```
+
+### Compiling user-code
+
+#### Using CMake
+
+##### Example
+
+Using *prrng* your `CMakeLists.txt` can be as follows
+
+```cmake
+cmake_minimum_required(VERSION 3.1)
+project(example)
+find_package(prrng REQUIRED)
+add_executable(example example.cpp)
+target_link_libraries(example PRIVATE prrng)
+```
+
+##### Targets
+
+The following targets are available:
+
+*   `prrng`
+    Includes *prrng* and the *xtensor* dependency.
+
+*   `prrng::assert`
+    Enables assertions by defining `QPOT_ENABLE_ASSERT`.
+
+*   `prrng::debug`
+    Enables all assertions by defining
+    `QPOT_ENABLE_ASSERT` and `XTENSOR_ENABLE_ASSERT`.
+
+*   `prrng::compiler_warings`
+    Enables compiler warnings (generic).
+
+##### Optimisation
+
+It is advised to think about compiler optimisation and enabling *xsimd*.
+Using *CMake* this can be done using the `xtensor::optimize` and `xtensor::use_xsimd` targets.
+The above example then becomes:
+
+```cmake
+cmake_minimum_required(VERSION 3.1)
+project(example)
+find_package(prrng REQUIRED)
+find_package(xtensor REQUIRED)
+find_package(xsimd REQUIRED)
+add_executable(example example.cpp)
+target_link_libraries(example PRIVATE
+    prrng
+    xtensor::optimize
+    xtensor::use_xsimd)
+```
+
+See the [documentation of xtensor](https://xtensor.readthedocs.io/en/latest/) concerning optimisation.
+
+#### By hand
+
+Presuming that the compiler is `c++`, compile using:
+
+```
+c++ -I/path/to/prrng/include ...
+```
+
+Note that you have to take care of the *xtensor* dependency, the C++ version, optimisation,
+enabling *xsimd*, ...
+
+#### Using pkg-config
+
+Presuming that the compiler is `c++`, compile using:
+
+```
+c++ `pkg-config --cflags prrng` ...
+```
+
+Note that you have to take care of the *xtensor* dependency, the C++ version, optimization,
+enabling *xsimd*, ...
+
 ## Change-log
+
+### v0.6.1
+
+*   Switching to scikit-build, clean-up of CMake (#24)
 
 ### v0.6.0
 
