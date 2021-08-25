@@ -1,6 +1,7 @@
-build/*
-dist/*
+build
+dist
 *.egg-info
+_skbuild
 
 # Prerequisites
 *.d

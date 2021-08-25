@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(prrng, m)
+PYBIND11_MODULE(_prrng, m)
 {
     xt::import_numpy();
 
