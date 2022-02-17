@@ -39,7 +39,6 @@ Multiplicative factor for pcg32()
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 
-
 #ifndef PRRNG_USE_BOOST
 /**
 If this macro is defined before including prrng:
@@ -102,9 +101,9 @@ Either:
 
     From the root of this project. This is what ``setup.py`` does.
 
-Note that both ``CMakeLists.txt`` and ``setup.py`` will construct the version using ``setuptools_scm``.
-Tip: use the environment variable ``SETUPTOOLS_SCM_PRETEND_VERSION``
-to overwrite the automatic version.
+Note that both ``CMakeLists.txt`` and ``setup.py`` will construct the version using
+``setuptools_scm``. Tip: use the environment variable ``SETUPTOOLS_SCM_PRETEND_VERSION`` to
+overwrite the automatic version.
 */
 #ifndef PRRNG_VERSION
 #define PRRNG_VERSION "@PROJECT_VERSION@"
@@ -140,157 +139,148 @@ namespace prrng {
 
 namespace detail {
 
-    /**
-    Remove " from string.
+/**
+Remove " from string.
 
-    \param arg Input string.
-    \return String without "
-    */
-    inline std::string unquote(const std::string& arg)
+\param arg Input string.
+\return String without "
+*/
+inline std::string unquote(const std::string& arg)
+{
+    std::string ret = arg;
+    ret.erase(std::remove(ret.begin(), ret.end(), '\"'), ret.end());
+    return ret;
+};
+
+template <class T>
+struct is_std_array : std::false_type {
+};
+
+template <class T, size_t N>
+struct is_std_array<std::array<T, N>> : std::true_type {
+};
+
+template <class T>
+struct is_xtensor : std::false_type {
+};
+
+template <class T, size_t N>
+struct is_xtensor<xt::xtensor<T, N>> : std::true_type {
+};
+
+/**
+Check that an object has a certain fixed rank.
+*/
+template <size_t N, class T, typename = void>
+struct check_fixed_rank {
+    constexpr static bool value = false;
+};
+
+template <size_t N, class T>
+struct check_fixed_rank<N, T, typename std::enable_if_t<is_xtensor<T>::value>> {
+    constexpr static bool value = (N == xt::get_rank<T>::value);
+};
+
+template <size_t N, class T>
+struct check_fixed_rank<N, T, typename std::enable_if_t<is_std_array<T>::value>> {
+    constexpr static bool value = (N == std::tuple_size<T>::value);
+};
+
+/**
+Get default return type
+*/
+template <typename R, size_t N>
+struct return_type_fixed {
+    using type = typename xt::xtensor<R, N>;
+};
+
+/**
+Get default return type
+*/
+template <typename R, class S, typename = void>
+struct return_type {
+    using type = typename xt::xarray<R>;
+};
+
+template <typename R, class S>
+struct return_type<R, S, typename std::enable_if_t<is_std_array<S>::value>> {
+    using type = typename xt::xtensor<R, std::tuple_size<S>::value>;
+};
+
+/**
+Get default return type
+*/
+template <typename R, class S, class T, typename = void>
+struct composite_return_type {
+    using type = typename xt::xarray<R>;
+};
+
+template <typename R, class S, class T>
+struct composite_return_type<
+    R,
+    S,
+    T,
+    typename std::enable_if_t<is_std_array<S>::value && is_std_array<T>::value>> {
+    constexpr static size_t N = std::tuple_size<S>::value + std::tuple_size<T>::value;
+    using type = typename xt::xtensor<R, N>;
+};
+
+/**
+Concatenate two objects that have `begin()` and `end()` methods.
+
+\param s First object (e.g. std::vector).
+\param t Second object (e.g. std::vector).
+\return Concatenated [t, s]
+*/
+template <class S, class T, typename = void>
+struct concatenate {
+    static auto two(const S& s, const T& t)
     {
-        std::string ret = arg;
-        ret.erase(std::remove(ret.begin(), ret.end(), '\"'), ret.end());
-        return ret;
-    };
-
-    template <class T>
-    struct is_std_array : std::false_type
-    {
-    };
-
-    template <class T, size_t N>
-    struct is_std_array<std::array<T, N>> : std::true_type
-    {
-    };
-
-    template <class T>
-    struct is_xtensor : std::false_type
-    {
-    };
-
-    template <class T, size_t N>
-    struct is_xtensor<xt::xtensor<T, N>> : std::true_type
-    {
-    };
-
-    /**
-    Check that an object has a certain fixed rank.
-    */
-    template <size_t N, class T, typename = void>
-    struct check_fixed_rank
-    {
-        constexpr static bool value = false;
-    };
-
-    template <size_t N, class T>
-    struct check_fixed_rank<N, T, typename std::enable_if_t<is_xtensor<T>::value>>
-    {
-        constexpr static bool value = (N == xt::get_rank<T>::value);
-    };
-
-    template <size_t N, class T>
-    struct check_fixed_rank<N, T, typename std::enable_if_t<is_std_array<T>::value>>
-    {
-        constexpr static bool value = (N == std::tuple_size<T>::value);
-    };
-
-    /**
-    Get default return type
-    */
-    template <typename R, size_t N>
-    struct return_type_fixed
-    {
-        using type = typename xt::xtensor<R, N>;
-    };
-
-    /**
-    Get default return type
-    */
-    template <typename R, class S, typename = void>
-    struct return_type
-    {
-        using type = typename xt::xarray<R>;
-    };
-
-    template <typename R, class S>
-    struct return_type<R, S, typename std::enable_if_t<is_std_array<S>::value>>
-    {
-        using type = typename xt::xtensor<R, std::tuple_size<S>::value>;
-    };
-
-    /**
-    Get default return type
-    */
-    template <typename R, class S, class T, typename = void>
-    struct composite_return_type
-    {
-        using type = typename xt::xarray<R>;
-    };
-
-    template <typename R, class S, class T>
-    struct composite_return_type<R, S, T, typename std::enable_if_t<is_std_array<S>::value &&
-                                                                    is_std_array<T>::value>>
-    {
-        constexpr static size_t N = std::tuple_size<S>::value + std::tuple_size<T>::value;
-        using type = typename xt::xtensor<R, N>;
-    };
-
-    /**
-    Concatenate two objects that have `begin()` and `end()` methods.
-
-    \param s First object (e.g. std::vector).
-    \param t Second object (e.g. std::vector).
-    \return Concatenated [t, s]
-    */
-    template <class S, class T, typename = void>
-    struct concatenate
-    {
-        static auto two(const S& s, const T& t)
-        {
-            std::vector<size_t> r;
-            r.insert(r.begin(), s.cbegin(), s.cend());
-            r.insert(r.end(), t.cbegin(), t.cend());
-            return r;
-        }
-    };
-
-    template <class S, class T>
-    struct concatenate<S, T, typename std::enable_if_t<is_std_array<S>::value &&
-                                                       is_std_array<T>::value>>
-    {
-        static auto two(const S& s, const T& t)
-        {
-            std::array<size_t, std::tuple_size<S>::value + std::tuple_size<T>::value> r;
-            std::copy(s.cbegin(), s.cend(), r.begin());
-            std::copy(t.cbegin(), t.cend(), r.begin() + std::tuple_size<S>::value);
-            return r;
-        }
-    };
-
-    /**
-    Compute 'size' from 'shape'.
-
-    \param shape Shape array.
-    \return Size
-    */
-    template <class S>
-    inline size_t size(const S& shape)
-    {
-        using ST = typename S::value_type;
-        return std::accumulate(shape.cbegin(), shape.cend(), ST(1), std::multiplies<ST>());
-    }
-
-    /**
-    Return as std::array.
-    */
-    template <class I, std::size_t L>
-    std::array<I, L> to_array(const I (&shape)[L])
-    {
-        std::array<I, L> r;
-        std::copy(&shape[0], &shape[0] + L, r.begin());
+        std::vector<size_t> r;
+        r.insert(r.begin(), s.cbegin(), s.cend());
+        r.insert(r.end(), t.cbegin(), t.cend());
         return r;
     }
+};
+
+template <class S, class T>
+struct concatenate<
+    S,
+    T,
+    typename std::enable_if_t<is_std_array<S>::value && is_std_array<T>::value>> {
+    static auto two(const S& s, const T& t)
+    {
+        std::array<size_t, std::tuple_size<S>::value + std::tuple_size<T>::value> r;
+        std::copy(s.cbegin(), s.cend(), r.begin());
+        std::copy(t.cbegin(), t.cend(), r.begin() + std::tuple_size<S>::value);
+        return r;
+    }
+};
+
+/**
+Compute 'size' from 'shape'.
+
+\param shape Shape array.
+\return Size
+*/
+template <class S>
+inline size_t size(const S& shape)
+{
+    using ST = typename S::value_type;
+    return std::accumulate(shape.cbegin(), shape.cend(), ST(1), std::multiplies<ST>());
 }
+
+/**
+Return as std::array.
+*/
+template <class I, std::size_t L>
+std::array<I, L> to_array(const I (&shape)[L])
+{
+    std::array<I, L> r;
+    std::copy(&shape[0], &shape[0] + L, r.begin());
+    return r;
+}
+} // namespace detail
 
 /**
 Return version string, for example `"0.1.0"`
@@ -310,10 +300,8 @@ References:
 -   https://en.wikipedia.org/wiki/Weibull_distribution
 -   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/weibull.hpp
 */
-class weibull_distribution
-{
+class weibull_distribution {
 public:
-
     /**
     Constructor.
 
@@ -378,7 +366,6 @@ public:
     }
 
 private:
-
     double m_shape;
     double m_scale;
 };
@@ -391,10 +378,8 @@ References:
 -   https://en.wikipedia.org/wiki/Gamma_distribution
 -   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/gamma.hpp
 */
-class gamma_distribution
-{
+class gamma_distribution {
 public:
-
     /**
     Constructor.
 
@@ -420,15 +405,15 @@ public:
     {
         using value_type = typename T::value_type;
 
-        #if PRRNG_USE_BOOST
-            auto f = xt::vectorize(boost::math::gamma_p_derivative<value_type, value_type>);
-            T ret = f(m_shape, x / m_scale);
-            return xt::where(xt::equal(x, 0), 0.0, ret);
-        #else
-            T ret = x;
-            ret.fill(std::numeric_limits<value_type>::quiet_NaN());
-            return ret;
-        #endif
+#if PRRNG_USE_BOOST
+        auto f = xt::vectorize(boost::math::gamma_p_derivative<value_type, value_type>);
+        T ret = f(m_shape, x / m_scale);
+        return xt::where(xt::equal(x, 0), 0.0, ret);
+#else
+        T ret = x;
+        ret.fill(std::numeric_limits<value_type>::quiet_NaN());
+        return ret;
+#endif
     }
 
     /**
@@ -444,14 +429,14 @@ public:
     {
         using value_type = typename T::value_type;
 
-        #if PRRNG_USE_BOOST
-            auto f = xt::vectorize(boost::math::gamma_p<value_type, value_type>);
-            return f(m_shape, x / m_scale);
-        #else
-            auto ret = x;
-            ret.fill(std::numeric_limits<value_type>::quiet_NaN());
-            return ret;
-        #endif
+#if PRRNG_USE_BOOST
+        auto f = xt::vectorize(boost::math::gamma_p<value_type, value_type>);
+        return f(m_shape, x / m_scale);
+#else
+        auto ret = x;
+        ret.fill(std::numeric_limits<value_type>::quiet_NaN());
+        return ret;
+#endif
     }
 
     /**
@@ -467,18 +452,17 @@ public:
     {
         using value_type = typename T::value_type;
 
-        #if PRRNG_USE_BOOST
-            auto f = xt::vectorize(boost::math::gamma_p_inv<value_type, value_type>);
-            return m_scale * f(m_shape, p);
-        #else
-            auto ret = p;
-            ret.fill(std::numeric_limits<value_type>::quiet_NaN());
-            return ret;
-        #endif
+#if PRRNG_USE_BOOST
+        auto f = xt::vectorize(boost::math::gamma_p_inv<value_type, value_type>);
+        return m_scale * f(m_shape, p);
+#else
+        auto ret = p;
+        ret.fill(std::numeric_limits<value_type>::quiet_NaN());
+        return ret;
+#endif
     }
 
 private:
-
     double m_shape;
     double m_scale;
 };
@@ -487,10 +471,8 @@ private:
 Base class of the pseudorandom number generators.
 This class provides common methods, but itself does not really do much.
 */
-class GeneratorBase
-{
+class GeneratorBase {
 public:
-
     GeneratorBase() = default;
 
     virtual ~GeneratorBase() = default;
@@ -554,12 +536,12 @@ public:
     \return The sample of shape `shape`.
     */
     template <class S>
-    auto weibull(const S& shape, double k = 1.0, double lambda = 1.0)
-    -> typename detail::return_type<double, S>::type
+    auto weibull(const S& shape, double k = 1.0, double lambda = 1.0) ->
+        typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
         return this->weibull_impl<R>(shape, k, lambda);
-    };
+    }
 
     /**
     \copydoc weibull(const S&, double, double)
@@ -569,18 +551,18 @@ public:
     R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
     {
         return this->weibull_impl<R>(shape, k, lambda);
-    };
+    }
 
     /**
     \copydoc weibull(const S&, double, double)
     */
     template <class I, std::size_t L>
-    auto weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
-    -> typename detail::return_type_fixed<double, L>::type
+    auto weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0) ->
+        typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
         return this->weibull_impl<R>(shape, k, lambda);
-    };
+    }
 
     /**
     \copydoc weibull(const S&, double, double)
@@ -590,7 +572,7 @@ public:
     R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
     {
         return this->weibull_impl<R>(shape, k, lambda);
-    };
+    }
 
     /**
     Generate an nd-array of random numbers distributed according to a Gamma distribution.
@@ -603,12 +585,12 @@ public:
     \return The sample of shape `shape`.
     */
     template <class S>
-    auto gamma(const S& shape, double k = 1.0, double theta = 1.0)
-    -> typename detail::return_type<double, S>::type
+    auto gamma(const S& shape, double k = 1.0, double theta = 1.0) ->
+        typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
         return this->gamma_impl<R>(shape, k, theta);
-    };
+    }
 
     /**
     \copydoc gamma(const S&, double, double)
@@ -618,18 +600,18 @@ public:
     R gamma(const S& shape, double k = 1.0, double theta = 1.0)
     {
         return this->gamma_impl<R>(shape, k, theta);
-    };
+    }
 
     /**
     \copydoc gamma(const S&, double, double)
     */
     template <class I, std::size_t L>
-    auto gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
-    -> typename detail::return_type_fixed<double, L>::type
+    auto gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0) ->
+        typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
         return this->gamma_impl<R>(shape, k, theta);
-    };
+    }
 
     /**
     \copydoc gamma(const S&, double, double)
@@ -639,37 +621,36 @@ public:
     R gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
     {
         return this->gamma_impl<R>(shape, k, theta);
-    };
+    }
 
 private:
-
     template <class R, class S>
     R random_impl(const S& shape)
     {
-        static_assert(std::is_same<typename R::value_type, double>::value,
+        static_assert(
+            std::is_same<typename R::value_type, double>::value,
             "Return value_type must be double");
 
         R ret = xt::empty<typename R::value_type>(shape);
         this->draw_list(&ret.front(), ret.size());
         return ret;
-    };
+    }
 
     template <class R, class S>
     R weibull_impl(const S& shape, double k, double lambda)
     {
         R r = this->random_impl<R>(shape);
         return weibull_distribution(k, lambda).quantile(r);
-    };
+    }
 
     template <class R, class S>
     R gamma_impl(const S& shape, double k, double theta)
     {
         R r = this->random_impl<R>(shape);
         return gamma_distribution(k, theta).quantile(r);
-    };
+    }
 
 protected:
-
     /**
     Draw `n` random numbers and write them to list (input as pointer `data`).
 
@@ -717,10 +698,8 @@ Whereby most code is taken from the follow wrapper:
     Wenzel Jakob, February 2015
     https://github.com/wjakob/pcg32
 */
-class pcg32 : public GeneratorBase
-{
+class pcg32 : public GeneratorBase {
 public:
-
     /**
     Constructor.
 
@@ -733,7 +712,7 @@ public:
         static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
         static_assert(sizeof(uint64_t) >= sizeof(S), "Down-casting not allowed.");
         this->seed(static_cast<uint64_t>(initstate), static_cast<uint64_t>(initseq));
-    };
+    }
 
     /**
     Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
@@ -750,7 +729,7 @@ public:
         uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
         uint32_t rot = oldstate >> 59u;
         return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
-    };
+    }
 
     /**
     Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
@@ -789,7 +768,7 @@ public:
         // because this version will calculate the same modulus, but the LHS
         // value is less than 2^32.
 
-        uint32_t threshold = (~bound+1u) % bound;
+        uint32_t threshold = (~bound + 1u) % bound;
 
         // Uniformity guarantees that this loop will terminate.  In practice, it
         // should usually terminate quickly; on average (assuming all bounds are
@@ -813,7 +792,8 @@ public:
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
-    float next_float() {
+    float next_float()
+    {
         /* Trick from MTGP: generate an uniformly distributed
            single precision number in [1,2) and subtract 1. */
         union {
@@ -842,7 +822,7 @@ public:
             double d;
         } x;
 
-        x.u = ((uint64_t) next_uint32() << 20) | 0x3ff0000000000000ULL;
+        x.u = ((uint64_t)next_uint32() << 20) | 0x3ff0000000000000ULL;
 
         return x.d - 1.0;
     }
@@ -856,7 +836,7 @@ public:
     uint64_t state()
     {
         return m_state;
-    };
+    }
 
     /**
     \copydoc state()
@@ -867,14 +847,16 @@ public:
     template <typename R>
     R state()
     {
-        static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_state)>::max,
+        static_assert(
+            std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_state)>::max,
             "Down-casting not allowed.");
 
-        static_assert(std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_state)>::min,
+        static_assert(
+            std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_state)>::min,
             "Down-casting not allowed.");
 
         return static_cast<R>(m_state);
-    };
+    }
 
     /**
     The state initiator that was used upon construction.
@@ -884,7 +866,7 @@ public:
     uint64_t initstate()
     {
         return m_initstate;
-    };
+    }
 
     /**
     \copydoc initstate()
@@ -895,14 +877,16 @@ public:
     template <typename R>
     R initstate()
     {
-        static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initstate)>::max,
+        static_assert(
+            std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initstate)>::max,
             "Down-casting not allowed.");
 
-        static_assert(std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_initstate)>::min,
+        static_assert(
+            std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_initstate)>::min,
             "Down-casting not allowed.");
 
         return static_cast<R>(m_initstate);
-    };
+    }
 
     /**
     The sequence initiator that was used upon construction.
@@ -912,7 +896,7 @@ public:
     uint64_t initseq()
     {
         return m_initseq;
-    };
+    }
 
     /**
     \copydoc initseq()
@@ -923,14 +907,16 @@ public:
     template <typename R>
     R initseq()
     {
-        static_assert(std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initseq)>::max,
+        static_assert(
+            std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initseq)>::max,
             "Down-casting not allowed.");
 
-        static_assert(std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_initseq)>::min,
+        static_assert(
+            std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_initseq)>::min,
             "Down-casting not allowed.");
 
         return static_cast<R>(m_initseq);
-    };
+    }
 
     /**
     Restore a given state in the sequence. See state().
@@ -943,21 +929,20 @@ public:
     {
         static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
         m_state = static_cast<uint64_t>(state);
-    };
+    }
 
     /**
     \copydoc distance(const pcg32 &)
     */
-    int64_t operator-(const pcg32 &other) const
+    int64_t operator-(const pcg32& other) const
     {
         PRRNG_ASSERT(m_inc == other.m_inc);
 
-        uint64_t
-            cur_mult = PRRNG_PCG32_MULT,
-            cur_plus = m_inc,
-            cur_state = other.m_state,
-            the_bit = 1u,
-            distance = 0u;
+        uint64_t cur_mult = PRRNG_PCG32_MULT;
+        uint64_t cur_plus = m_inc;
+        uint64_t cur_state = other.m_state;
+        uint64_t the_bit = 1u;
+        uint64_t distance = 0u;
 
         while (m_state != cur_state) {
             if ((m_state & the_bit) != (cur_state & the_bit)) {
@@ -970,8 +955,8 @@ public:
             cur_mult *= cur_mult;
         }
 
-        return (int64_t) distance;
-    };
+        return (int64_t)distance;
+    }
 
     /**
     The distance between two PCG32 pseudorandom number generators.
@@ -980,7 +965,7 @@ public:
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
-    int64_t distance(const pcg32 &other)
+    int64_t distance(const pcg32& other)
     {
         return this->operator-(other);
     }
@@ -992,16 +977,16 @@ public:
     store the internal state of type `int64_t`.
     */
     template <typename R>
-    R distance(const pcg32 &other)
+    R distance(const pcg32& other)
     {
         static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
 
         int64_t r = this->operator-(other);
 
-        #ifdef PRRNG_ENABLE_ASSERT
+#ifdef PRRNG_ENABLE_ASSERT
         bool u = std::is_unsigned<R>::value;
         PRRNG_ASSERT((r < 0 && !u) || r >= 0);
-        #endif
+#endif
 
         return static_cast<R>(r);
     }
@@ -1018,12 +1003,11 @@ public:
     template <typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
     int64_t distance(T other_state)
     {
-        uint64_t
-            cur_mult = PRRNG_PCG32_MULT,
-            cur_plus = m_inc,
-            cur_state = other_state,
-            the_bit = 1u,
-            distance = 0u;
+        uint64_t cur_mult = PRRNG_PCG32_MULT;
+        uint64_t cur_plus = m_inc;
+        uint64_t cur_state = other_state;
+        uint64_t the_bit = 1u;
+        uint64_t distance = 0u;
 
         while (m_state != cur_state) {
             if ((m_state & the_bit) != (cur_state & the_bit)) {
@@ -1036,7 +1020,7 @@ public:
             cur_mult *= cur_mult;
         }
 
-        return (int64_t) distance;
+        return (int64_t)distance;
     }
 
     /**
@@ -1052,10 +1036,10 @@ public:
 
         int64_t r = this->distance(other_state);
 
-        #ifdef PRRNG_ENABLE_ASSERT
+#ifdef PRRNG_ENABLE_ASSERT
         bool u = std::is_unsigned<R>::value;
         PRRNG_ASSERT((r < 0 && !u) || r >= 0);
-        #endif
+#endif
 
         return static_cast<R>(r);
     }
@@ -1079,15 +1063,14 @@ public:
 
         int64_t delta_ = static_cast<int64_t>(distance);
 
-        uint64_t
-            cur_mult = PRRNG_PCG32_MULT,
-            cur_plus = m_inc,
-            acc_mult = 1u,
-            acc_plus = 0u;
+        uint64_t cur_mult = PRRNG_PCG32_MULT;
+        uint64_t cur_plus = m_inc;
+        uint64_t acc_mult = 1u;
+        uint64_t acc_plus = 0u;
 
         /* Even though delta is an unsigned integer, we can pass a signed
            integer to go backwards, it just goes "the long way round". */
-        uint64_t delta = (uint64_t) delta_;
+        uint64_t delta = (uint64_t)delta_;
 
         while (delta > 0) {
             if (delta & 1) {
@@ -1115,7 +1098,7 @@ public:
     void shuffle(Iterator begin, Iterator end)
     {
         for (Iterator it = end - 1; it > begin; --it) {
-            std::iter_swap(it, begin + next_uint32((uint32_t) (it - begin + 1)));
+            std::iter_swap(it, begin + next_uint32((uint32_t)(it - begin + 1)));
         }
     }
 
@@ -1126,10 +1109,10 @@ public:
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
-    bool operator==(const pcg32 &other) const
+    bool operator==(const pcg32& other) const
     {
         return m_state == other.m_state && m_inc == other.m_inc;
-    };
+    }
 
     /**
     Inequality operator.
@@ -1138,13 +1121,12 @@ public:
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
-    bool operator!=(const pcg32 &other) const
+    bool operator!=(const pcg32& other) const
     {
         return m_state != other.m_state || m_inc != other.m_inc;
-    };
+    }
 
 protected:
-
     void draw_list(double* data, size_t n) override
     {
         for (size_t i = 0; i < n; ++i) {
@@ -1153,7 +1135,6 @@ protected:
     }
 
 private:
-
     void seed(uint64_t initstate, uint64_t initseq)
     {
         PRRNG_ASSERT(initstate >= 0);
@@ -1167,10 +1148,9 @@ private:
         (*this)();
         m_state += initstate;
         (*this)();
-    };
+    }
 
 private:
-
     uint64_t m_initstate; ///< State initiator
     uint64_t m_initseq; ///< Sequence initiator
     uint64_t m_state; ///< RNG state. All values are possible.
@@ -1185,10 +1165,8 @@ See the description of derived classed for information.
 \tparam M Type to use storage of the shape and array vectors. E.g. `std::vector` or `std::array`
 */
 template <class M>
-class GeneratorBase_array
-{
+class GeneratorBase_array {
 public:
-
     GeneratorBase_array() = default;
 
     virtual ~GeneratorBase_array() = default;
@@ -1266,8 +1244,7 @@ public:
     \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class S>
-    auto random(const S& ishape)
-    -> typename detail::composite_return_type<double, M, S>::type
+    auto random(const S& ishape) -> typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
         return this->random_impl<R>(ishape);
@@ -1287,8 +1264,8 @@ public:
     \copydoc random(const S&)
     */
     template <class I, std::size_t L>
-    auto random(const I (&ishape)[L])
-    -> typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    auto random(const I (&ishape)[L]) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
         return this->random_impl<R>(detail::to_array(ishape));
@@ -1321,12 +1298,12 @@ public:
     \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class S>
-    auto weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
-    -> typename detail::composite_return_type<double, M, S>::type
+    auto weibull(const S& ishape, double k = 1.0, double lambda = 1.0) ->
+        typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
         return this->weibull_impl<R>(ishape, k, lambda);
-    };
+    }
 
     /**
     \copydoc weibull(const S&, double, double)
@@ -1336,18 +1313,18 @@ public:
     R weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
     {
         return this->weibull_impl<R>(ishape, k, lambda);
-    };
+    }
 
     /**
     \copydoc weibull(const S&, double, double)
     */
     template <class I, std::size_t L>
-    auto weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
-    -> typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    auto weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
         return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
-    };
+    }
 
     /**
     \copydoc weibull(const S&, double, double)
@@ -1357,7 +1334,7 @@ public:
     R weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
     {
         return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
-    };
+    }
 
     /**
     Per generator, generate an nd-array of random numbers distributed
@@ -1371,12 +1348,12 @@ public:
     \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class S>
-    auto gamma(const S& ishape, double k = 1.0, double theta = 1.0)
-    -> typename detail::composite_return_type<double, M, S>::type
+    auto gamma(const S& ishape, double k = 1.0, double theta = 1.0) ->
+        typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
         return this->gamma_impl<R>(ishape, k, theta);
-    };
+    }
 
     /**
     \copydoc gamma(const S&, double, double)
@@ -1386,18 +1363,18 @@ public:
     R gamma(const S& ishape, double k = 1.0, double theta = 1.0)
     {
         return this->gamma_impl<R>(ishape, k, theta);
-    };
+    }
 
     /**
     \copydoc gamma(const S&, double, double)
     */
     template <class I, std::size_t L>
-    auto gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
-    -> typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    auto gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
         return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
-    };
+    }
 
     /**
     \copydoc gamma(const S&, double, double)
@@ -1407,38 +1384,37 @@ public:
     R gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
     {
         return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
-    };
+    }
 
 private:
-
     template <class R, class S>
     R random_impl(const S& ishape)
     {
-        static_assert(std::is_same<typename R::value_type, double>::value,
+        static_assert(
+            std::is_same<typename R::value_type, double>::value,
             "Return value_type must be double");
 
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
         this->draw_list(&ret.front(), n);
         return ret;
-    };
+    }
 
     template <class R, class S>
     R weibull_impl(const S& ishape, double k, double lambda)
     {
         R r = this->random_impl<R>(ishape);
         return weibull_distribution(k, lambda).quantile(r);
-    };
+    }
 
     template <class R, class S>
     R gamma_impl(const S& ishape, double k, double theta)
     {
         R r = this->random_impl<R>(ishape);
         return gamma_distribution(k, theta).quantile(r);
-    };
+    }
 
 protected:
-
     /**
     Draw `n` random numbers and write them to list (input as pointer `data`).
 
@@ -1453,21 +1429,17 @@ protected:
     }
 
 protected:
-
     size_t m_size = 0; ///< See size().
     M m_shape; ///< See shape().
     M m_strides; ///< The strides of the array of generators.
 };
 
-
 /**
 Base class, see pcg32_array for description.
 */
 template <class M>
-class pcg32_arrayBase : public GeneratorBase_array<M>
-{
+class pcg32_arrayBase : public GeneratorBase_array<M> {
 public:
-
     pcg32_arrayBase() = default;
 
     virtual ~pcg32_arrayBase() = default;
@@ -1620,7 +1592,6 @@ public:
     }
 
 protected:
-
     /**
     Draw `n` random numbers per array item, and write them to the correct position in `data`
     (assuming row-major storage!).
@@ -1638,7 +1609,6 @@ protected:
     }
 
 private:
-
     /**
     implementation of `operator()`.
     (Last call in recursion).
@@ -1660,7 +1630,6 @@ private:
     }
 
 protected:
-
     std::vector<pcg32> m_gen; ///< Underlying storage: one generator per array item
     using GeneratorBase_array<M>::m_size;
     using GeneratorBase_array<M>::m_shape;
@@ -1688,8 +1657,7 @@ can be used for each reference.
 In addition, convenience functions state(), initstate(), initseq(), restore() are provided
 here to store/restore the state of the entire array of generators.
 */
-class pcg32_array : public pcg32_arrayBase<std::vector<size_t>>
-{
+class pcg32_array : public pcg32_arrayBase<std::vector<size_t>> {
 public:
     /**
     Constructor.
@@ -1733,7 +1701,6 @@ public:
     }
 
 protected:
-
     using pcg32_arrayBase<std::vector<size_t>>::m_gen;
     using GeneratorBase_array<std::vector<size_t>>::m_size;
     using GeneratorBase_array<std::vector<size_t>>::m_shape;
@@ -1744,10 +1711,8 @@ protected:
 Fixed rank version of pcg32_array
 */
 template <size_t N>
-class pcg32_tensor : public pcg32_arrayBase<std::array<size_t, N>>
-{
+class pcg32_tensor : public pcg32_arrayBase<std::array<size_t, N>> {
 public:
-
     /**
     Constructor.
 
@@ -1793,7 +1758,6 @@ public:
     }
 
 protected:
-
     using pcg32_arrayBase<std::array<size_t, N>>::m_gen;
     using GeneratorBase_array<std::array<size_t, N>>::m_size;
     using GeneratorBase_array<std::array<size_t, N>>::m_shape;
@@ -1802,50 +1766,47 @@ protected:
 
 namespace detail {
 
-    template <class T, typename = void>
-    struct auto_pcg32
+template <class T, typename = void>
+struct auto_pcg32 {
+    static auto get(const T& initseq)
     {
-        static auto get(const T& initseq)
-        {
-            return pcg32_array(initseq);
-        }
+        return pcg32_array(initseq);
+    }
 
-        template <class S>
-        static auto get(const T& initseq, const S& initstate)
-        {
-            return pcg32_array(initseq, initstate);
-        }
-    };
-
-    template <class T>
-    struct auto_pcg32<T, typename std::enable_if_t<xt::has_fixed_rank_t<T>::value>>
+    template <class S>
+    static auto get(const T& initseq, const S& initstate)
     {
-        static auto get(const T& initseq)
-        {
-            return pcg32_tensor<xt::get_rank<T>::value>(initseq);
-        }
+        return pcg32_array(initseq, initstate);
+    }
+};
 
-        template <class S>
-        static auto get(const T& initseq, const S& initstate)
-        {
-            return pcg32_tensor<xt::get_rank<T>::value>(initseq, initstate);
-        }
-    };
-
-    template <class T>
-    struct auto_pcg32<T, typename std::enable_if_t<std::is_integral<T>::value>>
+template <class T>
+struct auto_pcg32<T, typename std::enable_if_t<xt::has_fixed_rank_t<T>::value>> {
+    static auto get(const T& initseq)
     {
-        static auto get(const T& initseq)
-        {
-            return pcg32(initseq);
-        }
+        return pcg32_tensor<xt::get_rank<T>::value>(initseq);
+    }
 
-        template <class S>
-        static auto get(const T& initseq, const S& initstate)
-        {
-            return pcg32(initseq, initstate);
-        }
-    };
+    template <class S>
+    static auto get(const T& initseq, const S& initstate)
+    {
+        return pcg32_tensor<xt::get_rank<T>::value>(initseq, initstate);
+    }
+};
+
+template <class T>
+struct auto_pcg32<T, typename std::enable_if_t<std::is_integral<T>::value>> {
+    static auto get(const T& initseq)
+    {
+        return pcg32(initseq);
+    }
+
+    template <class S>
+    static auto get(const T& initseq, const S& initstate)
+    {
+        return pcg32(initseq, initstate);
+    }
+};
 
 } // namespace detail
 
