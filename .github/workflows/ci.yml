@@ -25,7 +25,7 @@ jobs:
             conda: environment.yaml
             prop: tests
           - runs-on: windows-latest
-            config: -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=1
+            config: -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=1 -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
             conda: environment.yaml
             prop: tests
 
@@ -47,18 +47,15 @@ jobs:
         environment-file: environment.yaml
         environment-name: myenv
 
-    - name: Set dummy version
-      run: echo "SETUPTOOLS_SCM_PRETEND_VERSION=ci" >> $GITHUB_ENV
-
-    - name: Configure using CMake (!Windows)
-      if: runner.os != 'Windows'
-      run: cmake -Bbuild ${{ matrix.config }}
-
-    - name: Configure using CMake (Windows)
+    - name: Install clang
       if: runner.os == 'Windows'
-      run: |
-        micromamba install -c conda-forge clang_win-64 ninja
-        cmake -Bbuild -G Ninja ${{ matrix.config }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      run: micromamba install -c conda-forge clang_win-64 ninja
+
+    - name: Set dummy version
+      run: echo "SETUPTOOLS_SCM_PRETEND_VERSION=0.0" >> $GITHUB_ENV
+
+    - name: Configure using CMake
+      run: cmake -Bbuild ${{ matrix.config }}
 
     - name: Build C++ ${{ matrix.prop }}
       working-directory: build
@@ -78,4 +75,4 @@ jobs:
     - name: Build doxygen-docs (error on warning)
       if: runner.os == 'Linux'
       working-directory: build
-      run: make docs
+      run: make html
