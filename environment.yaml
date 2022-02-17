@@ -1,15 +1,15 @@
 channels:
-  - conda-forge
+- conda-forge
 dependencies:
-  - boost
-  - catch2
-  - cmake
-  - doxygen
-  - mathjax
-  - ninja
-  - numpy
-  - python
-  - scikit-build
-  - setuptools_scm
-  - xtensor
-  - xtensor-python
+- boost
+- catch2
+- cmake
+- doxygen
+- mathjax
+- ninja
+- numpy
+- python
+- scikit-build
+- setuptools_scm
+- xtensor
+- xtensor-python
