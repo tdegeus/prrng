@@ -848,11 +848,11 @@ public:
     R state()
     {
         static_assert(
-            std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_state)>::max,
+            std::numeric_limits<R>::max() >= std::numeric_limits<decltype(m_state)>::max(),
             "Down-casting not allowed.");
 
         static_assert(
-            std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_state)>::min,
+            std::numeric_limits<R>::min() <= std::numeric_limits<decltype(m_state)>::min(),
             "Down-casting not allowed.");
 
         return static_cast<R>(m_state);
@@ -878,11 +878,11 @@ public:
     R initstate()
     {
         static_assert(
-            std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initstate)>::max,
+            std::numeric_limits<R>::max() >= std::numeric_limits<decltype(m_initstate)>::max(),
             "Down-casting not allowed.");
 
         static_assert(
-            std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_initstate)>::min,
+            std::numeric_limits<R>::min() <= std::numeric_limits<decltype(m_initstate)>::min(),
             "Down-casting not allowed.");
 
         return static_cast<R>(m_initstate);
@@ -908,11 +908,11 @@ public:
     R initseq()
     {
         static_assert(
-            std::numeric_limits<R>::max >= std::numeric_limits<decltype(m_initseq)>::max,
+            std::numeric_limits<R>::max() >= std::numeric_limits<decltype(m_initseq)>::max(),
             "Down-casting not allowed.");
 
         static_assert(
-            std::numeric_limits<R>::min <= std::numeric_limits<decltype(m_initseq)>::min,
+            std::numeric_limits<R>::min() <= std::numeric_limits<decltype(m_initseq)>::min(),
             "Down-casting not allowed.");
 
         return static_cast<R>(m_initseq);
