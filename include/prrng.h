@@ -65,6 +65,7 @@ Likewise one can be explicit in enabling it:
 #endif
 
 #if PRRNG_USE_BOOST
+#include <boost/math/special_functions/erf.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 #include <xtensor/xvectorize.hpp>
 #endif
@@ -290,6 +291,82 @@ Return version string, for example `"0.1.0"`
 inline std::string version()
 {
     return detail::unquote(std::string(QUOTE(PRRNG_VERSION)));
+};
+
+/**
+Normal distribution.
+
+References:
+
+-   https://en.wikipedia.org/wiki/Normal_distribution
+-   https://www.boost.org/doc/libs/1_63_0/libs/math/doc/html/math_toolkit/sf_erf/error_inv.html
+-   https://www.boost.org/doc/libs/1_78_0/boost/math/special_functions/detail/erf_inv.hpp
+*/
+class normal_distribution {
+public:
+    /**
+    Constructor.
+
+    \param mu Average.
+    \param sigma Standard deviation.
+    */
+    normal_distribution(double mu = 0.0, double sigma = 1.0)
+    {
+        m_mu = mu;
+        m_sigma = sigma;
+        m_sigma_sqrt2 = m_sigma * std::sqrt(2.0);
+    }
+
+    /**
+    Return the probability density function.
+
+    \param x Coordinates.
+    \return probability density for each `x`.
+    */
+    template <class T>
+    T pdf(const T& x)
+    {
+        return xt::exp(-0.5 * xt::pow((x - m_mu) / m_sigma, 2.0)) /
+               (m_sigma_sqrt2 * std::sqrt(xt::numeric_constants<double>::PI));
+    }
+
+    /**
+    Return the cumulative density function.
+
+    \param x Coordinates.
+    \return cumulative density for each `x`.
+    */
+    template <class T>
+    T cdf(const T& x)
+    {
+        return 0.5 * (1.0 + xt::erf((x - m_mu) / m_sigma_sqrt2));
+    }
+
+    /**
+    Return the quantile (the inverse of the cumulative density function).
+
+    \param p Probability [0, 1].
+    \return quantile for each `p`.
+    */
+    template <class T>
+    T quantile(const T& p)
+    {
+        using value_type = typename T::value_type;
+
+#if PRRNG_USE_BOOST
+        auto f = xt::vectorize(boost::math::erf_inv<value_type>);
+        return m_mu + m_sigma_sqrt2 * f(2.0 * p - 1.0);
+#else
+        auto ret = p;
+        ret.fill(std::numeric_limits<value_type>::quiet_NaN());
+        return ret;
+#endif
+    }
+
+private:
+    double m_mu;
+    double m_sigma;
+    double m_sigma_sqrt2;
 };
 
 /**
@@ -521,6 +598,60 @@ public:
     }
 
     /**
+    Generate an nd-array of random numbers distributed according to a normal distribution.
+    Internally, the output of random() is converted using the cumulative density
+
+    \f$ \Phi(x) = \frac{1}{2} \left[1 + \erf\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)\right]\f$
+
+    such that the output `r` from random() leads to
+
+    \f$ x = \mu + \sigma \sqrt{2} \erf^{-1} (2r - 1) \f$
+
+    \param shape The shape of the nd-array.
+    \param mu The average.
+    \param sigma The standard deviation.
+    \return The sample of shape `shape`.
+    */
+    template <class S>
+    auto normal(const S& shape, double mu = 0.0, double sigma = 1.0) ->
+        typename detail::return_type<double, S>::type
+    {
+        using R = typename detail::return_type<double, S>::type;
+        return this->normal_impl<R>(shape, mu, sigma);
+    }
+
+    /**
+    \copydoc normal(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S>
+    R normal(const S& shape, double mu = 0.0, double sigma = 1.0)
+    {
+        return this->normal_impl<R>(shape, mu, sigma);
+    }
+
+    /**
+    \copydoc normal(const S&, double, double)
+    */
+    template <class I, std::size_t L>
+    auto normal(const I (&shape)[L], double mu = 0.0, double sigma = 1.0) ->
+        typename detail::return_type_fixed<double, L>::type
+    {
+        using R = typename detail::return_type_fixed<double, L>::type;
+        return this->normal_impl<R>(shape, mu, sigma);
+    }
+
+    /**
+    \copydoc normal(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L>
+    R normal(const I (&shape)[L], double mu = 0.0, double sigma = 1.0)
+    {
+        return this->normal_impl<R>(shape, mu, sigma);
+    }
+
+    /**
     Generate an nd-array of random numbers distributed according to a Weibull distribution.
     Internally, the output of random() is converted using the cumulative density
 
@@ -634,6 +765,13 @@ private:
         R ret = xt::empty<typename R::value_type>(shape);
         this->draw_list(&ret.front(), ret.size());
         return ret;
+    }
+
+    template <class R, class S>
+    R normal_impl(const S& shape, double mu, double sigma)
+    {
+        R r = this->random_impl<R>(shape);
+        return normal_distribution(mu, sigma).quantile(r);
     }
 
     template <class R, class S>
@@ -1283,6 +1421,61 @@ public:
 
     /**
     Per generator, generate an nd-array of random numbers distributed
+    according to a normal distribution.
+    Internally, the output of random() is converted using the cumulative density
+
+    \f$ \Phi(x) = \frac{1}{2} \left[1 + \erf\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)\right]\f$
+
+    such that the output `r` from random() leads to
+
+    \f$ x = \mu + \sigma \sqrt{2} \erf^{-1} (2r - 1) \f$
+
+    \param ishape The shape of the nd-array drawn per generator.
+    \param mu The average.
+    \param sigma The standard deviation.
+    \return The array of arrays of samples: [#shape, `ishape`]
+    */
+    template <class S>
+    auto normal(const S& ishape, double mu = 0.0, double sigma = 1.0) ->
+        typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->normal_impl<R>(ishape, mu, sigma);
+    }
+
+    /**
+    \copydoc normal(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S>
+    R normal(const S& ishape, double mu = 0.0, double sigma = 1.0)
+    {
+        return this->normal_impl<R>(ishape, mu, sigma);
+    }
+
+    /**
+    \copydoc normal(const S&, double, double)
+    */
+    template <class I, std::size_t L>
+    auto normal(const I (&ishape)[L], double mu = 0.0, double sigma = 1.0) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->normal_impl<R>(detail::to_array(ishape), mu, sigma);
+    }
+
+    /**
+    \copydoc normal(const S&, double, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L>
+    R normal(const I (&ishape)[L], double mu = 0.0, double sigma = 1.0)
+    {
+        return this->normal_impl<R>(detail::to_array(ishape), mu, sigma);
+    }
+
+    /**
+    Per generator, generate an nd-array of random numbers distributed
     according to a Weibull distribution.
     Internally, the output of random() is converted using the cumulative density
 
@@ -1398,6 +1591,13 @@ private:
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
         this->draw_list(&ret.front(), n);
         return ret;
+    }
+
+    template <class R, class S>
+    R normal_impl(const S& ishape, double mu, double sigma)
+    {
+        R r = this->random_impl<R>(ishape);
+        return normal_distribution(mu, sigma).quantile(r);
     }
 
     template <class R, class S>

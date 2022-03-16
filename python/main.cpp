@@ -47,6 +47,40 @@ PYBIND11_MODULE(_prrng, m)
         "Return version string."
         "See :cpp:class:`prrng::version`.");
 
+    py::class_<prrng::normal_distribution>(m, "normal_distribution")
+
+        .def(
+            py::init<double, double>(),
+            "Normal distribution."
+            "See :cpp:class:`prrng::normal_distribution`.",
+            py::arg("mu") = 0.0,
+            py::arg("sigma") = 1.0)
+
+        .def(
+            "pdf",
+            &prrng::normal_distribution::pdf<xt::pytensor<double, 1>>,
+            "Probability density distribution."
+            "See :cpp:func:`prrng::normal_distribution::pdf`.",
+            py::arg("x"))
+
+        .def(
+            "cdf",
+            &prrng::normal_distribution::cdf<xt::pytensor<double, 1>>,
+            "Cumulative density distribution."
+            "See :cpp:func:`prrng::normal_distribution::cdf`.",
+            py::arg("x"))
+
+        .def(
+            "quantile",
+            &prrng::normal_distribution::quantile<xt::pyarray<double>>,
+            "Quantile (inverse of cumulative density distribution)."
+            "See :cpp:func:`prrng::normal_distribution::quantile`.",
+            py::arg("r"))
+
+        .def("__repr__", [](const prrng::normal_distribution&) {
+            return "<prrng.normal_distribution>";
+        });
+
     py::class_<prrng::weibull_distribution>(m, "weibull_distribution")
 
         .def(
@@ -129,6 +163,16 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random number numbers."
             "See :cpp:func:`prrng::GeneratorBase::random`.",
             py::arg("shape"))
+
+        .def(
+            "normal",
+            py::overload_cast<const std::vector<size_t>&, double, double>(
+                &prrng::GeneratorBase::normal<xt::pyarray<double>, std::vector<size_t>>),
+            "ndarray of random number numbers, distributed according to a normal distribution."
+            "See :cpp:func:`prrng::GeneratorBase::normal`.",
+            py::arg("shape"),
+            py::arg("mu") = 0.0,
+            py::arg("sigma") = 1.0)
 
         .def(
             "weibull",
@@ -256,6 +300,17 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random number numbers."
             "See :cpp:func:`prrng::GeneratorBase_array::random`.",
             py::arg("ishape"))
+
+        .def(
+            "normal",
+            py::overload_cast<const std::vector<size_t>&, double, double>(
+                &prrng::GeneratorBase_array<
+                    std::vector<size_t>>::normal<xt::pyarray<double>, std::vector<size_t>>),
+            "ndarray of random number numbers, distributed according to a normal distribution."
+            "See :cpp:func:`prrng::GeneratorBase_array::normal`.",
+            py::arg("ishape"),
+            py::arg("mu") = 0.0,
+            py::arg("sigma") = 1.0)
 
         .def(
             "weibull",
