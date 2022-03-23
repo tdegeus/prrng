@@ -1,7 +1,12 @@
+# Mac crap
+.DS_Store
+
+# Python API
+_skbuild
+_cmake_test_compile
 build
 dist
 *.egg-info
-_skbuild
 
 # Prerequisites
 *.d
