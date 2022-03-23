@@ -1101,26 +1101,18 @@ public:
     /**
     The distance between two PCG32 pseudorandom number generators.
 
+    \tparam R
+        Return-type.
+        `static_assert` against down-casting, #PRRNG_ASSERT against loss of signedness.
+
     \return Distance.
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
-    int64_t distance(const pcg32& other)
-    {
-        return this->operator-(other);
-    }
-
-    /**
-    \copydoc distance(const pcg32 &)
-
-    \tparam R use a different return-type. There are some internal checks if the type is able to
-    store the internal state of type `int64_t`.
-    */
-    template <typename R>
+    template <typename R = int64_t>
     R distance(const pcg32& other)
     {
         static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
-
         int64_t r = this->operator-(other);
 
 #ifdef PRRNG_ENABLE_ASSERT
@@ -1134,15 +1126,24 @@ public:
     /**
     The distance between two states.
 
+    \tparam R
+        Return-type.
+        `static_assert` against down-casting, #PRRNG_ASSERT against loss of signedness.
+
     \return Distance.
 
     \warning The increment of used to generate must be the same. There is no way of checking here!
 
     \author Wenzel Jakob, https://github.com/wjakob/pcg32.
     */
-    template <typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
-    int64_t distance(T other_state)
+    template <
+        typename R = int64_t,
+        typename T,
+        std::enable_if_t<std::is_integral<T>::value, bool> = true>
+    R distance(T other_state)
     {
+        static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
+
         uint64_t cur_mult = PRRNG_PCG32_MULT;
         uint64_t cur_plus = m_inc;
         uint64_t cur_state = other_state;
@@ -1160,21 +1161,7 @@ public:
             cur_mult *= cur_mult;
         }
 
-        return (int64_t)distance;
-    }
-
-    /**
-    \copydoc distance(T)
-
-    \tparam R use a different return-type. There are some internal checks if the type is able to
-    store the internal state of type `int64_t`.
-    */
-    template <typename R, typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
-    R distance(T other_state)
-    {
-        static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
-
-        int64_t r = this->distance(other_state);
+        int64_t r = (int64_t)distance;
 
 #ifdef PRRNG_ENABLE_ASSERT
         bool u = std::is_unsigned<R>::value;
@@ -1661,6 +1648,18 @@ public:
     }
 
     /**
+    Return a constant reference to one generator, using an array index.
+
+    \param args Array index (number of arguments should correspond to the rank of the array).
+    \return Reference to underlying generator.
+    */
+    template <class... Args>
+    const pcg32& operator()(Args... args) const
+    {
+        return m_gen[this->get_item(0, 0, args...)];
+    }
+
+    /**
     Return a reference to one generator, using a flat index.
 
     \param i Flat index.
@@ -1669,7 +1668,42 @@ public:
     pcg32& operator[](size_t i)
     {
         PRRNG_ASSERT(i < m_size);
+        return m_gen[i];
+    }
 
+    /**
+    Return a constant reference to one generator, using a flat index.
+
+    \param i Flat index.
+    \return Reference to underlying generator.
+    */
+    const pcg32& operator[](size_t i) const
+    {
+        PRRNG_ASSERT(i < m_size);
+        return m_gen[i];
+    }
+
+    /**
+    Return a reference to one generator, using a flat index.
+
+    \param i Flat index.
+    \return Reference to underlying generator.
+    */
+    pcg32& flat(size_t i)
+    {
+        PRRNG_ASSERT(i < m_size);
+        return m_gen[i];
+    }
+
+    /**
+    Return a constant reference to one generator, using a flat index.
+
+    \param i Flat index.
+    \return Reference to underlying generator.
+    */
+    const pcg32& flat(size_t i) const
+    {
+        PRRNG_ASSERT(i < m_size);
         return m_gen[i];
     }
 
@@ -1758,6 +1792,41 @@ public:
 
         for (size_t i = 0; i < m_size; ++i) {
             ret.flat(i) = m_gen[i].template initseq<value_type>();
+        }
+
+        return ret;
+    }
+
+    /**
+    Distance between two states.
+    See pcg32::distance().
+
+    \tparam T Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
+    \param arg The state to which to compare.
+    */
+    template <class T>
+    auto distance(const T& arg) -> typename detail::return_type<int64_t, M>::type
+    {
+        using R = typename detail::return_type<int64_t, M>::type;
+        return this->distance<R, T>(arg);
+    }
+
+    /**
+    Distance between two states.
+    See pcg32::distance().
+
+    \tparam R Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
+    \tparam T Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
+    \param arg The state to which to compare.
+    */
+    template <class R, class T>
+    R distance(const T& arg)
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_shape);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            ret.flat(i) = m_gen[i].template distance<value_type>(arg.flat(i));
         }
 
         return ret;
