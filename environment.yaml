@@ -5,7 +5,6 @@ dependencies:
 - catch2
 - cmake
 - doxygen
-- mathjax
 - ninja
 - numpy
 - python
