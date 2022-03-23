@@ -42,9 +42,6 @@ jobs:
         environment-name: myenv
         cache-env: true
         extra-specs: |
-          breathe
-          sphinx
-          sphinx_rtd_theme
           sel(win): clang_win-64
 
     - name: Set dummy version
@@ -55,10 +52,6 @@ jobs:
 
     - name: Run Python tests
       run: python -m unittest discover tests
-
-    - name: Build sphinx docs
-      working-directory: docs
-      run: sphinx-build -b html . _build -W
 
     - name: Configure using CMake
       run: cmake -Bbuild ${{ matrix.config }}
