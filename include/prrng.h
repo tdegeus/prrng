@@ -92,11 +92,11 @@ Library version.
 
 Either:
 
--   Configure using CMake at install time. Internally uses::
+-   Configure using CMake at install time. Internally uses:
 
         python -c "from setuptools_scm import get_version; print(get_version())"
 
--   Define externally using::
+-   Define externally using:
 
         -DPRRNG_VERSION="`python -c "from setuptools_scm import get_version; print(get_version())"`"
 
@@ -601,11 +601,13 @@ public:
     Generate an nd-array of random numbers distributed according to a normal distribution.
     Internally, the output of random() is converted using the cumulative density
 
-    \f$ \Phi(x) = \frac{1}{2} \left[1 + \erf\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)\right]\f$
+    \f$ \Phi(x) = \frac{1}{2} \left[
+        1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
+    \right]\f$
 
     such that the output `r` from random() leads to
 
-    \f$ x = \mu + \sigma \sqrt{2} \erf^{-1} (2r - 1) \f$
+    \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
 
     \param shape The shape of the nd-array.
     \param mu The average.
@@ -1424,11 +1426,13 @@ public:
     according to a normal distribution.
     Internally, the output of random() is converted using the cumulative density
 
-    \f$ \Phi(x) = \frac{1}{2} \left[1 + \erf\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)\right]\f$
+    \f$ \Phi(x) = \frac{1}{2} \left[
+        1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
+    \right]\f$
 
     such that the output `r` from random() leads to
 
-    \f$ x = \mu + \sigma \sqrt{2} \erf^{-1} (2r - 1) \f$
+    \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
 
     \param ishape The shape of the nd-array drawn per generator.
     \param mu The average.
