@@ -8,6 +8,10 @@ build
 dist
 *.egg-info
 
+# docs
+docs/_build
+docs/_doxygen
+
 # Prerequisites
 *.d
 
