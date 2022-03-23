@@ -338,21 +338,14 @@ PYBIND11_MODULE(_prrng, m)
             return "<prrng.GeneratorBase_array>";
         });
 
-    py::class_<prrng::pcg32_array, prrng::GeneratorBase_array<std::vector<size_t>>>(
-        m, "pcg32_array")
+    py::class_<
+        prrng::pcg32_arrayBase<std::vector<size_t>>,
+        prrng::GeneratorBase_array<std::vector<size_t>>>(m, "pcg32_arrayBase")
 
         .def(
-            py::init<xt::pyarray<uint64_t>>(),
-            "Random number generator."
-            "See :cpp:class:`prrng::pcg32_array`.",
-            py::arg("initstate"))
-
-        .def(
-            py::init<xt::pyarray<uint64_t>, xt::pyarray<uint64_t>>(),
-            "Random number generator."
-            "See :cpp:class:`prrng::pcg32_array`.",
-            py::arg("initstate"),
-            py::arg("initseq"))
+            py::init<>(),
+            "Random number generator base class."
+            "See :cpp:class:`prrng::pcg32_arrayBase`.")
 
         // https://github.com/pybind/pybind11/blob/master/tests/test_sequences_and_iterators.cpp
 
@@ -377,27 +370,53 @@ PYBIND11_MODULE(_prrng, m)
         .def(
             "state",
             &prrng::pcg32_array::state<xt::pyarray<uint64_t>>,
-            "current state."
+            "Get current state."
             "See :cpp:func:`prrng::pcg32_array::state`.")
 
         .def(
             "initstate",
             &prrng::pcg32_array::initstate<xt::pyarray<uint64_t>>,
-            "used initstate."
+            "initstate used in constructor."
             "See :cpp:func:`prrng::pcg32_array::initstate`.")
 
         .def(
             "initseq",
             &prrng::pcg32_array::initseq<xt::pyarray<uint64_t>>,
-            "used initseq."
+            "initseq used in constructor."
             "See :cpp:func:`prrng::pcg32_array::initseq`.")
+
+        .def(
+            "advance",
+            &prrng::pcg32_array::advance<xt::pyarray<uint64_t>>,
+            "Advance generators."
+            "See :cpp:func:`prrng::pcg32_array::advance`.",
+            py::arg("distance"))
 
         .def(
             "restore",
             &prrng::pcg32_array::restore<xt::pyarray<uint64_t>>,
-            "restore state."
+            "Restore state."
             "See :cpp:func:`prrng::pcg32_array::restore`.",
             py::arg("state"))
+
+        .def("__repr__", [](const prrng::pcg32_arrayBase<std::vector<size_t>>&) {
+            return "<prrng.pcg32_arrayBase>";
+        });
+
+    py::class_<prrng::pcg32_array, prrng::pcg32_arrayBase<std::vector<size_t>>>(m, "pcg32_array")
+
+        .def(
+            py::init<xt::pyarray<uint64_t>>(),
+            "Random number generator."
+            "See :cpp:class:`prrng::pcg32_array`.",
+            py::arg("initstate"))
+
+        .def(
+            py::init<xt::pyarray<uint64_t>, xt::pyarray<uint64_t>>(),
+            "Random number generator."
+            "See :cpp:class:`prrng::pcg32_array`.",
+            py::arg("initstate"),
+            py::arg("initseq"))
 
         .def("__repr__", [](const prrng::pcg32_array&) { return "<prrng.pcg32_array>"; });
 
