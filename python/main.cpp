@@ -386,6 +386,23 @@ PYBIND11_MODULE(_prrng, m)
             "See :cpp:func:`prrng::pcg32_arrayBase::initseq`.")
 
         .def(
+            "distance",
+            py::overload_cast<const xt::pyarray<uint64_t>&>(
+                &prrng::pcg32_arrayBase<std::vector<size_t>>::distance<xt::pyarray<uint64_t>>),
+            "Distance to a state. "
+            "See :cpp:func:`prrng::pcg32_arrayBase::distance`.",
+            py::arg("arg"))
+
+        .def(
+            "distance",
+            py::overload_cast<const prrng::pcg32_arrayBase<std::vector<size_t>>&>(
+                &prrng::pcg32_arrayBase<std::vector<size_t>>::distance<
+                    prrng::pcg32_arrayBase<std::vector<size_t>>>),
+            "Distance to a state. "
+            "See :cpp:func:`prrng::pcg32_arrayBase::distance`.",
+            py::arg("arg"))
+
+        .def(
             "advance",
             &prrng::pcg32_arrayBase<std::vector<size_t>>::advance<xt::pyarray<uint64_t>>,
             "Advance generators. "

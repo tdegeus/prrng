@@ -713,21 +713,28 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         }
     }
 
-    SECTION("pcg32_array - matrix - state/restore/advance")
+    SECTION("pcg32_array - matrix - state/restore/advance/distance")
     {
         xt::xtensor<uint64_t, 2> seed = {{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}};
 
         prrng::pcg32_array gen(seed);
         prrng::pcg32_array regen(seed);
 
+        auto i = gen.state();
         auto a = gen.random({4, 5});
         auto b = gen.random({4, 5});
         auto c = gen.random({4, 5});
         auto s = gen.state();
-        auto d = gen.random({4, 5});
+        auto e = gen.random({4, 5});
+        xt::xtensor<int64_t, 2> unit = xt::ones<int64_t>(seed.shape());
 
+        REQUIRE(xt::all(xt::equal(regen.distance(gen), -4 * 4 * 5 * unit)));
+        REQUIRE(xt::all(xt::equal(gen.distance(regen), 4 * 4 * 5 * unit)));
         regen.restore(s);
-        REQUIRE(xt::allclose(d, regen.random({4, 5})));
+        REQUIRE(xt::all(xt::equal(regen.distance(i), 3 * 4 * 5 * unit)));
+        REQUIRE(xt::all(xt::equal(regen.random({4, 5}), e)));
+        REQUIRE(xt::all(xt::equal(regen.distance(gen), 0 * unit)));
+        REQUIRE(xt::all(xt::equal(gen.distance(regen), 0 * unit)));
 
         regen.restore(s);
         regen.advance(xt::eval(-4 * 5 * xt::ones<int>(regen.shape())));

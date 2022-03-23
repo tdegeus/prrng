@@ -774,6 +774,19 @@ class Test_pcg32_array(unittest.TestCase):
                 self.assertTrue(gen[i, j].initstate() == initstate[i, j])
                 self.assertTrue(gen[i, j].initseq() == initseq[i, j])
 
+    def test_distance(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        regen = prrng.pcg32_array(seed)
+        state = gen.state()
+
+        gen.random([4, 5])
+
+        self.assertTrue(np.all(gen.distance(state) == 4 * 5 * np.ones(seed.shape)))
+        self.assertTrue(np.all(gen.distance(regen) == 4 * 5 * np.ones(seed.shape)))
+        self.assertTrue(np.all(regen.distance(gen) == -4 * 5 * np.ones(seed.shape)))
+
 
 if __name__ == "__main__":
 
