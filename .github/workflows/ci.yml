@@ -21,7 +21,7 @@ jobs:
         - runs-on: macos-latest
           config: -DCMAKE_BUILD_TYPE=Release -DBUILD_ALL=1
         - runs-on: windows-latest
-          config: -DCMAKE_BUILD_TYPE=Release -DBUILD_ALL=1 -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          config: -DCMAKE_BUILD_TYPE=Release -DBUILD_ALL=1 -G Ninja
 
     defaults:
       run:
@@ -41,8 +41,6 @@ jobs:
         environment-file: environment.yaml
         environment-name: myenv
         cache-env: true
-        extra-specs: |
-          sel(win): clang_win-64
 
     - name: Set dummy version
       run: echo "SETUPTOOLS_SCM_PRETEND_VERSION=0.0" >> $GITHUB_ENV
