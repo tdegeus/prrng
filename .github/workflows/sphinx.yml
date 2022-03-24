@@ -29,6 +29,6 @@ jobs:
         cache-env: true
 
     - name: Build docs
-      uses: ammaraskar/sphinx-action@master
+      uses: MatthiasZepper/sphinx-action-v4@main
       with:
         docs-folder: "docs/"
