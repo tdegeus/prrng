@@ -151,7 +151,7 @@ inline std::string unquote(const std::string& arg)
     std::string ret = arg;
     ret.erase(std::remove(ret.begin(), ret.end(), '\"'), ret.end());
     return ret;
-};
+}
 
 template <class T>
 struct is_std_array : std::false_type {
@@ -291,7 +291,7 @@ Return version string, for example `"0.1.0"`
 inline std::string version()
 {
     return detail::unquote(std::string(QUOTE(PRRNG_VERSION)));
-};
+}
 
 /**
 Normal distribution.
