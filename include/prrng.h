@@ -138,6 +138,43 @@ Portable Reconstructible (Pseudo!) Random Number Generator
 */
 namespace prrng {
 
+/**
+Container type.
+*/
+namespace array_type {
+
+#ifdef PRRNG_USE_XTENSOR_PYTHON
+
+/**
+Variable rank array.
+*/
+template <typename T>
+using array = xt::pyarray<T>;
+
+/**
+Fixed (static) rank array.
+*/
+template <typename T, size_t N>
+using tensor = xt::pytensor<T, N>;
+
+#else
+
+/**
+Variable rank array.
+*/
+template <typename T>
+using array = xt::xarray<T>;
+
+/**
+Fixed (static) rank array.
+*/
+template <typename T, size_t N>
+using tensor = xt::xtensor<T, N>;
+
+#endif
+
+} // namespace array_type
+
 namespace detail {
 
 /**
@@ -166,7 +203,7 @@ struct is_xtensor : std::false_type {
 };
 
 template <class T, size_t N>
-struct is_xtensor<xt::xtensor<T, N>> : std::true_type {
+struct is_xtensor<array_type::tensor<T, N>> : std::true_type {
 };
 
 /**
@@ -192,7 +229,7 @@ Get default return type
 */
 template <typename R, size_t N>
 struct return_type_fixed {
-    using type = typename xt::xtensor<R, N>;
+    using type = typename array_type::tensor<R, N>;
 };
 
 /**
@@ -200,12 +237,12 @@ Get default return type
 */
 template <typename R, class S, typename = void>
 struct return_type {
-    using type = typename xt::xarray<R>;
+    using type = typename array_type::array<R>;
 };
 
 template <typename R, class S>
 struct return_type<R, S, typename std::enable_if_t<is_std_array<S>::value>> {
-    using type = typename xt::xtensor<R, std::tuple_size<S>::value>;
+    using type = typename array_type::tensor<R, std::tuple_size<S>::value>;
 };
 
 /**
@@ -213,7 +250,7 @@ Get default return type
 */
 template <typename R, class S, class T, typename = void>
 struct composite_return_type {
-    using type = typename xt::xarray<R>;
+    using type = typename array_type::array<R>;
 };
 
 template <typename R, class S, class T>
@@ -223,7 +260,7 @@ struct composite_return_type<
     T,
     typename std::enable_if_t<is_std_array<S>::value && is_std_array<T>::value>> {
     constexpr static size_t N = std::tuple_size<S>::value + std::tuple_size<T>::value;
-    using type = typename xt::xtensor<R, N>;
+    using type = typename array_type::tensor<R, N>;
 };
 
 /**
@@ -569,7 +606,7 @@ public:
 
     /**
     \copydoc random(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class S>
     R random(const S& shape)
@@ -589,7 +626,7 @@ public:
 
     /**
     \copydoc random(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R random(const I (&shape)[L])
@@ -624,7 +661,7 @@ public:
 
     /**
     \copydoc normal(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class S>
     R normal(const S& shape, double mu = 0.0, double sigma = 1.0)
@@ -645,7 +682,7 @@ public:
 
     /**
     \copydoc normal(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R normal(const I (&shape)[L], double mu = 0.0, double sigma = 1.0)
@@ -678,7 +715,7 @@ public:
 
     /**
     \copydoc weibull(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class S>
     R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
@@ -699,7 +736,7 @@ public:
 
     /**
     \copydoc weibull(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
@@ -727,7 +764,7 @@ public:
 
     /**
     \copydoc gamma(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class S>
     R gamma(const S& shape, double k = 1.0, double theta = 1.0)
@@ -748,7 +785,7 @@ public:
 
     /**
     \copydoc gamma(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
@@ -1379,7 +1416,7 @@ public:
 
     /**
     \copydoc random(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class S>
     R random(const S& ishape)
@@ -1400,7 +1437,7 @@ public:
 
     /**
     \copydoc random(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R random(const I (&ishape)[L])
@@ -1436,7 +1473,7 @@ public:
 
     /**
     \copydoc normal(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class S>
     R normal(const S& ishape, double mu = 0.0, double sigma = 1.0)
@@ -1457,7 +1494,7 @@ public:
 
     /**
     \copydoc normal(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R normal(const I (&ishape)[L], double mu = 0.0, double sigma = 1.0)
@@ -1491,7 +1528,7 @@ public:
 
     /**
     \copydoc weibull(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class S>
     R weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
@@ -1512,7 +1549,7 @@ public:
 
     /**
     \copydoc weibull(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
@@ -1541,7 +1578,7 @@ public:
 
     /**
     \copydoc gamma(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class S>
     R gamma(const S& ishape, double k = 1.0, double theta = 1.0)
@@ -1562,7 +1599,7 @@ public:
 
     /**
     \copydoc gamma(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    \tparam R return type, e.g. `prrng::array_type::tensor<double, 1>`
     */
     template <class R, class I, std::size_t L>
     R gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
@@ -1722,7 +1759,7 @@ public:
     /**
     \copydoc state()
 
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
+    \tparam R Array, e.g. `prrng::array_type::array<uint64_t>`, ...
     */
     template <class R>
     R state()
@@ -1782,7 +1819,7 @@ public:
     /**
     \copydoc initseq()
 
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
+    \tparam R Array, e.g. `prrng::array_type::array<uint64_t>`, ...
     */
     template <class R>
     R initseq()
@@ -1801,7 +1838,7 @@ public:
     Distance between two states.
     See pcg32::distance().
 
-    \tparam T Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
+    \tparam T Array, `prrng::array_type::array<int64_t>`, ...
     \param arg The state to which to compare.
     */
     template <class T>
@@ -1815,8 +1852,8 @@ public:
     Distance between two states.
     See pcg32::distance().
 
-    \tparam R Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
-    \tparam T Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
+    \tparam R Array, e.g. `prrng::array_type::array<int64_t>`, ...
+    \tparam T Array, e.g. `prrng::array_type::array<int64_t>`, ...
     \param arg The state to which to compare.
     */
     template <class R, class T>
@@ -1836,8 +1873,7 @@ public:
     Advance generators.
     See pcg32::advance().
 
-    \tparam T The type of the input array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`
-
+    \tparam T Array, e.g. `prrng::array_type::array<int64_t>`, ...
     \param arg The distance (positive or negative) by which to advance each generator.
     */
     template <class T>
@@ -1852,8 +1888,7 @@ public:
     Restore generators from a state.
     See pcg32::restore().
 
-    \tparam T The type of the input array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-
+    \tparam T Array, e.g. `prrng::array_type::array<uint64_t>`, ...
     \param arg The state of each generator.
     */
     template <class T>

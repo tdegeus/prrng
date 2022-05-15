@@ -1,5 +1,3 @@
-#include <prrng.h>
-
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -7,6 +5,9 @@
 #define FORCE_IMPORT_ARRAY
 #include <xtensor-python/pyarray.hpp>
 #include <xtensor-python/pytensor.hpp>
+
+#define PRRNG_USE_XTENSOR_PYTHON
+#include <prrng.h>
 
 namespace py = pybind11;
 
