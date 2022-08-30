@@ -756,6 +756,52 @@ public:
         return this->gamma_impl<R>(shape, k, theta);
     }
 
+    /**
+    Generate an nd-array of numbers that are delta distribution.
+    These numbers are not random; calling this function does not change the state of the generators.
+
+    \param shape The shape of the nd-array.
+    \param mean The value of the 'peak' of the delta distribution.
+    \return The sample of shape `shape`.
+    */
+    template <class S>
+    auto delta(const S& shape, double mean = 1.0) -> typename detail::return_type<double, S>::type
+    {
+        using R = typename detail::return_type<double, S>::type;
+        return this->delta_impl<R>(shape, mean);
+    }
+
+    /**
+    \copydoc delta(const S&, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S>
+    R delta(const S& shape, double mean = 1.0)
+    {
+        return this->delta_impl<R>(shape, mean);
+    }
+
+    /**
+    \copydoc delta(const S&, double)
+    */
+    template <class I, std::size_t L>
+    auto delta(const I (&shape)[L], double mean = 1.0) ->
+        typename detail::return_type_fixed<double, L>::type
+    {
+        using R = typename detail::return_type_fixed<double, L>::type;
+        return this->delta_impl<R>(shape, mean);
+    }
+
+    /**
+    \copydoc delta(const S&, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L>
+    R delta(const I (&shape)[L], double mean = 1.0)
+    {
+        return this->delta_impl<R>(shape, mean);
+    }
+
 private:
     template <class R, class S>
     R random_impl(const S& shape)
@@ -788,6 +834,12 @@ private:
     {
         R r = this->random_impl<R>(shape);
         return gamma_distribution(k, theta).quantile(r);
+    }
+
+    template <class R, class S>
+    R delta_impl(const S& shape, double mean)
+    {
+        return mean * xt::ones<typename R::value_type>(shape);
     }
 
 protected:
@@ -1570,6 +1622,53 @@ public:
         return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
     }
 
+    /**
+    Per generator, generate an nd-array of numbers that are delta distribution.
+    These numbers are not random; calling this function does not change the state of the generators.
+
+    \param ishape The shape of the nd-array drawn per generator.
+    \param mean The value of the 'peak' of the delta distribution.
+    \return The array of arrays of samples: [#shape, `ishape`]
+    */
+    template <class S>
+    auto delta(const S& ishape, double mean = 1.0) ->
+        typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->delta_impl<R>(ishape, mean);
+    }
+
+    /**
+    \copydoc delta(const S&, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S>
+    R delta(const S& ishape, double mean = 1.0)
+    {
+        return this->delta_impl<R>(ishape, mean);
+    }
+
+    /**
+    \copydoc delta(const S&, double)
+    */
+    template <class I, std::size_t L>
+    auto delta(const I (&ishape)[L], double mean = 1.0) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->delta_impl<R>(detail::to_array(ishape), mean);
+    }
+
+    /**
+    \copydoc delta(const S&, double)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L>
+    R delta(const I (&ishape)[L], double mean = 1.0)
+    {
+        return this->delta_impl<R>(detail::to_array(ishape), mean);
+    }
+
 private:
     template <class R, class S>
     R random_impl(const S& ishape)
@@ -1603,6 +1702,12 @@ private:
     {
         R r = this->random_impl<R>(ishape);
         return gamma_distribution(k, theta).quantile(r);
+    }
+
+    template <class R, class S>
+    R delta_impl(const S& ishape, double mean)
+    {
+        return mean * xt::ones<typename R::value_type>(ishape);
     }
 
 protected:
