@@ -20,7 +20,7 @@ subprocess.call(f"cd {doxydir:s}; make html", shell=True)
 
 extensions = [
     "breathe",
-    "sphinx.ext.imgmath",
+    "sphinx.ext.mathjax",
     "sphinx.ext.todo",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
