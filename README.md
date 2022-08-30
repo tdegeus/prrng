@@ -9,42 +9,6 @@ Portable Reconstructible (Pseudo) Random Number Generator.
 
 Documentation: https://tdegeus.github.io/prrng
 
-## Contents
-
-<!-- MarkdownTOC -->
-
-- [Overview](#overview)
-    - [Credits](#credits)
-    - [Basic example](#basic-example)
-    - [pcg32](#pcg32)
-    - [Python API](#python-api)
-    - [Array of tensors](#array-of-tensors)
-    - [Random distributions](#random-distributions)
-    - [More information](#more-information)
-- [Implementation](#implementation)
-    - [C++ and Python](#c-and-python)
-    - [Installation](#installation)
-        - [C++ headers](#c-headers)
-            - [Using conda](#using-conda)
-            - [From source](#from-source)
-        - [Python module](#python-module)
-            - [Using conda](#using-conda-1)
-            - [From source](#from-source-1)
-    - [Compiling user-code](#compiling-user-code)
-        - [Using CMake](#using-cmake)
-            - [Example](#example)
-            - [Targets](#targets)
-            - [Optimisation](#optimisation)
-        - [By hand](#by-hand)
-        - [Using pkg-config](#using-pkg-config)
-- [Change-log](#change-log)
-    - [v0.6.1](#v061)
-    - [v0.6.0](#v060)
-
-<!-- /MarkdownTOC -->
-
-## Overview
-
 ### Credits
 
 This library is a wrapper around [imneme/pcg-c-basic](https://github.com/imneme/pcg-c-basic), see also [pcg-random.org](http://www.pcg-random.org), and uses some features from [wjakob/pcg32](https://github.com/wjakob/pcg32).
@@ -151,8 +115,8 @@ Also this feature is included in the Python API, allowing to get a reproducible 
 
 ### C++ and Python
 
-The code is a C++ header-only library (see [installation notes](#c-headers)),
-but a Python module is also provided (see [installation notes](#python-module)).
+The code is a C++ header-only library,
+but a Python module is also provided.
 The interfaces are identical except:
 
 +   All *xtensor* objects (`xt::xtensor<...>`) are *NumPy* arrays in Python.
