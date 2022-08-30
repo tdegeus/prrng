@@ -23,7 +23,7 @@ target_link_libraries(mytarget INTERFACE
     ${PROJECT_NAME}
     ${PROJECT_NAME}::compiler_warnings
     ${PROJECT_NAME}::use_boost
-    Catch2::Catch2)
+    Catch2::Catch2WithMain)
 
 if(USE_ASSERT)
     target_link_libraries(mytarget INTERFACE ${PROJECT_NAME}::assert)
