@@ -4,7 +4,6 @@
 
 TEST_CASE("prrng::version", "prrng.h")
 {
-
     SECTION("basic")
     {
         std::cout << prrng::version() << std::endl;
