@@ -472,7 +472,7 @@ public:
     /**
     Return the probability density function.
     Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_bost`).
+    (e.g. using the CMake target `prrng::use_boost`).
 
     \param x Coordinates.
     \return probability density for each `x`.
@@ -496,7 +496,7 @@ public:
     /**
     Return the cumulative density function.
     Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_bost`).
+    (e.g. using the CMake target `prrng::use_boost`).
 
     \param x Coordinates.
     \return cumulative density for each `x`.
@@ -519,7 +519,7 @@ public:
     /**
     Return the quantile (the inverse of the cumulative density function).
     Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_bost`).
+    (e.g. using the CMake target `prrng::use_boost`).
 
     \param p Probability [0, 1].
     \return quantile for each `p`.
@@ -710,7 +710,7 @@ public:
     /**
     Generate an nd-array of random numbers distributed according to a Gamma distribution.
     Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_bost`).
+    (e.g. using the CMake target `prrng::use_boost`).
 
     \param shape The shape of the nd-array.
     \param k The "shape" parameter.
@@ -1524,7 +1524,7 @@ public:
     Per generator, generate an nd-array of random numbers distributed
     according to a Gamma distribution.
     Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_bost`).
+    (e.g. using the CMake target `prrng::use_boost`).
 
     \param ishape The shape of the nd-array drawn per generator.
     \param k The "shape" parameter.
