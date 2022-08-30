@@ -690,6 +690,17 @@ class Test_pcg32_gamma(unittest.TestCase):
             print("Warning: Compile without Gamma functions, skipping check")
 
 
+class Test_pcg32_delta(unittest.TestCase):
+    def test_array(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        state = gen.state()
+        a = gen.delta([4, 5])
+        self.assertTrue(np.allclose(a, np.ones_like(a)))
+        self.assertTrue(np.all(np.equal(gen.state(), state)))
+
+
 class Test_pcg32_array(unittest.TestCase):
     def test_list(self):
 

@@ -194,6 +194,15 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("k") = 1.0,
             py::arg("theta") = 1.0)
 
+        .def(
+            "delta",
+            py::overload_cast<const std::vector<size_t>&, double>(
+                &prrng::GeneratorBase::delta<xt::pyarray<double>, std::vector<size_t>>),
+            "ndarray equal to mean. This is not a random distribution!."
+            "See :cpp:func:`prrng::GeneratorBase::delta`.",
+            py::arg("shape"),
+            py::arg("mean") = 1.0)
+
         .def("__repr__", [](const prrng::GeneratorBase&) { return "<prrng.GeneratorBase>"; });
 
     py::class_<prrng::pcg32, prrng::GeneratorBase>(m, "pcg32")
@@ -333,6 +342,16 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("ishape"),
             py::arg("k") = 1.0,
             py::arg("theta") = 1.0)
+
+        .def(
+            "delta",
+            py::overload_cast<const std::vector<size_t>&, double>(
+                &prrng::GeneratorBase_array<
+                    std::vector<size_t>>::delta<xt::pyarray<double>, std::vector<size_t>>),
+            "ndarray equal to mean. This is not a random distribution!. "
+            "See :cpp:func:`prrng::GeneratorBase_array::delta`.",
+            py::arg("ishape"),
+            py::arg("mean") = 1.0)
 
         .def("__repr__", [](const prrng::GeneratorBase_array<std::vector<size_t>>&) {
             return "<prrng.GeneratorBase_array>";
