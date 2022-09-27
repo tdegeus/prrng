@@ -219,6 +219,18 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         REQUIRE(std::abs((m - 0.5) / 0.5) < 1e-3);
     }
 
+    SECTION("randint - mean")
+    {
+        prrng::pcg32 gen;
+
+        uint32_t bound = 1000;
+        auto a = gen.randint({1000000}, bound);
+        double m = xt::mean(xt::cast<double>(a))();
+        double c = 0.5 * static_cast<double>(bound - 1);
+        REQUIRE(xt::all(a < 1000));
+        REQUIRE(std::abs((m - c) / c) < 1e-3);
+    }
+
     SECTION("random - historic")
     {
         prrng::pcg32 gen;

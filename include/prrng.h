@@ -598,6 +598,51 @@ public:
     }
 
     /**
+    Generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+
+    \param shape The shape of the nd-array.
+    \param bound The upper bound of the random integers.
+    \return The sample of shape `shape`.
+    */
+    template <class S, typename T>
+    auto randint(const S& shape, T bound) -> typename detail::return_type<uint32_t, S>::type
+    {
+        using R = typename detail::return_type<uint32_t, S>::type;
+        return this->randint_impl<R>(shape, bound);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S, typename T>
+    R randint(const S& shape, T bound)
+    {
+        return this->randint_impl<R>(shape, bound);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    */
+    template <class I, std::size_t L, typename T>
+    auto randint(const I (&shape)[L], T bound) ->
+        typename detail::return_type_fixed<uint32_t, L>::type
+    {
+        using R = typename detail::return_type_fixed<uint32_t, L>::type;
+        return this->randint_impl<R>(shape, bound);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    \tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
+    */
+    template <class R, class I, std::size_t L, typename T>
+    R randint(const I (&shape)[L], T bound)
+    {
+        return this->randint_impl<R>(shape, bound);
+    }
+
+    /**
     Generate an nd-array of random numbers distributed according to a normal distribution.
     Internally, the output of random() is converted using the cumulative density
 
@@ -815,6 +860,24 @@ private:
         return ret;
     }
 
+    template <class R, class S, class T>
+    R randint_impl(const S& shape, T bound)
+    {
+        static_assert(
+            std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<T>::max(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
+            "Bound too large");
+
+        R ret = xt::empty<typename R::value_type>(shape);
+        std::vector<uint32_t> tmp(ret.size());
+        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(bound), ret.size());
+        std::copy(tmp.begin(), tmp.end(), ret.begin());
+        return ret;
+    }
+
     template <class R, class S>
     R normal_impl(const S& shape, double mu, double sigma)
     {
@@ -853,6 +916,22 @@ protected:
     {
         for (size_t i = 0; i < n; ++i) {
             data[i] = 0.5;
+        }
+    }
+
+    /**
+    Draw `n` random numbers and write them to list (input as pointer `data`).
+
+    \param data Pointer to the data (no bounds-check).
+    \param bound Upper bound of the random numbers.
+    \param n Size of `data`.
+    */
+    virtual void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
+    {
+        (void)(bound);
+
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = 0;
         }
     }
 };
@@ -1313,6 +1392,13 @@ protected:
         }
     }
 
+    void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n) override
+    {
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = next_uint32(bound);
+        }
+    }
+
 private:
     void seed(uint64_t initstate, uint64_t initseq)
     {
@@ -1458,6 +1544,52 @@ public:
     R random(const I (&ishape)[L])
     {
         return this->random_impl<R>(detail::to_array(ishape));
+    }
+
+    /**
+    Per generator, generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+
+    \param ishape The shape of the nd-array drawn per generator.
+    \param bound The upper bound of the interval.
+    \return The array of arrays of samples: [#shape, `ishape`]
+    */
+    template <class S, typename T>
+    auto randint(const S& ishape, T bound) ->
+        typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->randint_impl<R>(ishape, bound);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S, typename T>
+    R randint(const S& ishape, T bound)
+    {
+        return this->randint_impl<R>(ishape, bound);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    */
+    template <class I, std::size_t L, typename T>
+    auto randint(const I (&ishape)[L], T bound) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->randint_impl<R>(detail::to_array(ishape), bound);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L, typename T>
+    R randint(const I (&ishape)[L], T bound)
+    {
+        return this->randint_impl<R>(detail::to_array(ishape), bound);
     }
 
     /**
@@ -1683,6 +1815,25 @@ private:
         return ret;
     }
 
+    template <class R, class S, class T>
+    R randint_impl(const S& ishape, T bound)
+    {
+        static_assert(
+            std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<T>::max(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
+            "Bound too large");
+
+        auto n = detail::size(ishape);
+        R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
+        std::vector<uint32_t> tmp(ret.size());
+        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(bound), n);
+        std::copy(tmp.begin(), tmp.end(), ret.begin());
+        return ret;
+    }
+
     template <class R, class S>
     R normal_impl(const S& ishape, double mu, double sigma)
     {
@@ -1721,6 +1872,22 @@ protected:
     {
         for (size_t i = 0; i < n; ++i) {
             data[i] = 0.5;
+        }
+    }
+
+    /**
+    Draw `n` random numbers and write them to list (input as pointer `data`).
+
+    \param data Pointer to the data (no bounds-check).
+    \param bound Upper bound of the random numbers.
+    \param n Size of `data`.
+    */
+    virtual void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
+    {
+        (void)(bound);
+
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = 0;
         }
     }
 
@@ -1982,6 +2149,23 @@ protected:
         for (size_t i = 0; i < m_size; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 data[i * n + j] = m_gen[i].next_double();
+            }
+        }
+    }
+
+    /**
+    Draw `n` random numbers per array item, and write them to the correct position in `data`
+    (assuming row-major storage!).
+
+    \param data Pointer to the data (no bounds-check).
+    \param bound The upper bound of the random numbers.
+    \param n The number of random numbers per generator.
+    */
+    void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n) override
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            for (size_t j = 0; j < n; ++j) {
+                data[i * n + j] = m_gen[i].next_uint32(bound);
             }
         }
     }
