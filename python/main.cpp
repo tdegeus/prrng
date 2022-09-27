@@ -160,15 +160,25 @@ PYBIND11_MODULE(_prrng, m)
             "random",
             py::overload_cast<const std::vector<size_t>&>(
                 &prrng::GeneratorBase::random<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers. "
+            "ndarray of random numbers. "
             "See :cpp:func:`prrng::GeneratorBase::random`.",
             py::arg("shape"))
+
+        .def(
+            "randint",
+            py::overload_cast<const std::vector<size_t>&, uint32_t>(
+                &prrng::GeneratorBase::
+                    randint<xt::pyarray<uint32_t>, std::vector<size_t>, uint32_t>),
+            "ndarray of random integers. "
+            "See :cpp:func:`prrng::GeneratorBase::randint`.",
+            py::arg("shape"),
+            py::arg("bound"))
 
         .def(
             "normal",
             py::overload_cast<const std::vector<size_t>&, double, double>(
                 &prrng::GeneratorBase::normal<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers, distributed according to a normal distribution. "
+            "ndarray of random numbers, distributed according to a normal distribution. "
             "See :cpp:func:`prrng::GeneratorBase::normal`.",
             py::arg("shape"),
             py::arg("mu") = 0.0,
@@ -178,7 +188,7 @@ PYBIND11_MODULE(_prrng, m)
             "weibull",
             py::overload_cast<const std::vector<size_t>&, double, double>(
                 &prrng::GeneratorBase::weibull<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers, distributed according to a weibull distribution. "
+            "ndarray of random numbers, distributed according to a weibull distribution. "
             "See :cpp:func:`prrng::GeneratorBase::weibull`.",
             py::arg("shape"),
             py::arg("k") = 1.0,
@@ -188,7 +198,7 @@ PYBIND11_MODULE(_prrng, m)
             "gamma",
             py::overload_cast<const std::vector<size_t>&, double, double>(
                 &prrng::GeneratorBase::gamma<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers, distributed according to a gamma distribution. "
+            "ndarray of random numbers, distributed according to a gamma distribution. "
             "See :cpp:func:`prrng::GeneratorBase::gamma`.",
             py::arg("shape"),
             py::arg("k") = 1.0,
@@ -268,9 +278,18 @@ PYBIND11_MODULE(_prrng, m)
             "random",
             py::overload_cast<const std::vector<size_t>&>(
                 &prrng::pcg32::random<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers. "
+            "ndarray of random numbers. "
             "See :cpp:func:`prrng::pcg32::random`.",
             py::arg("shape"))
+
+        .def(
+            "randint",
+            py::overload_cast<const std::vector<size_t>&, uint32_t>(
+                &prrng::pcg32::randint<xt::pyarray<uint32_t>, std::vector<size_t>, uint32_t>),
+            "ndarray of random integers. "
+            "See :cpp:func:`prrng::pcg32::randint`.",
+            py::arg("shape"),
+            py::arg("bound"))
 
         .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
@@ -306,16 +325,26 @@ PYBIND11_MODULE(_prrng, m)
             py::overload_cast<const std::vector<size_t>&>(
                 &prrng::GeneratorBase_array<
                     std::vector<size_t>>::random<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers. "
+            "ndarray of random numbers. "
             "See :cpp:func:`prrng::GeneratorBase_array::random`.",
             py::arg("ishape"))
+
+        .def(
+            "randint",
+            py::overload_cast<const std::vector<size_t>&, uint32_t>(
+                &prrng::GeneratorBase_array<std::vector<size_t>>::
+                    randint<xt::pyarray<uint32_t>, std::vector<size_t>, uint32_t>),
+            "ndarray of random integers. "
+            "See :cpp:func:`prrng::GeneratorBase_array::randint`.",
+            py::arg("ishape"),
+            py::arg("bound"))
 
         .def(
             "normal",
             py::overload_cast<const std::vector<size_t>&, double, double>(
                 &prrng::GeneratorBase_array<
                     std::vector<size_t>>::normal<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers, distributed according to a normal distribution. "
+            "ndarray of random numbers, distributed according to a normal distribution. "
             "See :cpp:func:`prrng::GeneratorBase_array::normal`.",
             py::arg("ishape"),
             py::arg("mu") = 0.0,
@@ -326,7 +355,7 @@ PYBIND11_MODULE(_prrng, m)
             py::overload_cast<const std::vector<size_t>&, double, double>(
                 &prrng::GeneratorBase_array<
                     std::vector<size_t>>::weibull<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers, distributed according to a weibull distribution. "
+            "ndarray of random numbers, distributed according to a weibull distribution. "
             "See :cpp:func:`prrng::GeneratorBase_array::weibull`.",
             py::arg("ishape"),
             py::arg("k") = 1.0,
@@ -337,7 +366,7 @@ PYBIND11_MODULE(_prrng, m)
             py::overload_cast<const std::vector<size_t>&, double, double>(
                 &prrng::GeneratorBase_array<
                     std::vector<size_t>>::gamma<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random number numbers, distributed according to a gamma distribution. "
+            "ndarray of random numbers, distributed according to a gamma distribution. "
             "See :cpp:func:`prrng::GeneratorBase_array::gamma`.",
             py::arg("ishape"),
             py::arg("k") = 1.0,

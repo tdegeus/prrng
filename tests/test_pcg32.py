@@ -798,6 +798,18 @@ class Test_pcg32_array(unittest.TestCase):
         self.assertTrue(np.all(gen.distance(regen) == 4 * 5 * np.ones(seed.shape)))
         self.assertTrue(np.all(regen.distance(gen) == -4 * 5 * np.ones(seed.shape)))
 
+    def test_randint(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+
+        a = gen.randint([10, 10], 10)
+        self.assertTrue(np.all(a < 10))
+
+        bound = 1000
+        m = np.mean(gen.randint([100000], bound))
+        self.assertLess((m - (bound - 1)) / (bound - 1), 1e-3)
+
 
 if __name__ == "__main__":
 
