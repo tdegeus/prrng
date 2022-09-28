@@ -180,6 +180,19 @@ struct check_fixed_rank<N, T, typename std::enable_if_t<is_std_array<T>::value>>
 };
 
 /**
+Get value type
+*/
+template <typename R, typename = void>
+struct get_value_type {
+    using type = typename R::value_type;
+};
+
+template <typename R>
+struct get_value_type<R, typename std::enable_if_t<std::is_arithmetic<R>::value>> {
+    using type = R;
+};
+
+/**
 Get default return type
 */
 template <typename R, size_t N>
@@ -399,13 +412,13 @@ public:
     template <class T>
     T quantile(const T& p)
     {
-        static_assert(xt::is_xexpression<T>::value, "T must be an xexpression");
-        using value_type = typename T::value_type;
+        using value_type = typename detail::get_value_type<T>::type;
 
 #if PRRNG_USE_BOOST
         auto f = xt::vectorize(boost::math::erf_inv<value_type>);
         return m_mu + m_sigma_sqrt2 * f(2.0 * p - 1.0);
 #else
+        static_assert(xt::is_xexpression<T>::value, "T must be an xexpression");
         auto ret = p;
         ret.fill(std::numeric_limits<value_type>::quiet_NaN());
         return ret;
