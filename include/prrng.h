@@ -227,6 +227,62 @@ struct composite_return_type<
 };
 
 /**
+Allocate return: scalar or array
+*/
+template <typename R, typename = void>
+struct allocate_return {
+
+    using value_type = typename R::value_type;
+    R value;
+
+    template <class S>
+    allocate_return(const S& shape)
+    {
+        value = xt::empty<typename R::value_type>(shape);
+    }
+
+    typename R::value_type* data()
+    {
+        return &value.front();
+    }
+
+    size_t size() const
+    {
+        return value.size();
+    }
+};
+
+template <typename R>
+struct allocate_return<R, typename std::enable_if_t<std::is_arithmetic<R>::value>> {
+
+    using value_type = R;
+    R value;
+
+    template <class S>
+    allocate_return(const S& shape)
+    {
+#ifdef PRRNG_ENABLE_ASSERT
+        PRRNG_ASSERT(shape.size() <= 1);
+        if (shape.size() == 1) {
+            PRRNG_ASSERT(shape[0] == 1);
+        }
+#else
+        (void)(shape);
+#endif
+    }
+
+    R* data()
+    {
+        return &value;
+    }
+
+    size_t size() const
+    {
+        return 1;
+    }
+};
+
+/**
 Concatenate two objects that have `begin()` and `end()` methods.
 
 \param s First object (e.g. std::vector).
@@ -852,12 +908,12 @@ private:
     R random_impl(const S& shape)
     {
         static_assert(
-            std::is_same<typename R::value_type, double>::value,
+            std::is_same<typename detail::allocate_return<R>::value_type, double>::value,
             "Return value_type must be double");
 
-        R ret = xt::empty<typename R::value_type>(shape);
-        this->draw_list(&ret.front(), ret.size());
-        return ret;
+        detail::allocate_return<R> ret(shape);
+        this->draw_list(ret.data(), ret.size());
+        return ret.value;
     }
 
     template <class R, class S, class T>
