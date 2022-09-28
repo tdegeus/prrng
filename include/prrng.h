@@ -161,14 +161,6 @@ template <class T, size_t N>
 struct is_std_array<std::array<T, N>> : std::true_type {
 };
 
-template <class T>
-struct is_xtensor : std::false_type {
-};
-
-template <class T, size_t N>
-struct is_xtensor<xt::xtensor<T, N>> : std::true_type {
-};
-
 /**
 Check that an object has a certain fixed rank.
 */
@@ -178,7 +170,7 @@ struct check_fixed_rank {
 };
 
 template <size_t N, class T>
-struct check_fixed_rank<N, T, typename std::enable_if_t<is_xtensor<T>::value>> {
+struct check_fixed_rank<N, T, typename std::enable_if_t<xt::get_rank<T>::value != SIZE_MAX>> {
     constexpr static bool value = (N == xt::get_rank<T>::value);
 };
 
