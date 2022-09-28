@@ -84,6 +84,18 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         REQUIRE(xt::all(xt::equal(a, b)));
     }
 
+    SECTION("random - scalar")
+    {
+        prrng::pcg32 generator;
+        std::array<size_t, 0> one = {};
+
+        double a = generator.random<double>(one);
+        generator.advance(-1);
+        auto b = generator.random({1});
+
+        REQUIRE(a == b(0));
+    }
+
     SECTION("random - return type")
     {
         prrng::pcg32 generator;
