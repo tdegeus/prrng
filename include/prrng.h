@@ -2442,6 +2442,8 @@ here to store/restore the state of the entire array of generators.
 */
 class pcg32_array : public pcg32_arrayBase<std::vector<size_t>> {
 public:
+    pcg32_array() = default;
+
     /**
     Constructor.
 
@@ -2496,6 +2498,8 @@ Fixed rank version of pcg32_array
 template <size_t N>
 class pcg32_tensor : public pcg32_arrayBase<std::array<size_t, N>> {
 public:
+    pcg32_tensor() = default;
+
     /**
     Constructor.
 
