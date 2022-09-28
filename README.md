@@ -264,6 +264,21 @@ enabling *xsimd*, ...
 
 ## Change-log
 
+### v1.2.0
+
+#### New features
+
+*   Allow scalar return type where possible
+*   Adding `randint`
+*   Adding `delta` distribution (just to provide a quick API)
+*   [docs] Using default doxygen theme
+
+#### Internal changes
+
+*   Making `normal_distribution::quantile` more robust
+*   Omitting unneeded `is_xtensor`
+*   [tests] Updating catch2 v3
+
 ### v0.6.1
 
 *   Switching to scikit-build, clean-up of CMake (#24)
