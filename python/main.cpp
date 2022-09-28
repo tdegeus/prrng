@@ -172,7 +172,18 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random integers. "
             "See :cpp:func:`prrng::GeneratorBase::randint`.",
             py::arg("shape"),
-            py::arg("bound"))
+            py::arg("high"))
+
+        .def(
+            "randint",
+            py::overload_cast<const std::vector<size_t>&, int32_t, int32_t>(
+                &prrng::GeneratorBase::
+                    randint<xt::pyarray<int32_t>, std::vector<size_t>, int32_t, int32_t>),
+            "ndarray of random integers. "
+            "See :cpp:func:`prrng::GeneratorBase::randint`.",
+            py::arg("shape"),
+            py::arg("low"),
+            py::arg("high"))
 
         .def(
             "normal",
@@ -289,7 +300,18 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random integers. "
             "See :cpp:func:`prrng::pcg32::randint`.",
             py::arg("shape"),
-            py::arg("bound"))
+            py::arg("high"))
+
+        .def(
+            "randint",
+            py::overload_cast<const std::vector<size_t>&, int32_t, int32_t>(
+                &prrng::pcg32::
+                    randint<xt::pyarray<int32_t>, std::vector<size_t>, int32_t, int32_t>),
+            "ndarray of random integers. "
+            "See :cpp:func:`prrng::pcg32::randint`.",
+            py::arg("shape"),
+            py::arg("low"),
+            py::arg("high"))
 
         .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
@@ -337,7 +359,18 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random integers. "
             "See :cpp:func:`prrng::GeneratorBase_array::randint`.",
             py::arg("ishape"),
-            py::arg("bound"))
+            py::arg("high"))
+
+        .def(
+            "randint",
+            py::overload_cast<const std::vector<size_t>&, int32_t, int32_t>(
+                &prrng::GeneratorBase_array<std::vector<size_t>>::
+                    randint<xt::pyarray<int32_t>, std::vector<size_t>, int32_t, int32_t>),
+            "ndarray of random integers. "
+            "See :cpp:func:`prrng::GeneratorBase_array::randint`.",
+            py::arg("ishape"),
+            py::arg("low"),
+            py::arg("high"))
 
         .def(
             "normal",

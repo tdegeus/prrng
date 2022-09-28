@@ -245,11 +245,25 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     {
         prrng::pcg32 gen;
 
-        uint32_t bound = 1000;
-        auto a = gen.randint({1000000}, bound);
+        uint32_t high = 1000;
+        auto a = gen.randint({1000000}, high);
         double m = xt::mean(xt::cast<double>(a))();
-        double c = 0.5 * static_cast<double>(bound - 1);
-        REQUIRE(xt::all(a < 1000));
+        double c = 0.5 * static_cast<double>(high - 1);
+        REQUIRE(xt::all(a < high));
+        REQUIRE(std::abs((m - c) / c) < 1e-3);
+    }
+
+    SECTION("randint - mean - low")
+    {
+        prrng::pcg32 gen;
+
+        uint32_t low = 500;
+        uint32_t high = 1000;
+        auto a = gen.randint({1000000}, low, high);
+        double m = xt::mean(xt::cast<double>(a))();
+        double c = 0.5 * (static_cast<double>(low) + static_cast<double>(high - 1));
+        REQUIRE(xt::all(a >= low));
+        REQUIRE(xt::all(a < high));
         REQUIRE(std::abs((m - c) / c) < 1e-3);
     }
 

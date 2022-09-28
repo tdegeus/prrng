@@ -806,9 +806,20 @@ class Test_pcg32_array(unittest.TestCase):
         a = gen.randint([10, 10], 10)
         self.assertTrue(np.all(a < 10))
 
-        bound = 1000
-        m = np.mean(gen.randint([100000], bound))
-        self.assertLess((m - (bound - 1)) / (bound - 1), 1e-3)
+        high = 1000
+        a = gen.randint([100000], high)
+        m = np.mean(a)
+        self.assertTrue(np.all(a < high))
+        self.assertLess((m - (high - 1)) / (high - 1), 1e-3)
+
+        low = 500
+        high = 1000
+        a = gen.randint([100000], low, high)
+        m = np.mean(a)
+        c = 0.5 * (high - 1 + low)
+        self.assertTrue(np.all(a >= low))
+        self.assertTrue(np.all(a < high))
+        self.assertLess((m - c) / c, 1e-3)
 
 
 if __name__ == "__main__":
