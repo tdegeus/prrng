@@ -399,6 +399,7 @@ public:
     template <class T>
     T quantile(const T& p)
     {
+        static_assert(xt::is_xexpression<T>::value, "T must be an xexpression");
         using value_type = typename T::value_type;
 
 #if PRRNG_USE_BOOST
