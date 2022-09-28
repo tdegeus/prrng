@@ -87,11 +87,21 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     SECTION("random - scalar")
     {
         prrng::pcg32 generator;
-        std::array<size_t, 0> one = {};
+        auto a = generator.random<double>(std::array<size_t, 0>{});
 
-        double a = generator.random<double>(one);
         generator.advance(-1);
         auto b = generator.random({1});
+
+        REQUIRE(a == b(0));
+    }
+
+    SECTION("randint - scalar")
+    {
+        prrng::pcg32 generator;
+        auto a = generator.randint<uint32_t>(std::array<size_t, 0>{}, 10);
+
+        generator.advance(-1);
+        auto b = generator.randint({1}, 10);
 
         REQUIRE(a == b(0));
     }
