@@ -649,14 +649,14 @@ public:
     Generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
 
     \param shape The shape of the nd-array.
-    \param bound The upper bound of the random integers.
+    \param high The upper bound of the random integers.
     \return The sample of shape `shape`.
     */
     template <class S, typename T>
-    auto randint(const S& shape, T bound) -> typename detail::return_type<uint32_t, S>::type
+    auto randint(const S& shape, T high) -> typename detail::return_type<uint32_t, S>::type
     {
         using R = typename detail::return_type<uint32_t, S>::type;
-        return this->randint_impl<R>(shape, bound);
+        return this->randint_impl<R>(shape, high);
     }
 
     /**
@@ -664,20 +664,20 @@ public:
     \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class S, typename T>
-    R randint(const S& shape, T bound)
+    R randint(const S& shape, T high)
     {
-        return this->randint_impl<R>(shape, bound);
+        return this->randint_impl<R>(shape, high);
     }
 
     /**
     \copydoc randint(const S&)
     */
     template <class I, std::size_t L, typename T>
-    auto randint(const I (&shape)[L], T bound) ->
+    auto randint(const I (&shape)[L], T high) ->
         typename detail::return_type_fixed<uint32_t, L>::type
     {
         using R = typename detail::return_type_fixed<uint32_t, L>::type;
-        return this->randint_impl<R>(shape, bound);
+        return this->randint_impl<R>(shape, high);
     }
 
     /**
@@ -685,9 +685,55 @@ public:
     \tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
     */
     template <class R, class I, std::size_t L, typename T>
-    R randint(const I (&shape)[L], T bound)
+    R randint(const I (&shape)[L], T high)
     {
-        return this->randint_impl<R>(shape, bound);
+        return this->randint_impl<R>(shape, high);
+    }
+
+    /**
+    Generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+
+    \param shape The shape of the nd-array.
+    \param low The lower bound of the random integers.
+    \param high The upper bound of the random integers.
+    \return The sample of shape `shape`.
+    */
+    template <class S, typename T, typename U>
+    auto randint(const S& shape, T low, U high) -> typename detail::return_type<uint32_t, S>::type
+    {
+        using R = typename detail::return_type<uint32_t, S>::type;
+        return this->randint_impl<R>(shape, low, high);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S, typename T, typename U>
+    R randint(const S& shape, T low, U high)
+    {
+        return this->randint_impl<R>(shape, low, high);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    */
+    template <class I, std::size_t L, typename T, typename U>
+    auto randint(const I (&shape)[L], T low, U high) ->
+        typename detail::return_type_fixed<uint32_t, L>::type
+    {
+        using R = typename detail::return_type_fixed<uint32_t, L>::type;
+        return this->randint_impl<R>(shape, low, high);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    \tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
+    */
+    template <class R, class I, std::size_t L, typename T, typename U>
+    R randint(const I (&shape)[L], T low, U high)
+    {
+        return this->randint_impl<R>(shape, low, high);
     }
 
     /**
@@ -908,8 +954,8 @@ private:
         return ret.value;
     }
 
-    template <class R, class S, class T>
-    R randint_impl(const S& shape, T bound)
+    template <class R, class S, typename T>
+    R randint_impl(const S& shape, T high)
     {
         static_assert(
             std::numeric_limits<typename detail::allocate_return<R>::value_type>::max() >=
@@ -922,9 +968,43 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(bound), ret.size());
+        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), ret.size());
         std::copy(tmp.begin(), tmp.end(), ret.data());
         return ret.value;
+    }
+
+    template <class R, class S, typename T, typename U>
+    R randint_impl(const S& shape, T low, U high)
+    {
+        static_assert(
+            std::numeric_limits<typename detail::allocate_return<R>::value_type>::min() >=
+                std::numeric_limits<T>::min(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<typename detail::allocate_return<R>::value_type>::max() >=
+                std::numeric_limits<T>::max(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<typename detail::allocate_return<R>::value_type>::min() >=
+                std::numeric_limits<U>::min(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<typename detail::allocate_return<R>::value_type>::max() >=
+                std::numeric_limits<U>::max(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
+            "Bound too large");
+
+        detail::allocate_return<R> ret(shape);
+        std::vector<uint32_t> tmp(ret.size());
+        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), ret.size());
+        std::copy(tmp.begin(), tmp.end(), ret.data());
+        return ret.value + low;
     }
 
     template <class R, class S>
@@ -1599,15 +1679,15 @@ public:
     Per generator, generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
 
     \param ishape The shape of the nd-array drawn per generator.
-    \param bound The upper bound of the interval.
+    \param high The upper bound of the interval.
     \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class S, typename T>
-    auto randint(const S& ishape, T bound) ->
+    auto randint(const S& ishape, T high) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
-        return this->randint_impl<R>(ishape, bound);
+        return this->randint_impl<R>(ishape, high);
     }
 
     /**
@@ -1615,20 +1695,20 @@ public:
     \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class S, typename T>
-    R randint(const S& ishape, T bound)
+    R randint(const S& ishape, T high)
     {
-        return this->randint_impl<R>(ishape, bound);
+        return this->randint_impl<R>(ishape, high);
     }
 
     /**
     \copydoc randint(const S&)
     */
     template <class I, std::size_t L, typename T>
-    auto randint(const I (&ishape)[L], T bound) ->
+    auto randint(const I (&ishape)[L], T high) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
-        return this->randint_impl<R>(detail::to_array(ishape), bound);
+        return this->randint_impl<R>(detail::to_array(ishape), high);
     }
 
     /**
@@ -1636,9 +1716,56 @@ public:
     \tparam R return type, e.g. `xt::xtensor<double, 1>`
     */
     template <class R, class I, std::size_t L, typename T>
-    R randint(const I (&ishape)[L], T bound)
+    R randint(const I (&ishape)[L], T high)
     {
-        return this->randint_impl<R>(detail::to_array(ishape), bound);
+        return this->randint_impl<R>(detail::to_array(ishape), high);
+    }
+
+    /**
+    Per generator, generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+
+    \param ishape The shape of the nd-array drawn per generator.
+    \param low The lower bound of the interval.
+    \param high The upper bound of the interval.
+    \return The array of arrays of samples: [#shape, `ishape`]
+    */
+    template <class S, typename T, typename U>
+    auto randint(const S& ishape, T low, U high) ->
+        typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->randint_impl<R>(ishape, low, high);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class S, typename T, typename U>
+    R randint(const S& ishape, T low, U high)
+    {
+        return this->randint_impl<R>(ishape, low, high);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    */
+    template <class I, std::size_t L, typename T, typename U>
+    auto randint(const I (&ishape)[L], T low, U high) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->randint_impl<R>(detail::to_array(ishape), low, high);
+    }
+
+    /**
+    \copydoc randint(const S&)
+    \tparam R return type, e.g. `xt::xtensor<double, 1>`
+    */
+    template <class R, class I, std::size_t L, typename T, typename U>
+    R randint(const I (&ishape)[L], T low, U high)
+    {
+        return this->randint_impl<R>(detail::to_array(ishape), low, high);
     }
 
     /**
@@ -1864,8 +1991,8 @@ private:
         return ret;
     }
 
-    template <class R, class S, class T>
-    R randint_impl(const S& ishape, T bound)
+    template <class R, class S, typename T>
+    R randint_impl(const S& ishape, T high)
     {
         static_assert(
             std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<T>::max(),
@@ -1878,9 +2005,40 @@ private:
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
         std::vector<uint32_t> tmp(ret.size());
-        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(bound), n);
+        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), n);
         std::copy(tmp.begin(), tmp.end(), ret.begin());
         return ret;
+    }
+
+    template <class R, class S, typename T, typename U>
+    R randint_impl(const S& ishape, T low, U high)
+    {
+        static_assert(
+            std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<T>::max(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<typename R::value_type>::min() >= std::numeric_limits<T>::min(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<U>::max(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<typename R::value_type>::min() >= std::numeric_limits<U>::min(),
+            "Return value_type must must be able to accommodate the bound");
+
+        static_assert(
+            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
+            "Bound too large");
+
+        auto n = detail::size(ishape);
+        R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
+        std::vector<uint32_t> tmp(ret.size());
+        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), n);
+        std::copy(tmp.begin(), tmp.end(), ret.begin());
+        return ret + low;
     }
 
     template <class R, class S>
