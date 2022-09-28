@@ -912,18 +912,19 @@ private:
     R randint_impl(const S& shape, T bound)
     {
         static_assert(
-            std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<T>::max(),
+            std::numeric_limits<typename detail::allocate_return<R>::value_type>::max() >=
+                std::numeric_limits<T>::max(),
             "Return value_type must must be able to accommodate the bound");
 
         static_assert(
             std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
             "Bound too large");
 
-        R ret = xt::empty<typename R::value_type>(shape);
+        detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
         this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(bound), ret.size());
-        std::copy(tmp.begin(), tmp.end(), ret.begin());
-        return ret;
+        std::copy(tmp.begin(), tmp.end(), ret.data());
+        return ret.value;
     }
 
     template <class R, class S>
