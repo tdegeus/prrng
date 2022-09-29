@@ -667,9 +667,9 @@ public:
     \return The sample of shape `shape`.
     */
     template <class S, typename T>
-    auto randint(const S& shape, T high) -> typename detail::return_type<uint32_t, S>::type
+    auto randint(const S& shape, T high) -> typename detail::return_type<T, S>::type
     {
-        using R = typename detail::return_type<uint32_t, S>::type;
+        using R = typename detail::return_type<T, S>::type;
         return this->randint_impl<R>(shape, high);
     }
 
@@ -687,10 +687,9 @@ public:
     \copydoc randint(const S&)
     */
     template <class I, std::size_t L, typename T>
-    auto randint(const I (&shape)[L], T high) ->
-        typename detail::return_type_fixed<uint32_t, L>::type
+    auto randint(const I (&shape)[L], T high) -> typename detail::return_type_fixed<T, L>::type
     {
-        using R = typename detail::return_type_fixed<uint32_t, L>::type;
+        using R = typename detail::return_type_fixed<T, L>::type;
         return this->randint_impl<R>(shape, high);
     }
 
@@ -713,9 +712,9 @@ public:
     \return The sample of shape `shape`.
     */
     template <class S, typename T, typename U>
-    auto randint(const S& shape, T low, U high) -> typename detail::return_type<uint32_t, S>::type
+    auto randint(const S& shape, T low, U high) -> typename detail::return_type<T, S>::type
     {
-        using R = typename detail::return_type<uint32_t, S>::type;
+        using R = typename detail::return_type<T, S>::type;
         return this->randint_impl<R>(shape, low, high);
     }
 
@@ -734,9 +733,9 @@ public:
     */
     template <class I, std::size_t L, typename T, typename U>
     auto randint(const I (&shape)[L], T low, U high) ->
-        typename detail::return_type_fixed<uint32_t, L>::type
+        typename detail::return_type_fixed<T, L>::type
     {
-        using R = typename detail::return_type_fixed<uint32_t, L>::type;
+        using R = typename detail::return_type_fixed<T, L>::type;
         return this->randint_impl<R>(shape, low, high);
     }
 
@@ -1697,10 +1696,9 @@ public:
     \return The array of arrays of samples: [#shape, `ishape`]
     */
     template <class S, typename T>
-    auto randint(const S& ishape, T high) ->
-        typename detail::composite_return_type<double, M, S>::type
+    auto randint(const S& ishape, T high) -> typename detail::composite_return_type<T, M, S>::type
     {
-        using R = typename detail::composite_return_type<double, M, S>::type;
+        using R = typename detail::composite_return_type<T, M, S>::type;
         return this->randint_impl<R>(ishape, high);
     }
 
@@ -1719,9 +1717,9 @@ public:
     */
     template <class I, std::size_t L, typename T>
     auto randint(const I (&ishape)[L], T high) ->
-        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+        typename detail::composite_return_type<T, M, std::array<size_t, L>>::type
     {
-        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        using R = typename detail::composite_return_type<T, M, std::array<size_t, L>>::type;
         return this->randint_impl<R>(detail::to_array(ishape), high);
     }
 
@@ -1745,9 +1743,9 @@ public:
     */
     template <class S, typename T, typename U>
     auto randint(const S& ishape, T low, U high) ->
-        typename detail::composite_return_type<double, M, S>::type
+        typename detail::composite_return_type<T, M, S>::type
     {
-        using R = typename detail::composite_return_type<double, M, S>::type;
+        using R = typename detail::composite_return_type<T, M, S>::type;
         return this->randint_impl<R>(ishape, low, high);
     }
 
@@ -1766,9 +1764,9 @@ public:
     */
     template <class I, std::size_t L, typename T, typename U>
     auto randint(const I (&ishape)[L], T low, U high) ->
-        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+        typename detail::composite_return_type<T, M, std::array<size_t, L>>::type
     {
-        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        using R = typename detail::composite_return_type<T, M, std::array<size_t, L>>::type;
         return this->randint_impl<R>(detail::to_array(ishape), low, high);
     }
 
