@@ -98,10 +98,10 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     SECTION("randint - scalar")
     {
         prrng::pcg32 generator;
-        auto a = generator.randint<uint32_t>(std::array<size_t, 0>{}, 10);
+        auto a = generator.randint<int>(std::array<size_t, 0>{}, 10);
 
         generator.advance(-1);
-        auto b = generator.randint({1}, 10);
+        auto b = generator.randint({1}, (int)10);
 
         REQUIRE(a == b(0));
     }
