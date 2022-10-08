@@ -426,6 +426,19 @@ public:
     }
 
 private:
+    friend class GeneratorBase;
+
+    template <class T>
+    void apply_quantile(T* p)
+    {
+#if PRRNG_USE_BOOST
+        *p = m_mu + m_sigma_sqrt2 * boost::math::erf_inv<T>(2.0 * (*p) - 1.0);
+#else
+        *p = std::numeric_limits<T>::quiet_NaN();
+#endif
+    }
+
+private:
     double m_mu;
     double m_sigma;
     double m_sigma_sqrt2;
@@ -505,6 +518,15 @@ public:
     }
 
 private:
+    friend class GeneratorBase;
+
+    template <class T>
+    void apply_quantile(T* p)
+    {
+        *p = m_scale * std::pow(-std::log(1 - (*p)), 1.0 / m_shape);
+    }
+
+private:
     double m_shape;
     double m_scale;
 };
@@ -525,7 +547,7 @@ public:
     \param k Shape parameter.
     \param theta Scale parameter.
     */
-    gamma_distribution(double k, double theta)
+    gamma_distribution(double k = 1.0, double theta = 1.0)
     {
         m_shape = k;
         m_scale = theta;
@@ -602,6 +624,19 @@ public:
     }
 
 private:
+    friend class GeneratorBase;
+
+    template <class T>
+    void apply_quantile(T* p)
+    {
+#if PRRNG_USE_BOOST
+        *p = m_scale * boost::math::gamma_p_inv<T, T>(m_shape, *p);
+#else
+        *p = std::numeric_limits<value_type>::quiet_NaN();
+#endif
+    }
+
+private:
     double m_shape;
     double m_scale;
 };
@@ -615,6 +650,80 @@ public:
     GeneratorBase() = default;
 
     virtual ~GeneratorBase() = default;
+
+    /**
+     * @brief Result of the cumulative sum of `n` random numbers.
+     * @param n Number of steps.
+     * @return Cumulative sum.
+     */
+    double cumsum_random(size_t n)
+    {
+        double ret = 0.0;
+        for (size_t i = 0; i < n; ++i) {
+            ret += draw_double();
+        }
+        return ret;
+    }
+
+    /**
+     * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
+     * normal distribution, see normal_distribution(),
+     * @param n Number of steps.
+     * @param mu Mean of the normal distribution.
+     * @param sigma Standard deviation of the normal distribution.
+     * @return Cumulative sum.
+     */
+    double cumsum_normal(size_t n, double mu = 0.0, double sigma = 1.0)
+    {
+        double ret = 0.0;
+        auto tranform = normal_distribution(mu, sigma);
+        for (size_t i = 0; i < n; ++i) {
+            auto r = draw_double();
+            tranform.apply_quantile(&r);
+            ret += r;
+        }
+        return ret;
+    }
+
+    /**
+     * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
+     * weibull distribution, see weibull_distribution(),
+     * @param n Number of steps.
+     * @param k Shape parameter.
+     * @param lambda Scale parameter.
+     * @return Cumulative sum.
+     */
+    double cumsum_weibull(size_t n, double k = 1.0, double lambda = 1.0)
+    {
+        double ret = 0.0;
+        auto tranform = weibull_distribution(k, lambda);
+        for (size_t i = 0; i < n; ++i) {
+            auto r = draw_double();
+            tranform.apply_quantile(&r);
+            ret += r;
+        }
+        return ret;
+    }
+
+    /**
+     * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
+     * gamma distribution, see gamma_distribution(),
+     * @param n Number of steps.
+     * @param k Shape parameter.
+     * @param theta Scale parameter.
+     * @return Cumulative sum.
+     */
+    double cumsum_gamma(size_t n, double k = 1.0, double theta = 1.0)
+    {
+        double ret = 0.0;
+        auto tranform = gamma_distribution(k, theta);
+        for (size_t i = 0; i < n; ++i) {
+            auto r = draw_double();
+            tranform.apply_quantile(&r);
+            ret += r;
+        }
+        return ret;
+    }
 
     /**
     Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
@@ -1048,6 +1157,15 @@ private:
     }
 
 protected:
+    /**
+     * @brief Draw one random double.
+     * @return double
+     */
+    virtual double draw_double()
+    {
+        return 0.5;
+    }
+
     /**
     Draw `n` random numbers and write them to list (input as pointer `data`).
 
@@ -1527,6 +1645,11 @@ public:
     }
 
 protected:
+    double draw_double() override
+    {
+        return next_double();
+    }
+
     void draw_list(double* data, size_t n) override
     {
         for (size_t i = 0; i < n; ++i) {
@@ -2353,6 +2476,147 @@ public:
         for (size_t i = 0; i < m_size; ++i) {
             m_gen[i].restore(arg.flat(i));
         }
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers.
+     * @param n Number of steps.
+     * @return Cumulative sum.
+     */
+    template <class T>
+    auto cumsum_random(size_t n) -> typename detail::return_type<double, M>::type
+    {
+        using R = typename detail::return_type<double, M>::type;
+        return this->cumsum_random<R, T>(n);
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers.
+     * @param n Number of steps.
+     * @return Cumulative sum.
+     */
+    template <class R, class T>
+    R cumsum_random(size_t n)
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_shape);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            ret.flat(i) = m_gen[i].cumsum_random(n);
+        }
+
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a normal distribution, see normal_distribution(),
+     * @param n Number of steps.
+     * @param mu Mean of the normal distribution.
+     * @param sigma Standard deviation of the normal distribution.
+     * @return Cumulative sum.
+     */
+    template <class T>
+    auto cumsum_normal(size_t n, double mu = 0.0, double sigma = 1.0) ->
+        typename detail::return_type<double, M>::type
+    {
+        using R = typename detail::return_type<double, M>::type;
+        return this->cumsum_normal<R, T>(n, mu, sigma);
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a normal distribution, see normal_distribution(),
+     * @param n Number of steps.
+     * @param mu Mean of the normal distribution.
+     * @param sigma Standard deviation of the normal distribution.
+     * @return Cumulative sum.
+     */
+    template <class R, class T>
+    R cumsum_normal(size_t n, double mu = 0.0, double sigma = 1.0)
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_shape);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            ret.flat(i) = m_gen[i].cumsum_normal(n, mu, sigma);
+        }
+
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a normal distribution, see weibull_distribution(),
+     * @param n Number of steps.
+     * @param k Shape parameter.
+     * @param lambda Scale parameter.
+     * @return Cumulative sum.
+     */
+    template <class T>
+    auto cumsum_weibull(size_t n, double k = 1.0, double lambda = 1.0) ->
+        typename detail::return_type<double, M>::type
+    {
+        using R = typename detail::return_type<double, M>::type;
+        return this->cumsum_weibull<R, T>(n, k, lambda);
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a weibull distribution, see weibull_distribution(),
+     * @param n Number of steps.
+     * @param k Shape parameter.
+     * @param lambda Scale parameter.
+     * @return Cumulative sum.
+     */
+    template <class R, class T>
+    R cumsum_weibull(size_t n, double k = 1.0, double lambda = 1.0)
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_shape);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            ret.flat(i) = m_gen[i].cumsum_weibull(n, k, lambda);
+        }
+
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a normal distribution, see gamma_distribution(),
+     * @param n Number of steps.
+     * @param k Shape parameter.
+     * @param theta Scale parameter.
+     * @return Cumulative sum.
+     */
+    template <class T>
+    auto cumsum_gamma(size_t n, double k = 1.0, double theta = 1.0) ->
+        typename detail::return_type<double, M>::type
+    {
+        using R = typename detail::return_type<double, M>::type;
+        return this->cumsum_gamma<R, T>(n, k, theta);
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a gamma distribution, see gamma_distribution(),
+     * @param n Number of steps.
+     * @param k Shape parameter.
+     * @param theta Scale parameter.
+     * @return Cumulative sum.
+     */
+    template <class R, class T>
+    R cumsum_gamma(size_t n, double k = 1.0, double theta = 1.0)
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_shape);
+
+        for (size_t i = 0; i < m_size; ++i) {
+            ret.flat(i) = m_gen[i].cumsum_gamma(n, k, theta);
+        }
+
+        return ret;
     }
 
 protected:

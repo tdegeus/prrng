@@ -21,7 +21,6 @@ class Test_pcg32_basic(unittest.TestCase):
     def test_restore(self):
 
         seed = int(time.time())
-
         gen = prrng.pcg32(seed)
         gen.random([123])
 
@@ -32,6 +31,129 @@ class Test_pcg32_basic(unittest.TestCase):
         b = gen.random([100])
 
         self.assertTrue(np.allclose(a, b))
+
+    def test_pcg32_cumsum_random(self):
+
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+
+        gen.restore(state)
+        a = np.cumsum(gen.random([n]))
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.random([n]))
+
+        gen.restore(state)
+        b = gen.cumsum_random(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_random(n)
+
+        self.assertAlmostEqual(a[-1], b)
+        self.assertAlmostEqual(aprime[-1], bprime)
+
+    def test_pcg32_cumsum_normal(self):
+
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+        mu = 1.2
+        sigma = 0.3
+
+        gen.restore(state)
+        a = np.cumsum(gen.normal([n]))
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.normal([n]))
+
+        gen.restore(state)
+        acustom = np.cumsum(offset + mean * gen.normal([n], mu, sigma))
+
+        gen.restore(state)
+        b = gen.cumsum_normal(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_normal(n)
+
+        gen.restore(state)
+        bcustom = offset * n + mean * gen.cumsum_normal(n, mu, sigma)
+
+        self.assertAlmostEqual(a[-1], b)
+        self.assertAlmostEqual(aprime[-1], bprime)
+        self.assertAlmostEqual(acustom[-1], bcustom)
+
+    def test_pcg32_cumsum_weibull(self):
+
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+        lam = 1.2
+        k = 0.3
+
+        gen.restore(state)
+        a = np.cumsum(gen.weibull([n]))
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.weibull([n]))
+
+        gen.restore(state)
+        acustom = np.cumsum(offset + mean * gen.weibull([n], lam, k))
+
+        gen.restore(state)
+        b = gen.cumsum_weibull(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_weibull(n)
+
+        gen.restore(state)
+        bcustom = offset * n + mean * gen.cumsum_weibull(n, lam, k)
+
+        self.assertAlmostEqual(a[-1], b)
+        self.assertAlmostEqual(aprime[-1], bprime)
+        self.assertAlmostEqual(acustom[-1], bcustom)
+
+    def test_pcg32_cumsum_gamma(self):
+
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+        k = 1.2
+        theta = 0.3
+
+        gen.restore(state)
+        a = np.cumsum(gen.gamma([n]))
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.gamma([n]))
+
+        gen.restore(state)
+        acustom = np.cumsum(offset + mean * gen.gamma([n], k, theta))
+
+        gen.restore(state)
+        b = gen.cumsum_gamma(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_gamma(n)
+
+        gen.restore(state)
+        bcustom = offset * n + mean * gen.cumsum_gamma(n, k, theta)
+
+        self.assertAlmostEqual(a[-1], b)
+        self.assertAlmostEqual(aprime[-1], bprime)
+        self.assertAlmostEqual(acustom[-1], bcustom)
 
 
 class Test_pcg32_random(unittest.TestCase):
@@ -820,6 +942,129 @@ class Test_pcg32_array(unittest.TestCase):
         self.assertTrue(np.all(a >= low))
         self.assertTrue(np.all(a < high))
         self.assertLess((m - c) / c, 1e-3)
+
+    def test_cumsum_random(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+
+        gen.restore(state)
+        a = np.cumsum(gen.random([n]), axis=-1)
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.random([n]), axis=-1)
+
+        gen.restore(state)
+        b = gen.cumsum_random(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_random(n)
+
+        self.assertTrue(np.allclose(a[..., -1], b))
+        self.assertTrue(np.allclose(aprime[..., -1], bprime))
+
+    def test_cumsum_normal(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+        mu = 1.2
+        sigma = 0.5
+
+        gen.restore(state)
+        a = np.cumsum(gen.normal([n]), axis=-1)
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.normal([n]), axis=-1)
+
+        gen.restore(state)
+        acustom = np.cumsum(offset + mean * gen.normal([n], mu, sigma), axis=-1)
+
+        gen.restore(state)
+        b = gen.cumsum_normal(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_normal(n)
+
+        gen.restore(state)
+        bcustom = offset * n + mean * gen.cumsum_normal(n, mu, sigma)
+
+        self.assertTrue(np.allclose(a[..., -1], b))
+        self.assertTrue(np.allclose(aprime[..., -1], bprime))
+        self.assertTrue(np.allclose(acustom[..., -1], bcustom))
+
+    def test_cumsum_weibull(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+        k = 1.2
+        lam = 0.5
+
+        gen.restore(state)
+        a = np.cumsum(gen.weibull([n]), axis=-1)
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.weibull([n]), axis=-1)
+
+        gen.restore(state)
+        acustom = np.cumsum(offset + mean * gen.weibull([n], k, lam), axis=-1)
+
+        gen.restore(state)
+        b = gen.cumsum_weibull(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_weibull(n)
+
+        gen.restore(state)
+        bcustom = offset * n + mean * gen.cumsum_weibull(n, k, lam)
+
+        self.assertTrue(np.allclose(a[..., -1], b))
+        self.assertTrue(np.allclose(aprime[..., -1], bprime))
+        self.assertTrue(np.allclose(acustom[..., -1], bcustom))
+
+    def test_cumsum_gamma(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+        k = 1.2
+        theta = 0.5
+
+        gen.restore(state)
+        a = np.cumsum(gen.gamma([n]), axis=-1)
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.gamma([n]), axis=-1)
+
+        gen.restore(state)
+        acustom = np.cumsum(offset + mean * gen.gamma([n], k, theta), axis=-1)
+
+        gen.restore(state)
+        b = gen.cumsum_gamma(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_gamma(n)
+
+        gen.restore(state)
+        bcustom = offset * n + mean * gen.cumsum_gamma(n, k, theta)
+
+        self.assertTrue(np.allclose(a[..., -1], b))
+        self.assertTrue(np.allclose(aprime[..., -1], bprime))
+        self.assertTrue(np.allclose(acustom[..., -1], bcustom))
 
 
 if __name__ == "__main__":
