@@ -157,6 +157,40 @@ PYBIND11_MODULE(_prrng, m)
             "See :cpp:class:`prrng::GeneratorBase`.")
 
         .def(
+            "cumsum_random",
+            &prrng::GeneratorBase::cumsum_random,
+            "The result of the cumsum of `n` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase::cumsum_random`.",
+            py::arg("n"))
+
+        .def(
+            "cumsum_normal",
+            &prrng::GeneratorBase::cumsum_normal,
+            "The result of the cumsum of `n` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase::cumsum_normal`.",
+            py::arg("n"),
+            py::arg("mu") = 0.0,
+            py::arg("sigma") = 1.0)
+
+        .def(
+            "cumsum_weibull",
+            &prrng::GeneratorBase::cumsum_weibull,
+            "The result of the cumsum of `n` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase::cumsum_weibull`.",
+            py::arg("n"),
+            py::arg("k") = 1.0,
+            py::arg("l") = 1.0)
+
+        .def(
+            "cumsum_gamma",
+            &prrng::GeneratorBase::cumsum_gamma,
+            "The result of the cumsum of `n` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase::cumsum_gamma`.",
+            py::arg("n"),
+            py::arg("k") = 1.0,
+            py::arg("theta") = 1.0)
+
+        .def(
             "random",
             py::overload_cast<const std::vector<size_t>&>(
                 &prrng::GeneratorBase::random<xt::pyarray<double>, std::vector<size_t>>),
@@ -496,6 +530,44 @@ PYBIND11_MODULE(_prrng, m)
             "Restore state. "
             "See :cpp:func:`prrng::pcg32_arrayBase::restore`.",
             py::arg("state"))
+
+        .def(
+            "cumsum_random",
+            &prrng::pcg32_arrayBase<
+                std::vector<size_t>>::cumsum_random<xt::pyarray<double>, xt::pyarray<size_t>>,
+            "Cumsum of ``n`` random numbers. "
+            "See :cpp:func:`prrng::pcg32_arrayBase::cumsum_random`.",
+            py::arg("n"))
+
+        .def(
+            "cumsum_normal",
+            &prrng::pcg32_arrayBase<
+                std::vector<size_t>>::cumsum_normal<xt::pyarray<double>, xt::pyarray<size_t>>,
+            "Cumsum of ``n`` random numbers. "
+            "See :cpp:func:`prrng::pcg32_arrayBase::cumsum_normal`.",
+            py::arg("n"),
+            py::arg("mu") = 0.0,
+            py::arg("sigma") = 1.0)
+
+        .def(
+            "cumsum_weibull",
+            &prrng::pcg32_arrayBase<
+                std::vector<size_t>>::cumsum_weibull<xt::pyarray<double>, xt::pyarray<size_t>>,
+            "Cumsum of ``n`` random numbers. "
+            "See :cpp:func:`prrng::pcg32_arrayBase::cumsum_weibull`.",
+            py::arg("n"),
+            py::arg("k") = 1.0,
+            py::arg("l") = 1.0)
+
+        .def(
+            "cumsum_gamma",
+            &prrng::pcg32_arrayBase<
+                std::vector<size_t>>::cumsum_gamma<xt::pyarray<double>, xt::pyarray<size_t>>,
+            "Cumsum of ``n`` random numbers. "
+            "See :cpp:func:`prrng::pcg32_arrayBase::cumsum_gamma`.",
+            py::arg("n"),
+            py::arg("k") = 1.0,
+            py::arg("theta") = 1.0)
 
         .def("__repr__", [](const prrng::pcg32_arrayBase<std::vector<size_t>>&) {
             return "<prrng.pcg32_arrayBase>";
