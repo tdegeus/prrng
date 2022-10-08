@@ -533,14 +533,16 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             "cumsum_random",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::cumsum_random<xt::pyarray<double>>,
+            &prrng::pcg32_arrayBase<
+                std::vector<size_t>>::cumsum_random<xt::pyarray<double>, xt::pyarray<size_t>>,
             "Cumsum of ``n`` random numbers. "
             "See :cpp:func:`prrng::pcg32_arrayBase::cumsum_random`.",
             py::arg("n"))
 
         .def(
             "cumsum_normal",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::cumsum_normal<xt::pyarray<double>>,
+            &prrng::pcg32_arrayBase<
+                std::vector<size_t>>::cumsum_normal<xt::pyarray<double>, xt::pyarray<size_t>>,
             "Cumsum of ``n`` random numbers. "
             "See :cpp:func:`prrng::pcg32_arrayBase::cumsum_normal`.",
             py::arg("n"),
@@ -549,7 +551,8 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             "cumsum_weibull",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::cumsum_weibull<xt::pyarray<double>>,
+            &prrng::pcg32_arrayBase<
+                std::vector<size_t>>::cumsum_weibull<xt::pyarray<double>, xt::pyarray<size_t>>,
             "Cumsum of ``n`` random numbers. "
             "See :cpp:func:`prrng::pcg32_arrayBase::cumsum_weibull`.",
             py::arg("n"),
@@ -558,7 +561,8 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             "cumsum_gamma",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::cumsum_gamma<xt::pyarray<double>>,
+            &prrng::pcg32_arrayBase<
+                std::vector<size_t>>::cumsum_gamma<xt::pyarray<double>, xt::pyarray<size_t>>,
             "Cumsum of ``n`` random numbers. "
             "See :cpp:func:`prrng::pcg32_arrayBase::cumsum_gamma`.",
             py::arg("n"),

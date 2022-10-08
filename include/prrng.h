@@ -2484,7 +2484,7 @@ public:
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_random(size_t n) -> typename detail::return_type<double, M>::type
+    auto cumsum_random(const T& n) -> typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
         return this->cumsum_random<R, T>(n);
@@ -2496,13 +2496,13 @@ public:
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_random(size_t n)
+    R cumsum_random(const T& n)
     {
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
-            ret.flat(i) = m_gen[i].cumsum_random(n);
+            ret.flat(i) = m_gen[i].cumsum_random(n.flat(i));
         }
 
         return ret;
@@ -2517,7 +2517,7 @@ public:
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_normal(size_t n, double mu = 0.0, double sigma = 1.0) ->
+    auto cumsum_normal(const T& n, double mu = 0.0, double sigma = 1.0) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
@@ -2533,13 +2533,14 @@ public:
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_normal(size_t n, double mu = 0.0, double sigma = 1.0)
+    R cumsum_normal(const T& n, double mu = 0.0, double sigma = 1.0)
     {
+        PRRNG_ASSERT(xt::has_shape(n, m_shape));
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
-            ret.flat(i) = m_gen[i].cumsum_normal(n, mu, sigma);
+            ret.flat(i) = m_gen[i].cumsum_normal(n.flat(i), mu, sigma);
         }
 
         return ret;
@@ -2554,7 +2555,7 @@ public:
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_weibull(size_t n, double k = 1.0, double lambda = 1.0) ->
+    auto cumsum_weibull(const T& n, double k = 1.0, double lambda = 1.0) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
@@ -2570,13 +2571,14 @@ public:
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_weibull(size_t n, double k = 1.0, double lambda = 1.0)
+    R cumsum_weibull(const T& n, double k = 1.0, double lambda = 1.0)
     {
+        PRRNG_ASSERT(xt::has_shape(n, m_shape));
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
-            ret.flat(i) = m_gen[i].cumsum_weibull(n, k, lambda);
+            ret.flat(i) = m_gen[i].cumsum_weibull(n.flat(i), k, lambda);
         }
 
         return ret;
@@ -2591,7 +2593,7 @@ public:
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_gamma(size_t n, double k = 1.0, double theta = 1.0) ->
+    auto cumsum_gamma(const T& n, double k = 1.0, double theta = 1.0) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
@@ -2607,13 +2609,14 @@ public:
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_gamma(size_t n, double k = 1.0, double theta = 1.0)
+    R cumsum_gamma(const T& n, double k = 1.0, double theta = 1.0)
     {
+        PRRNG_ASSERT(xt::has_shape(n, m_shape));
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_shape);
 
         for (size_t i = 0; i < m_size; ++i) {
-            ret.flat(i) = m_gen[i].cumsum_gamma(n, k, theta);
+            ret.flat(i) = m_gen[i].cumsum_gamma(n.flat(i), k, theta);
         }
 
         return ret;
