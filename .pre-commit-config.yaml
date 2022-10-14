@@ -52,4 +52,4 @@ repos:
   rev: v0.3.1
   hooks:
   - id: conda_envfile_parse
-    files: "environment.yaml"
+    files: environment.yaml
