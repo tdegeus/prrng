@@ -40,6 +40,7 @@ endif()
 # ==========
 
 find_package(xtensor REQUIRED)
+find_package(Boost REQUIRED)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
@@ -47,7 +48,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-target_link_libraries(${PROJECT_NAME} INTERFACE xtensor)
+target_link_libraries(${PROJECT_NAME} INTERFACE xtensor Boost::boost)
 
 target_compile_definitions(${PROJECT_NAME} INTERFACE
     ${PROJECT_NAME_UPPER}_VERSION="${PROJECT_VERSION}")
@@ -136,7 +137,7 @@ if(BUILD_PYTHON OR BUILD_ALL)
     pybind11_add_module(${PYPROJECT_NAME} python/main.cpp)
 
     target_compile_definitions(${PYPROJECT_NAME} PUBLIC VERSION_INFO=${PROJECT_VERSION})
-    target_link_libraries(${PYPROJECT_NAME} PUBLIC ${PROJECT_NAME} xtensor-python ${PROJECT_NAME}::use_boost)
+    target_link_libraries(${PYPROJECT_NAME} PUBLIC ${PROJECT_NAME} xtensor-python)
 
     if (SKBUILD)
         target_include_directories(${PYPROJECT_NAME} PUBLIC ${NumPy_INCLUDE_DIRS})
