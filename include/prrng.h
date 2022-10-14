@@ -41,26 +41,13 @@ Multiplicative factor for pcg32()
 
 #ifndef PRRNG_USE_BOOST
 /**
-If this macro is defined before including prrng:
-
-    #define PRRNG_USE_BOOST
-    #include <prrng.h>
-
-then Boost is used to compute the inverse Gamma function.
-Without it, the Gamma distribution does not work and returns NaNs.
-
-Note that one can switch-off Boost explicitly by:
+To use prrng without Boost
 
     #define PRRNG_USE_BOOST 0
     #include <prrng.h>
 
-Likewise one can be explicit in enabling it:
-
-    #define PRRNG_USE_BOOST 1
-    #include <prrng.h>
+You will loose the normal and Gamma distributions.
 */
-#define PRRNG_USE_BOOST 0
-#elif PRRNG_USE_BOOST != 0
 #define PRRNG_USE_BOOST 1
 #endif
 
