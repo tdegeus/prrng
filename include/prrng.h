@@ -632,7 +632,7 @@ private:
 #if PRRNG_USE_BOOST
         *p = m_scale * boost::math::gamma_p_inv<T, T>(m_shape, *p);
 #else
-        *p = std::numeric_limits<value_type>::quiet_NaN();
+        *p = std::numeric_limits<T>::quiet_NaN();
 #endif
     }
 
