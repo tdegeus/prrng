@@ -32,6 +32,21 @@ class Test_pcg32_basic(unittest.TestCase):
 
         self.assertTrue(np.allclose(a, b))
 
+    def test_rowmajor(self):
+
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        gen.random([123])
+        state = gen.state()
+
+        a = gen.random([100, 5, 11])
+
+        gen.restore(state)
+        gen.advance(99 * 5 * 11)
+        b = gen.random([5, 11])
+
+        self.assertTrue(np.allclose(a[-1, ...], b))
+
     def test_pcg32_cumsum_random(self):
 
         seed = int(time.time())
