@@ -191,6 +191,47 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("theta") = 1.0)
 
         .def(
+            "decide",
+            py::overload_cast<const xt::pyarray<double>&>(
+                &prrng::GeneratorBase::decide<xt::pyarray<double>, xt::pyarray<bool>>),
+            "ndarray of decision. "
+            "See :cpp:func:`prrng::GeneratorBase::decide`.",
+            py::arg("p"))
+
+        .def(
+            "decide",
+            py::overload_cast<const xt::pyarray<double>&, xt::pyarray<bool>&>(
+                &prrng::GeneratorBase::decide<xt::pyarray<double>, xt::pyarray<bool>>),
+            "ndarray of decision. "
+            "See :cpp:func:`prrng::GeneratorBase::decide`.",
+            py::arg("p"),
+            py::arg("ret"))
+
+        .def(
+            "decide_masked",
+            py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<bool>&>(
+                &prrng::GeneratorBase::
+                    decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
+            "ndarray of decision. "
+            "See :cpp:func:`prrng::GeneratorBase::decide_masked`.",
+            py::arg("p"),
+            py::arg("mask"))
+
+        .def(
+            "decide_masked",
+            py::overload_cast<
+                const xt::pyarray<double>&,
+                const xt::pyarray<bool>&,
+                xt::pyarray<bool>&>(
+                &prrng::GeneratorBase::
+                    decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
+            "ndarray of decision. "
+            "See :cpp:func:`prrng::GeneratorBase::decide_masked`.",
+            py::arg("p"),
+            py::arg("mak"),
+            py::arg("ret"))
+
+        .def(
             "random",
             py::overload_cast<const std::vector<size_t>&>(
                 &prrng::GeneratorBase::random<xt::pyarray<double>, std::vector<size_t>>),
@@ -375,6 +416,49 @@ PYBIND11_MODULE(_prrng, m)
             &prrng::GeneratorBase_array<std::vector<size_t>>::size,
             "Size of the array of generators. "
             "See :cpp:func:`prrng::GeneratorBase_array::size`.")
+
+        .def(
+            "decide",
+            py::overload_cast<const xt::pyarray<double>&>(
+                &prrng::GeneratorBase_array<
+                    std::vector<size_t>>::decide<xt::pyarray<double>, xt::pyarray<bool>>),
+            "ndarray of decision. "
+            "See :cpp:func:`prrng::GeneratorBase_array::decide`.",
+            py::arg("p"))
+
+        .def(
+            "decide",
+            py::overload_cast<const xt::pyarray<double>&, xt::pyarray<bool>&>(
+                &prrng::GeneratorBase_array<
+                    std::vector<size_t>>::decide<xt::pyarray<double>, xt::pyarray<bool>>),
+            "ndarray of decision. "
+            "See :cpp:func:`prrng::GeneratorBase_array::decide`.",
+            py::arg("p"),
+            py::arg("ret"))
+
+        .def(
+            "decide_masked",
+            py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<bool>&>(
+                &prrng::GeneratorBase_array<std::vector<size_t>>::
+                    decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
+            "ndarray of decision. "
+            "See :cpp:func:`prrng::GeneratorBase_array::decide_masked`.",
+            py::arg("p"),
+            py::arg("mask"))
+
+        .def(
+            "decide_masked",
+            py::overload_cast<
+                const xt::pyarray<double>&,
+                const xt::pyarray<bool>&,
+                xt::pyarray<bool>&>(
+                &prrng::GeneratorBase_array<std::vector<size_t>>::
+                    decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
+            "ndarray of decision. "
+            "See :cpp:func:`prrng::GeneratorBase_array::decide_masked`.",
+            py::arg("p"),
+            py::arg("mask"),
+            py::arg("ret"))
 
         .def(
             "random",

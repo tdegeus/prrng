@@ -47,6 +47,31 @@ class Test_pcg32_basic(unittest.TestCase):
 
         self.assertTrue(np.allclose(a[-1, ...], b))
 
+    def test_pcg32_decide(self):
+
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        p = gen.random([5, 10])
+
+        gen = prrng.pcg32(seed + 1)
+        state = gen.state()
+        decision = np.empty(p.shape, dtype=bool)
+        decision2 = np.empty(p.shape, dtype=bool)
+        gen.decide(p, decision)
+        gen.decide(p, decision2)
+
+        gen.restore(state)
+        self.assertTrue(np.all(np.equal(decision, gen.random(p.shape) <= p)))
+        self.assertTrue(np.all(np.equal(decision2, gen.random(p.shape) <= p)))
+
+        p = np.ones_like(p)
+        gen.decide(p, decision)
+        self.assertTrue(np.all(decision))
+
+        p = np.zeros_like(p)
+        gen.decide(p, decision)
+        self.assertTrue(not np.any(decision))
+
     def test_pcg32_cumsum_random(self):
 
         seed = int(time.time())
@@ -934,6 +959,44 @@ class Test_pcg32_array(unittest.TestCase):
         self.assertTrue(np.all(gen.distance(state) == 4 * 5 * np.ones(seed.shape)))
         self.assertTrue(np.all(gen.distance(regen) == 4 * 5 * np.ones(seed.shape)))
         self.assertTrue(np.all(regen.distance(gen) == -4 * 5 * np.ones(seed.shape)))
+
+    def test_decide(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        p = gen.random([])
+        state = gen.state()
+
+        decision = gen.decide(p)
+        decision2 = np.empty_like(decision)
+        gen.decide(p, decision2)
+
+        gen.restore(state)
+        self.assertTrue(np.all(np.equal(decision, gen.random([]) <= p)))
+        self.assertTrue(np.all(np.equal(decision2, gen.random([]) <= p)))
+
+        p = np.ones_like(p)
+        gen.decide(p, decision)
+        self.assertTrue(np.all(decision))
+
+        p = np.zeros_like(p)
+        gen.decide(p, decision)
+        self.assertTrue(not np.any(decision))
+
+        mask = np.empty_like(decision)
+        gen.decide(0.5 * np.ones_like(p), mask)
+        p = gen.random([])
+        state = gen.state()
+
+        decision = gen.decide_masked(p, mask)
+        self.assertTrue(
+            np.all(np.where(mask, np.equal(state, gen.state()), np.not_equal(state, gen.state())))
+        )
+
+        gen.decide_masked(p, mask, decision)
+        self.assertTrue(
+            np.all(np.where(mask, np.equal(state, gen.state()), np.not_equal(state, gen.state())))
+        )
 
     def test_randint(self):
 
