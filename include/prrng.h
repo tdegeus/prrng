@@ -2545,6 +2545,11 @@ private:
     }
 
 protected:
+    /**
+     * @brief For each `p` take a decision.
+     * @param p Array of probabilities.
+     * @param ret Outcome, same shape as `p`.
+     */
     virtual void decide_impl(const double* p, bool* ret)
     {
         for (size_t i = 0; i < m_size; ++i) {
@@ -2890,6 +2895,11 @@ public:
     }
 
 protected:
+    /**
+     * @brief For each `p` take a decision.
+     * @param p Array of probabilities.
+     * @param ret Outcome, same shape as `p`.
+     */
     void decide_impl(const double* p, bool* ret) override
     {
         for (size_t i = 0; i < m_size; ++i) {
@@ -2915,6 +2925,11 @@ protected:
         }
     }
 
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     */
     void cumsum_random_impl(double* ret, const size_t* n) override
     {
         for (size_t i = 0; i < m_size; ++i) {
@@ -2922,6 +2937,13 @@ protected:
         }
     }
 
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
+     */
     void cumsum_normal_impl(double* ret, const size_t* n, double mu, double sigma) override
     {
         for (size_t i = 0; i < m_size; ++i) {
@@ -2929,6 +2951,13 @@ protected:
         }
     }
 
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     * @param k Shape parameter.
+     * @param lambda Scale parameter.
+     */
     void cumsum_weibull_impl(double* ret, const size_t* n, double k, double lambda) override
     {
         for (size_t i = 0; i < m_size; ++i) {
@@ -2936,6 +2965,13 @@ protected:
         }
     }
 
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     * @param k Shape parameter.
+     * @param theta Scale parameter.
+     */
     void cumsum_gamma_impl(double* ret, const size_t* n, double k, double theta) override
     {
         for (size_t i = 0; i < m_size; ++i) {
