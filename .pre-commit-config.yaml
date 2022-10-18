@@ -4,14 +4,11 @@ repos:
   hooks:
   - id: black
     args: [--safe, --quiet, --line-length=100]
-    exclude: ^docs/doxystyle
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.3.0
   hooks:
   - id: trailing-whitespace
-    exclude: ^docs/doxystyle
   - id: end-of-file-fixer
-    exclude: ^docs/doxystyle
   - id: check-yaml
   - id: debug-statements
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
@@ -39,15 +36,18 @@ repos:
   - id: flake8
     args: [--max-line-length=100]
 - repo: https://github.com/asottile/setup-cfg-fmt
-  rev: v2.0.0
+  rev: v2.1.0
   hooks:
   - id: setup-cfg-fmt
+- repo: https://github.com/tdegeus/cpp_comment_format
+  rev: v0.1.1
+  hooks:
+  - id: cpp_comment_format
 - repo: https://github.com/pocc/pre-commit-hooks
   rev: v1.3.5
   hooks:
   - id: clang-format
     args: [-i]
-    exclude: ^docs/doxystyle
 - repo: https://github.com/tdegeus/conda_envfile
   rev: v0.3.1
   hooks:
