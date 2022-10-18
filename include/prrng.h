@@ -201,6 +201,11 @@ struct return_type<R, S, typename std::enable_if_t<is_std_array<S>::value>> {
     using type = typename xt::xtensor<R, std::tuple_size<S>::value>;
 };
 
+template <typename R, class S>
+struct return_type<R, S, typename std::enable_if_t<xt::has_fixed_rank_t<S>::value>> {
+    using type = typename xt::xtensor<R, xt::get_rank<S>::value>;
+};
+
 /**
  * Get default return type
  */
@@ -711,6 +716,117 @@ public:
             ret += r;
         }
         return ret;
+    }
+
+    /**
+     * @brief Decide based on probability per value.
+     * This is fully equivalent to `generator.random(p.shape) < p`,
+     * but avoids the memory allocation of `random`.
+     *
+     * @param p Probability per value [0, 1].
+     * @return Decision for each `p`.
+     */
+    template <class P>
+    auto decide(const P& p) -> typename detail::return_type<bool, P>::type
+    {
+        using R = typename detail::return_type<bool, P>::type;
+        R ret = xt::empty<bool>(p.shape());
+        this->decide(p, ret);
+        return ret;
+    }
+
+    /**
+     * @copydoc decide(const P&)
+     */
+    template <class P, class R>
+    R decide(const P& p)
+    {
+        using value_type = typename detail::get_value_type<R>::type;
+        R ret = xt::empty<value_type>(p.shape());
+        this->decide(p, ret);
+        return ret;
+    }
+
+    /**
+     * @brief Decide based on probability per value.
+     * This is fully equivalent to `generator.random(p.shape) < p`,
+     * but avoids the memory allocation of `random`.
+     *
+     * @param p Probability per value [0, 1].
+     * @param ret Decision for each ``p``.
+     */
+    template <class P, class R>
+    void decide(const P& p, R& ret)
+    {
+        PRRNG_ASSERT(xt::has_shape(p, ret.shape()));
+        using value_type = typename detail::get_value_type<R>::type;
+
+        for (size_t i = 0; i < p.size(); ++i) {
+            if (draw_double() < p.flat(i)) {
+                ret.flat(i) = static_cast<value_type>(true);
+            }
+            else {
+                ret.flat(i) = static_cast<value_type>(false);
+            }
+        }
+    }
+
+    /**
+     * @brief Decide based on probability per value.
+     * This is fully equivalent to `generator.random(p.shape) < p`,
+     * but avoids the memory allocation of `random`.
+     *
+     * @param p Probability per value [0, 1].
+     * @param mask Where `true` the decision is `false` (no random number is drawn there).
+     * @return Decision for each `p`.
+     */
+    template <class P, class T>
+    auto decide_masked(const P& p, const T& mask) -> typename detail::return_type<bool, P>::type
+    {
+        using R = typename detail::return_type<bool, P>::type;
+        R ret = xt::empty<bool>(p.shape());
+        this->decide_masked(p, ret);
+        return ret;
+    }
+
+    /**
+     * @copydoc decide_masked(const P&, const T&)
+     */
+    template <class P, class T, class R>
+    R decide_masked(const P& p, const T& mask)
+    {
+        using value_type = typename detail::get_value_type<R>::type;
+        R ret = xt::empty<value_type>(p.shape());
+        this->decide_masked(p, ret);
+        return ret;
+    }
+
+    /**
+     * @brief Decide based on probability per value.
+     * This is fully equivalent to `generator.random(p.shape) < p`,
+     * but avoids the memory allocation of `random`.
+     *
+     * @param p Probability per value [0, 1].
+     * @param mask Where `true` the decision is `false` (no random number is drawn there).
+     * @param ret Decision for each ``p``.
+     */
+    template <class P, class T, class R>
+    void decide_masked(const P& p, const T& mask, R& ret)
+    {
+        PRRNG_ASSERT(xt::has_shape(p, ret.shape()));
+        using value_type = typename detail::get_value_type<R>::type;
+
+        for (size_t i = 0; i < p.size(); ++i) {
+            if (mask.flat(i)) {
+                ret.flat(i) = static_cast<value_type>(false);
+            }
+            else if (draw_double() < p.flat(i)) {
+                ret.flat(i) = static_cast<value_type>(true);
+            }
+            else {
+                ret.flat(i) = static_cast<value_type>(false);
+            }
+        }
     }
 
     /**
@@ -2234,6 +2350,109 @@ public:
         return ret;
     }
 
+    /**
+     * @brief Decide based on probability per generator.
+     * This is fully equivalent to `generators.random({}) <= p`, but avoids the
+     * memory allocation of `random``.
+     *
+     * @param p Probability per generator [0, 1).
+     * @return Decision for each `p`.
+     */
+    template <class P>
+    auto decide(const P& p) -> typename detail::return_type<bool, P>::type
+    {
+        PRRNG_ASSERT(xt::has_shape(p, m_shape));
+        using R = typename detail::return_type<bool, P>::type;
+        R ret = R::from_shape(m_shape);
+        this->decide_impl(p.data(), ret.data());
+        return ret;
+    }
+
+    /**
+     * @copydoc decide(const P& p)
+     */
+    template <class P, class R>
+    auto decide(const P& p)
+    {
+        PRRNG_ASSERT(xt::has_shape(p, m_shape));
+        R ret = R::from_shape(m_shape);
+        this->decide_impl(p.data(), ret.data());
+        return ret;
+    }
+
+    /**
+     * @brief Decide based on probability per generator.
+     * This is fully equivalent to `generators.random({}) <= p`, but avoids the
+     * memory allocation of `random``.
+     *
+     * @param p Probability per generator [0, 1).
+     * @param ret Decision for each ``p``.
+     */
+    template <class P, class R>
+    void decide(const P& p, R& ret)
+    {
+        static_assert(
+            std::is_same<typename R::value_type, bool>::value, "Return value_type must be bool");
+
+        PRRNG_ASSERT(xt::has_shape(p, m_shape));
+        PRRNG_ASSERT(xt::has_shape(p, ret.shape()));
+        this->decide_impl(p.data(), ret.data());
+    }
+
+    /**
+     * @brief Decide based on probability per generator.
+     * This is fully equivalent to `generators.random({}) <= p`,
+     * but avoids the memory allocation of `random`.
+     *
+     * @param p Probability per generator [0, 1).
+     * @param mask Where `true` the decision is `false` (no random number is drawn there).
+     * @return Decision for each `p`.
+     */
+    template <class P, class T>
+    auto decide_masked(const P& p, const T& mask) -> typename detail::return_type<bool, P>::type
+    {
+        PRRNG_ASSERT(xt::has_shape(p, m_shape));
+        PRRNG_ASSERT(xt::has_shape(p, mask.shape()));
+        using R = typename detail::return_type<bool, P>::type;
+        R ret = R::from_shape(m_shape);
+        this->decide_masked_impl(p.data(), mask.data(), ret.data());
+        return ret;
+    }
+
+    /**
+     * @copydoc decide_masked(const P& p, const T& mask)
+     */
+    template <class P, class T, class R>
+    R decide_masked(const P& p, const T& mask)
+    {
+        PRRNG_ASSERT(xt::has_shape(p, m_shape));
+        PRRNG_ASSERT(xt::has_shape(p, mask.shape()));
+        R ret = R::from_shape(m_shape);
+        this->decide_masked_impl(p.data(), mask.data(), ret.data());
+        return ret;
+    }
+
+    /**
+     * @brief Decide based on probability per generator.
+     * This is fully equivalent to `generators.random({}) <= p`,
+     * but avoids the memory allocation of `random`.
+     *
+     * @param p Probability per generator [0, 1).
+     * @param mask Where `true` the decision is `false` (no random number is drawn there).
+     * @param ret Decision for each ``p``.
+     */
+    template <class P, class T, class R>
+    void decide_masked(const P& p, const T& mask, R& ret)
+    {
+        static_assert(
+            std::is_same<typename R::value_type, bool>::value, "Return value_type must be bool");
+
+        PRRNG_ASSERT(xt::has_shape(p, m_shape));
+        PRRNG_ASSERT(xt::has_shape(p, mask.shape()));
+        PRRNG_ASSERT(xt::has_shape(p, ret.shape()));
+        this->decide_masked_impl(p.data(), mask.data(), ret.data());
+    }
+
 private:
     template <class R, class S>
     R random_impl(const S& ishape)
@@ -2326,6 +2545,31 @@ private:
     }
 
 protected:
+    virtual void decide_impl(const double* p, bool* ret)
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            ret[i] = 0.5 < p[i];
+        }
+    }
+
+    /**
+     * @brief For each `p` take a decision.
+     * @param p Array of probabilities.
+     * @param mask Mask entries of `p`.
+     * @param ret Outcome, same shape as `p`.
+     */
+    virtual void decide_masked_impl(const double* p, const bool* mask, bool* ret)
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            if (mask[i]) {
+                ret[i] = false;
+            }
+            else {
+                ret[i] = 0.5 < p[i];
+            }
+        }
+    }
+
     /**
      * @brief Return the result of the cumulative sum of `n` random numbers.
      * @param ret Output, per generator.
@@ -2646,6 +2890,31 @@ public:
     }
 
 protected:
+    void decide_impl(const double* p, bool* ret) override
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            ret[i] = m_gen[i].next_double() < p[i];
+        }
+    }
+
+    /**
+     * @brief For each `p` take a decision.
+     * @param p Array of probabilities.
+     * @param mask Mask entries of `p`.
+     * @param ret Outcome, same shape as `p`.
+     */
+    void decide_masked_impl(const double* p, const bool* mask, bool* ret) override
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            if (mask[i]) {
+                ret[i] = false;
+            }
+            else {
+                ret[i] = m_gen[i].next_double() < p[i];
+            }
+        }
+    }
+
     void cumsum_random_impl(double* ret, const size_t* n) override
     {
         for (size_t i = 0; i < m_size; ++i) {
