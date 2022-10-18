@@ -1,38 +1,38 @@
 /**
-Portable Reconstructible Random Number Generator.
-The idea is that a random sequence can be restored independent of platform or compiler.
-In addition, this library allows you to store a point in the sequence, and then later restore
-the sequence exactly from this point (in both directions actually).
-
-Note that the core of this code is taken from
-https://github.com/imneme/pcg-c-basic
-All the credits goes to those developers.
-This is just a wrapper.
-
-\file prrng.h
-\copyright Copyright 2021. Tom de Geus. All rights reserved.
-\par license This project is released under the MIT License.
-*/
+ * Portable Reconstructible Random Number Generator.
+ * The idea is that a random sequence can be restored independent of platform or compiler.
+ * In addition, this library allows you to store a point in the sequence, and then later restore
+ * the sequence exactly from this point (in both directions actually).
+ *
+ * Note that the core of this code is taken from
+ * https://github.com/imneme/pcg-c-basic
+ * All the credits goes to those developers.
+ * This is just a wrapper.
+ *
+ * @file prrng.h
+ * @copyright Copyright 2021. Tom de Geus. All rights reserved.
+ * @par license This project is released under the MIT License.
+ */
 
 #ifndef PRRNG_H
 #define PRRNG_H
 
 /**
-Default initialisation state for pcg32()
-(used as constructor parameter that can be overwritten at run-time).
-*/
+ * Default initialisation state for pcg32()
+ * (used as constructor parameter that can be overwritten at run-time).
+ */
 #define PRRNG_PCG32_INITSTATE 0x853c49e6748fea9bULL
 
 /**
-Default initialisation sequence for pcg32()
-(used as constructor parameter that can be overwritten at run-time).
-*/
+ * Default initialisation sequence for pcg32()
+ * (used as constructor parameter that can be overwritten at run-time).
+ */
 #define PRRNG_PCG32_INITSEQ 0xda3e39cb94b95bdbULL
 
 /**
-Multiplicative factor for pcg32()
-(used internally, cannot be overwritten at run-time).
-*/
+ * Multiplicative factor for pcg32()
+ * (used internally, cannot be overwritten at run-time).
+ */
 #define PRRNG_PCG32_MULT 6364136223846793005ULL
 
 #include <array>
@@ -41,13 +41,13 @@ Multiplicative factor for pcg32()
 
 #ifndef PRRNG_USE_BOOST
 /**
-To use prrng without Boost
-
-    #define PRRNG_USE_BOOST 0
-    #include <prrng.h>
-
-You will loose the normal and Gamma distributions.
-*/
+ * To use prrng without Boost
+ *
+ *     #define PRRNG_USE_BOOST 0
+ *     #include <prrng.h>
+ *
+ * You will loose the normal and Gamma distributions.
+ */
 #define PRRNG_USE_BOOST 1
 #endif
 
@@ -58,8 +58,8 @@ You will loose the normal and Gamma distributions.
 #endif
 
 /**
-\cond
-*/
+ * \cond
+ */
 #define Q(x) #x
 #define QUOTE(x) Q(x)
 
@@ -71,49 +71,50 @@ You will loose the normal and Gamma distributions.
     }
 
 /**
-\endcond
-*/
+ * \endcond
+ */
 
 /**
-Library version.
-
-Either:
-
--   Configure using CMake at install time. Internally uses:
-
-        python -c "from setuptools_scm import get_version; print(get_version())"
-
--   Define externally using:
-
-        -DPRRNG_VERSION="`python -c "from setuptools_scm import get_version; print(get_version())"`"
-
-    From the root of this project. This is what ``setup.py`` does.
-
-Note that both ``CMakeLists.txt`` and ``setup.py`` will construct the version using
-``setuptools_scm``. Tip: use the environment variable ``SETUPTOOLS_SCM_PRETEND_VERSION`` to
-overwrite the automatic version.
-*/
+ * Library version.
+ *
+ * Either:
+ *
+ * -   Configure using CMake at install time. Internally uses:
+ *
+ *         python -c "from setuptools_scm import get_version; print(get_version())"
+ *
+ * -   Define externally using:
+ *
+ *         -DPRRNG_VERSION="`python -c "from setuptools_scm import get_version;
+ * print(get_version())"`"
+ *
+ *     From the root of this project. This is what ``setup.py`` does.
+ *
+ * Note that both ``CMakeLists.txt`` and ``setup.py`` will construct the version using
+ * ``setuptools_scm``. Tip: use the environment variable ``SETUPTOOLS_SCM_PRETEND_VERSION`` to
+ * overwrite the automatic version.
+ */
 #ifndef PRRNG_VERSION
 #define PRRNG_VERSION "@PROJECT_VERSION@"
 #endif
 
 /**
-All assertions are implementation as::
-
-    PRRNG_ASSERT(...)
-
-They can be enabled by::
-
-    #define PRRNG_ENABLE_ASSERT
-
-(before including prrng).
-The advantage is that:
-
--   File and line-number are displayed if the assertion fails.
--   prrng's assertions can be enabled/disabled independently from those of other libraries.
-
-\throw std::runtime_error
-*/
+ * All assertions are implementation as::
+ *
+ *     PRRNG_ASSERT(...)
+ *
+ * They can be enabled by::
+ *
+ *     #define PRRNG_ENABLE_ASSERT
+ *
+ * (before including prrng).
+ * The advantage is that:
+ *
+ * -   File and line-number are displayed if the assertion fails.
+ * -   prrng's assertions can be enabled/disabled independently from those of other libraries.
+ *
+ * \throw std::runtime_error
+ */
 #ifdef PRRNG_ENABLE_ASSERT
 #define PRRNG_ASSERT(expr) PRRNG_ASSERT_IMPL(expr, __FILE__, __LINE__)
 #else
@@ -121,18 +122,18 @@ The advantage is that:
 #endif
 
 /**
-Portable Reconstructible (Pseudo!) Random Number Generator
-*/
+ * Portable Reconstructible (Pseudo!) Random Number Generator
+ */
 namespace prrng {
 
 namespace detail {
 
 /**
-Remove " from string.
-
-\param arg Input string.
-\return String without "
-*/
+ * Remove " from string.
+ *
+ * @param arg Input string.
+ * @return String without "
+ */
 inline std::string unquote(const std::string& arg)
 {
     std::string ret = arg;
@@ -149,8 +150,8 @@ struct is_std_array<std::array<T, N>> : std::true_type {
 };
 
 /**
-Check that an object has a certain fixed rank.
-*/
+ * Check that an object has a certain fixed rank.
+ */
 template <size_t N, class T, typename = void>
 struct check_fixed_rank {
     constexpr static bool value = false;
@@ -167,8 +168,8 @@ struct check_fixed_rank<N, T, typename std::enable_if_t<is_std_array<T>::value>>
 };
 
 /**
-Get value type
-*/
+ * Get value type
+ */
 template <typename R, typename = void>
 struct get_value_type {
     using type = typename R::value_type;
@@ -180,16 +181,16 @@ struct get_value_type<R, typename std::enable_if_t<std::is_arithmetic<R>::value>
 };
 
 /**
-Get default return type
-*/
+ * Get default return type
+ */
 template <typename R, size_t N>
 struct return_type_fixed {
     using type = typename xt::xtensor<R, N>;
 };
 
 /**
-Get default return type
-*/
+ * Get default return type
+ */
 template <typename R, class S, typename = void>
 struct return_type {
     using type = typename xt::xarray<R>;
@@ -201,8 +202,8 @@ struct return_type<R, S, typename std::enable_if_t<is_std_array<S>::value>> {
 };
 
 /**
-Get default return type
-*/
+ * Get default return type
+ */
 template <typename R, class S, class T, typename = void>
 struct composite_return_type {
     using type = typename xt::xarray<R>;
@@ -219,8 +220,8 @@ struct composite_return_type<
 };
 
 /**
-Allocate return: scalar or array
-*/
+ * Allocate return: scalar or array
+ */
 template <typename R, typename = void>
 struct allocate_return {
 
@@ -275,12 +276,12 @@ struct allocate_return<R, typename std::enable_if_t<std::is_arithmetic<R>::value
 };
 
 /**
-Concatenate two objects that have `begin()` and `end()` methods.
-
-\param s First object (e.g. std::vector).
-\param t Second object (e.g. std::vector).
-\return Concatenated [t, s]
-*/
+ * Concatenate two objects that have `begin()` and `end()` methods.
+ *
+ * @param s First object (e.g. std::vector).
+ * @param t Second object (e.g. std::vector).
+ * @return Concatenated [t, s]
+ */
 template <class S, class T, typename = void>
 struct concatenate {
     static auto two(const S& s, const T& t)
@@ -307,11 +308,11 @@ struct concatenate<
 };
 
 /**
-Compute 'size' from 'shape'.
-
-\param shape Shape array.
-\return Size
-*/
+ * Compute 'size' from 'shape'.
+ *
+ * @param shape Shape array.
+ * @return Size
+ */
 template <class S>
 inline size_t size(const S& shape)
 {
@@ -320,8 +321,8 @@ inline size_t size(const S& shape)
 }
 
 /**
-Return as std::array.
-*/
+ * Return as std::array.
+ */
 template <class I, std::size_t L>
 std::array<I, L> to_array(const I (&shape)[L])
 {
@@ -332,32 +333,32 @@ std::array<I, L> to_array(const I (&shape)[L])
 } // namespace detail
 
 /**
-Return version string, for example `"0.1.0"`
-
-\return std::string
-*/
+ * Return version string, for example `"0.1.0"`
+ *
+ * @return std::string
+ */
 inline std::string version()
 {
     return detail::unquote(std::string(QUOTE(PRRNG_VERSION)));
 }
 
 /**
-Normal distribution.
-
-References:
-
--   https://en.wikipedia.org/wiki/Normal_distribution
--   https://www.boost.org/doc/libs/1_63_0/libs/math/doc/html/math_toolkit/sf_erf/error_inv.html
--   https://www.boost.org/doc/libs/1_78_0/boost/math/special_functions/detail/erf_inv.hpp
-*/
+ * Normal distribution.
+ *
+ * References:
+ *
+ * -   https://en.wikipedia.org/wiki/Normal_distribution
+ * -   https://www.boost.org/doc/libs/1_63_0/libs/math/doc/html/math_toolkit/sf_erf/error_inv.html
+ * -   https://www.boost.org/doc/libs/1_78_0/boost/math/special_functions/detail/erf_inv.hpp
+ */
 class normal_distribution {
 public:
     /**
-    Constructor.
-
-    \param mu Average.
-    \param sigma Standard deviation.
-    */
+     * Constructor.
+     *
+     * @param mu Average.
+     * @param sigma Standard deviation.
+     */
     normal_distribution(double mu = 0.0, double sigma = 1.0)
     {
         m_mu = mu;
@@ -366,11 +367,11 @@ public:
     }
 
     /**
-    Return the probability density function.
-
-    \param x Coordinates.
-    \return probability density for each `x`.
-    */
+     * Return the probability density function.
+     *
+     * @param x Coordinates.
+     * @return probability density for each `x`.
+     */
     template <class T>
     T pdf(const T& x)
     {
@@ -379,11 +380,11 @@ public:
     }
 
     /**
-    Return the cumulative density function.
-
-    \param x Coordinates.
-    \return cumulative density for each `x`.
-    */
+     * Return the cumulative density function.
+     *
+     * @param x Coordinates.
+     * @return cumulative density for each `x`.
+     */
     template <class T>
     T cdf(const T& x)
     {
@@ -391,11 +392,11 @@ public:
     }
 
     /**
-    Return the quantile (the inverse of the cumulative density function).
-
-    \param p Probability [0, 1].
-    \return quantile for each `p`.
-    */
+     * Return the quantile (the inverse of the cumulative density function).
+     *
+     * @param p Probability [0, 1].
+     * @return quantile for each `p`.
+     */
     template <class T>
     T quantile(const T& p)
     {
@@ -432,21 +433,21 @@ private:
 };
 
 /**
-Weibull distribution.
-
-References:
-
--   https://en.wikipedia.org/wiki/Weibull_distribution
--   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/weibull.hpp
-*/
+ * Weibull distribution.
+ *
+ * References:
+ *
+ * -   https://en.wikipedia.org/wiki/Weibull_distribution
+ * -   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/weibull.hpp
+ */
 class weibull_distribution {
 public:
     /**
-    Constructor.
-
-    \param k Shape parameter.
-    \param lambda Scale parameter.
-    */
+     * Constructor.
+     *
+     * @param k Shape parameter.
+     * @param lambda Scale parameter.
+     */
     weibull_distribution(double k = 1.0, double lambda = 1.0)
     {
         m_shape = k;
@@ -454,11 +455,11 @@ public:
     }
 
     /**
-    Return the probability density function.
-
-    \param x Coordinates.
-    \return probability density for each `x`.
-    */
+     * Return the probability density function.
+     *
+     * @param x Coordinates.
+     * @return probability density for each `x`.
+     */
     template <class T>
     T pdf(const T& x)
     {
@@ -481,11 +482,11 @@ public:
     }
 
     /**
-    Return the cumulative density function.
-
-    \param x Coordinates.
-    \return cumulative density for each `x`.
-    */
+     * Return the cumulative density function.
+     *
+     * @param x Coordinates.
+     * @return cumulative density for each `x`.
+     */
     template <class T>
     T cdf(const T& x)
     {
@@ -493,11 +494,11 @@ public:
     }
 
     /**
-    Return the quantile (the inverse of the cumulative density function).
-
-    \param p Probability [0, 1].
-    \return quantile for each `p`.
-    */
+     * Return the quantile (the inverse of the cumulative density function).
+     *
+     * @param p Probability [0, 1].
+     * @return quantile for each `p`.
+     */
     template <class T>
     T quantile(const T& p)
     {
@@ -519,21 +520,21 @@ private:
 };
 
 /**
-Gamma distribution.
-
-References:
-
--   https://en.wikipedia.org/wiki/Gamma_distribution
--   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/gamma.hpp
-*/
+ * Gamma distribution.
+ *
+ * References:
+ *
+ * -   https://en.wikipedia.org/wiki/Gamma_distribution
+ * -   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/gamma.hpp
+ */
 class gamma_distribution {
 public:
     /**
-    Constructor.
-
-    \param k Shape parameter.
-    \param theta Scale parameter.
-    */
+     * Constructor.
+     *
+     * @param k Shape parameter.
+     * @param theta Scale parameter.
+     */
     gamma_distribution(double k = 1.0, double theta = 1.0)
     {
         m_shape = k;
@@ -541,13 +542,13 @@ public:
     }
 
     /**
-    Return the probability density function.
-    Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_boost`).
-
-    \param x Coordinates.
-    \return probability density for each `x`.
-    */
+     * Return the probability density function.
+     * Only available when compiled with PRRNG_USE_BOOST
+     * (e.g. using the CMake target `prrng::use_boost`).
+     *
+     * @param x Coordinates.
+     * @return probability density for each `x`.
+     */
     template <class T>
     T pdf(const T& x)
     {
@@ -565,13 +566,13 @@ public:
     }
 
     /**
-    Return the cumulative density function.
-    Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_boost`).
-
-    \param x Coordinates.
-    \return cumulative density for each `x`.
-    */
+     * Return the cumulative density function.
+     * Only available when compiled with PRRNG_USE_BOOST
+     * (e.g. using the CMake target `prrng::use_boost`).
+     *
+     * @param x Coordinates.
+     * @return cumulative density for each `x`.
+     */
     template <class T>
     T cdf(const T& x)
     {
@@ -588,13 +589,13 @@ public:
     }
 
     /**
-    Return the quantile (the inverse of the cumulative density function).
-    Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_boost`).
-
-    \param p Probability [0, 1].
-    \return quantile for each `p`.
-    */
+     * Return the quantile (the inverse of the cumulative density function).
+     * Only available when compiled with PRRNG_USE_BOOST
+     * (e.g. using the CMake target `prrng::use_boost`).
+     *
+     * @param p Probability [0, 1].
+     * @return quantile for each `p`.
+     */
     template <class T>
     T quantile(const T& p)
     {
@@ -629,9 +630,9 @@ private:
 };
 
 /**
-Base class of the pseudorandom number generators.
-This class provides common methods, but itself does not really do much.
-*/
+ * Base class of the pseudorandom number generators.
+ * This class provides common methods, but itself does not really do much.
+ */
 class GeneratorBase {
 public:
     GeneratorBase() = default;
@@ -713,11 +714,11 @@ public:
     }
 
     /**
-    Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
-
-    \param shape The shape of the nd-array.
-    \return The sample of shape `shape`.
-    */
+     * Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+     *
+     * @param shape The shape of the nd-array.
+     * @return The sample of shape `shape`.
+     */
     template <class S>
     auto random(const S& shape) -> typename detail::return_type<double, S>::type
     {
@@ -726,9 +727,9 @@ public:
     }
 
     /**
-    \copydoc random(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc random(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R random(const S& shape)
     {
@@ -736,8 +737,8 @@ public:
     }
 
     /**
-    \copydoc random(const S&)
-    */
+     * @copydoc random(const S&)
+     */
     template <class I, std::size_t L>
     auto random(const I (&shape)[L]) -> typename detail::return_type_fixed<double, L>::type
     {
@@ -746,9 +747,9 @@ public:
     }
 
     /**
-    \copydoc random(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc random(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R random(const I (&shape)[L])
     {
@@ -756,12 +757,12 @@ public:
     }
 
     /**
-    Generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
-
-    \param shape The shape of the nd-array.
-    \param high The upper bound of the random integers.
-    \return The sample of shape `shape`.
-    */
+     * Generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+     *
+     * @param shape The shape of the nd-array.
+     * @param high The upper bound of the random integers.
+     * @return The sample of shape `shape`.
+     */
     template <class S, typename T>
     auto randint(const S& shape, T high) -> typename detail::return_type<T, S>::type
     {
@@ -770,9 +771,9 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc randint(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S, typename T>
     R randint(const S& shape, T high)
     {
@@ -780,8 +781,8 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    */
+     * @copydoc randint(const S&)
+     */
     template <class I, std::size_t L, typename T>
     auto randint(const I (&shape)[L], T high) -> typename detail::return_type_fixed<T, L>::type
     {
@@ -790,9 +791,9 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    \tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
-    */
+     * @copydoc randint(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
+     */
     template <class R, class I, std::size_t L, typename T>
     R randint(const I (&shape)[L], T high)
     {
@@ -800,13 +801,13 @@ public:
     }
 
     /**
-    Generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
-
-    \param shape The shape of the nd-array.
-    \param low The lower bound of the random integers.
-    \param high The upper bound of the random integers.
-    \return The sample of shape `shape`.
-    */
+     * Generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+     *
+     * @param shape The shape of the nd-array.
+     * @param low The lower bound of the random integers.
+     * @param high The upper bound of the random integers.
+     * @return The sample of shape `shape`.
+     */
     template <class S, typename T, typename U>
     auto randint(const S& shape, T low, U high) -> typename detail::return_type<T, S>::type
     {
@@ -815,9 +816,9 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc randint(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S, typename T, typename U>
     R randint(const S& shape, T low, U high)
     {
@@ -825,8 +826,8 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    */
+     * @copydoc randint(const S&)
+     */
     template <class I, std::size_t L, typename T, typename U>
     auto randint(const I (&shape)[L], T low, U high) ->
         typename detail::return_type_fixed<T, L>::type
@@ -836,9 +837,9 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    \tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
-    */
+     * @copydoc randint(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
+     */
     template <class R, class I, std::size_t L, typename T, typename U>
     R randint(const I (&shape)[L], T low, U high)
     {
@@ -846,22 +847,22 @@ public:
     }
 
     /**
-    Generate an nd-array of random numbers distributed according to a normal distribution.
-    Internally, the output of random() is converted using the cumulative density
-
-    \f$ \Phi(x) = \frac{1}{2} \left[
-        1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
-    \right]\f$
-
-    such that the output `r` from random() leads to
-
-    \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
-
-    \param shape The shape of the nd-array.
-    \param mu The average.
-    \param sigma The standard deviation.
-    \return The sample of shape `shape`.
-    */
+     * Generate an nd-array of random numbers distributed according to a normal distribution.
+     * Internally, the output of random() is converted using the cumulative density
+     *
+     * \f$ \Phi(x) = \frac{1}{2} \left[
+     *     1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
+     * \right]\f$
+     *
+     * such that the output `r` from random() leads to
+     *
+     * \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
+     *
+     * @param shape The shape of the nd-array.
+     * @param mu The average.
+     * @param sigma The standard deviation.
+     * @return The sample of shape `shape`.
+     */
     template <class S>
     auto normal(const S& shape, double mu = 0.0, double sigma = 1.0) ->
         typename detail::return_type<double, S>::type
@@ -871,9 +872,9 @@ public:
     }
 
     /**
-    \copydoc normal(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc normal(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R normal(const S& shape, double mu = 0.0, double sigma = 1.0)
     {
@@ -881,8 +882,8 @@ public:
     }
 
     /**
-    \copydoc normal(const S&, double, double)
-    */
+     * @copydoc normal(const S&, double, double)
+     */
     template <class I, std::size_t L>
     auto normal(const I (&shape)[L], double mu = 0.0, double sigma = 1.0) ->
         typename detail::return_type_fixed<double, L>::type
@@ -892,9 +893,9 @@ public:
     }
 
     /**
-    \copydoc normal(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc normal(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R normal(const I (&shape)[L], double mu = 0.0, double sigma = 1.0)
     {
@@ -902,20 +903,20 @@ public:
     }
 
     /**
-    Generate an nd-array of random numbers distributed according to a Weibull distribution.
-    Internally, the output of random() is converted using the cumulative density
-
-    \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
-
-    such that the output `r` from random() leads to
-
-    \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
-
-    \param shape The shape of the nd-array.
-    \param k The "shape" parameter.
-    \param lambda The "scale" parameter.
-    \return The sample of shape `shape`.
-    */
+     * Generate an nd-array of random numbers distributed according to a Weibull distribution.
+     * Internally, the output of random() is converted using the cumulative density
+     *
+     * \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
+     *
+     * such that the output `r` from random() leads to
+     *
+     * \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
+     *
+     * @param shape The shape of the nd-array.
+     * @param k The "shape" parameter.
+     * @param lambda The "scale" parameter.
+     * @return The sample of shape `shape`.
+     */
     template <class S>
     auto weibull(const S& shape, double k = 1.0, double lambda = 1.0) ->
         typename detail::return_type<double, S>::type
@@ -925,9 +926,9 @@ public:
     }
 
     /**
-    \copydoc weibull(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc weibull(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
     {
@@ -935,8 +936,8 @@ public:
     }
 
     /**
-    \copydoc weibull(const S&, double, double)
-    */
+     * @copydoc weibull(const S&, double, double)
+     */
     template <class I, std::size_t L>
     auto weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0) ->
         typename detail::return_type_fixed<double, L>::type
@@ -946,9 +947,9 @@ public:
     }
 
     /**
-    \copydoc weibull(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc weibull(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
     {
@@ -956,15 +957,15 @@ public:
     }
 
     /**
-    Generate an nd-array of random numbers distributed according to a Gamma distribution.
-    Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_boost`).
-
-    \param shape The shape of the nd-array.
-    \param k The "shape" parameter.
-    \param theta The "scale" parameter.
-    \return The sample of shape `shape`.
-    */
+     * Generate an nd-array of random numbers distributed according to a Gamma distribution.
+     * Only available when compiled with PRRNG_USE_BOOST
+     * (e.g. using the CMake target `prrng::use_boost`).
+     *
+     * @param shape The shape of the nd-array.
+     * @param k The "shape" parameter.
+     * @param theta The "scale" parameter.
+     * @return The sample of shape `shape`.
+     */
     template <class S>
     auto gamma(const S& shape, double k = 1.0, double theta = 1.0) ->
         typename detail::return_type<double, S>::type
@@ -974,9 +975,9 @@ public:
     }
 
     /**
-    \copydoc gamma(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc gamma(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R gamma(const S& shape, double k = 1.0, double theta = 1.0)
     {
@@ -984,8 +985,8 @@ public:
     }
 
     /**
-    \copydoc gamma(const S&, double, double)
-    */
+     * @copydoc gamma(const S&, double, double)
+     */
     template <class I, std::size_t L>
     auto gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0) ->
         typename detail::return_type_fixed<double, L>::type
@@ -995,9 +996,9 @@ public:
     }
 
     /**
-    \copydoc gamma(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc gamma(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
     {
@@ -1005,13 +1006,14 @@ public:
     }
 
     /**
-    Generate an nd-array of numbers that are delta distribution.
-    These numbers are not random; calling this function does not change the state of the generators.
-
-    \param shape The shape of the nd-array.
-    \param mean The value of the 'peak' of the delta distribution.
-    \return The sample of shape `shape`.
-    */
+     * Generate an nd-array of numbers that are delta distribution.
+     * These numbers are not random; calling this function does not change the state of the
+     * generators.
+     *
+     * @param shape The shape of the nd-array.
+     * @param mean The value of the 'peak' of the delta distribution.
+     * @return The sample of shape `shape`.
+     */
     template <class S>
     auto delta(const S& shape, double mean = 1.0) -> typename detail::return_type<double, S>::type
     {
@@ -1020,9 +1022,9 @@ public:
     }
 
     /**
-    \copydoc delta(const S&, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc delta(const S&, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R delta(const S& shape, double mean = 1.0)
     {
@@ -1030,8 +1032,8 @@ public:
     }
 
     /**
-    \copydoc delta(const S&, double)
-    */
+     * @copydoc delta(const S&, double)
+     */
     template <class I, std::size_t L>
     auto delta(const I (&shape)[L], double mean = 1.0) ->
         typename detail::return_type_fixed<double, L>::type
@@ -1041,9 +1043,9 @@ public:
     }
 
     /**
-    \copydoc delta(const S&, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc delta(const S&, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R delta(const I (&shape)[L], double mean = 1.0)
     {
@@ -1154,11 +1156,11 @@ protected:
     }
 
     /**
-    Draw `n` random numbers and write them to list (input as pointer `data`).
-
-    \param data Pointer to the data (no bounds-check).
-    \param n Size of `data`.
-    */
+     * Draw `n` random numbers and write them to list (input as pointer `data`).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param n Size of `data`.
+     */
     virtual void draw_list(double* data, size_t n)
     {
         for (size_t i = 0; i < n; ++i) {
@@ -1167,12 +1169,12 @@ protected:
     }
 
     /**
-    Draw `n` random numbers and write them to list (input as pointer `data`).
-
-    \param data Pointer to the data (no bounds-check).
-    \param bound Upper bound of the random numbers.
-    \param n Size of `data`.
-    */
+     * Draw `n` random numbers and write them to list (input as pointer `data`).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param bound Upper bound of the random numbers.
+     * @param n Size of `data`.
+     */
     virtual void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
     {
         (void)(bound);
@@ -1184,46 +1186,46 @@ protected:
 };
 
 /**
-Random number generate using the pcg32 algorithm.
-The class generate random 32-bit random numbers (of type `uint32_t`).
-In addition, they can be converted to nd-arrays of random floating-point numbers (according)
-using derived methods from Generate().
-
-The algorithm is full based on:
-
-    The PCG random number generator was developed by Melissa O'Neill
-    <oneill@pcg-random.org>
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-    For additional information about the PCG random number generation scheme,
-    including its license and other licensing options, visit
-
-        http://www.pcg-random.org
-
-Whereby most code is taken from the follow wrapper:
-
-    Wenzel Jakob, February 2015
-    https://github.com/wjakob/pcg32
-*/
+ * Random number generate using the pcg32 algorithm.
+ * The class generate random 32-bit random numbers (of type `uint32_t`).
+ * In addition, they can be converted to nd-arrays of random floating-point numbers (according)
+ * using derived methods from Generate().
+ *
+ * The algorithm is full based on:
+ *
+ *     The PCG random number generator was developed by Melissa O'Neill
+ *     <oneill@pcg-random.org>
+ *
+ *     Licensed under the Apache License, Version 2.0 (the "License");
+ *     you may not use this file except in compliance with the License.
+ *     You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *     Unless required by applicable law or agreed to in writing, software
+ *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *     See the License for the specific language governing permissions and
+ *     limitations under the License.
+ *
+ *     For additional information about the PCG random number generation scheme,
+ *     including its license and other licensing options, visit
+ *
+ *         http://www.pcg-random.org
+ *
+ * Whereby most code is taken from the follow wrapper:
+ *
+ *     Wenzel Jakob, February 2015
+ *     https://github.com/wjakob/pcg32
+ */
 class pcg32 : public GeneratorBase {
 public:
     /**
-    Constructor.
-
-    \param initstate State initiator.
-    \param initseq Sequence initiator.
-    */
+     * Constructor.
+     *
+     * @param initstate State initiator.
+     * @param initseq Sequence initiator.
+     */
     template <typename T = uint64_t, typename S = uint64_t>
     pcg32(T initstate = PRRNG_PCG32_INITSTATE, S initseq = PRRNG_PCG32_INITSEQ)
     {
@@ -1233,13 +1235,13 @@ public:
     }
 
     /**
-    Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
-    This advances the state of the generator by one increment.
-
-    \return Next random number in sequence.
-
-    \author Melissa O'Neill, http://www.pcg-random.org.
-    */
+     * Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
+     * This advances the state of the generator by one increment.
+     *
+     * @return Next random number in sequence.
+     *
+     * @author Melissa O'Neill, http://www.pcg-random.org.
+     */
     uint32_t operator()()
     {
         uint64_t oldstate = m_state;
@@ -1250,26 +1252,26 @@ public:
     }
 
     /**
-    Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
-    This advances the state of the generator by one increment.
-
-    \return Next random number in sequence.
-
-    \note Wrapper around operator().
-    */
+     * Draw new random number (uniformly distributed, `0 <= r <= max(uint32_t)`).
+     * This advances the state of the generator by one increment.
+     *
+     * @return Next random number in sequence.
+     *
+     * \note Wrapper around operator().
+     */
     uint32_t next_uint32()
     {
         return (*this)();
     }
 
     /**
-    Draw new random number (uniformly distributed, `0 <= r <= bound`).
-
-    \param bound Bound on the return.
-    \return Next random number in sequence.
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * Draw new random number (uniformly distributed, `0 <= r <= bound`).
+     *
+     * @param bound Bound on the return.
+     * @return Next random number in sequence.
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     uint32_t next_uint32(uint32_t bound)
     {
         // To avoid bias, we need to make the range of the RNG a multiple of
@@ -1304,16 +1306,16 @@ public:
     }
 
     /**
-    Generate a single precision floating point value on the interval [0, 1).
-
-    \return Next random number in sequence.
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * Generate a single precision floating point value on the interval [0, 1).
+     *
+     * @return Next random number in sequence.
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     float next_float()
     {
-        /* Trick from MTGP: generate an uniformly distributed
-           single precision number in [1,2) and subtract 1. */
+        // Trick from MTGP: generate an uniformly distributed
+        // single precision number in [1,2) and subtract 1.
         union {
             uint32_t u;
             float f;
@@ -1323,16 +1325,16 @@ public:
     }
 
     /**
-    Generate a double precision floating point value on the interval [0, 1).
-
-    \return Next random number in sequence.
-
-    \remark Since the underlying random number generator produces 32 bit output,
-    only the first 32 mantissa bits will be filled (however, the resolution is still
-    finer than in next_float(), which only uses 23 mantissa bits).
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * Generate a double precision floating point value on the interval [0, 1).
+     *
+     * @return Next random number in sequence.
+     *
+     * @remark Since the underlying random number generator produces 32 bit output,
+     * only the first 32 mantissa bits will be filled (however, the resolution is still
+     * finer than in next_float(), which only uses 23 mantissa bits).
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     double next_double()
     {
         union {
@@ -1346,22 +1348,22 @@ public:
     }
 
     /**
-    The current "state" of the generator. If the same initseq() is used, this exact point
-    in the sequence can be restored with restore().
-
-    \return State of the generator.
-    */
+     * The current "state" of the generator. If the same initseq() is used, this exact point
+     * in the sequence can be restored with restore().
+     *
+     * @return State of the generator.
+     */
     uint64_t state()
     {
         return m_state;
     }
 
     /**
-    \copydoc state()
-
-    \tparam R use a different return-type. There are some internal checks if the type is able to
-    store the internal state of type `uint64_t`.
-    */
+     * @copydoc state()
+     *
+     * @tparam R use a different return-type. There are some internal checks if the type is able to
+     * store the internal state of type `uint64_t`.
+     */
     template <typename R>
     R state()
     {
@@ -1377,21 +1379,21 @@ public:
     }
 
     /**
-    The state initiator that was used upon construction.
-
-    \return initiator.
-    */
+     * The state initiator that was used upon construction.
+     *
+     * @return initiator.
+     */
     uint64_t initstate()
     {
         return m_initstate;
     }
 
     /**
-    \copydoc initstate()
-
-    \tparam R use a different return-type. There are some internal checks if the type is able to
-    store the internal state of type `uint64_t`.
-    */
+     * @copydoc initstate()
+     *
+     * @tparam R use a different return-type. There are some internal checks if the type is able to
+     * store the internal state of type `uint64_t`.
+     */
     template <typename R>
     R initstate()
     {
@@ -1407,21 +1409,21 @@ public:
     }
 
     /**
-    The sequence initiator that was used upon construction.
-
-    \return initiator.
-    */
+     * The sequence initiator that was used upon construction.
+     *
+     * @return initiator.
+     */
     uint64_t initseq()
     {
         return m_initseq;
     }
 
     /**
-    \copydoc initseq()
-
-    \tparam R use a different return-type. There are some internal checks if the type is able to
-    store the internal state of type `uint64_t`.
-    */
+     * @copydoc initseq()
+     *
+     * @tparam R use a different return-type. There are some internal checks if the type is able to
+     * store the internal state of type `uint64_t`.
+     */
     template <typename R>
     R initseq()
     {
@@ -1437,11 +1439,11 @@ public:
     }
 
     /**
-    Restore a given state in the sequence. See state().
-
-    \tparam R use a different return-type. There are some internal checks if the type is able to
-    store the internal state of type `uint64_t`.
-    */
+     * Restore a given state in the sequence. See state().
+     *
+     * @tparam R use a different return-type. There are some internal checks if the type is able to
+     * store the internal state of type `uint64_t`.
+     */
     template <typename T>
     void restore(T state)
     {
@@ -1450,8 +1452,8 @@ public:
     }
 
     /**
-    \copydoc distance(const pcg32 &)
-    */
+     * @copydoc distance(const pcg32 &)
+     */
     int64_t operator-(const pcg32& other) const
     {
         PRRNG_ASSERT(m_inc == other.m_inc);
@@ -1477,16 +1479,16 @@ public:
     }
 
     /**
-    The distance between two PCG32 pseudorandom number generators.
-
-    \tparam R
-        Return-type.
-        `static_assert` against down-casting, #PRRNG_ASSERT against loss of signedness.
-
-    \return Distance.
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * The distance between two PCG32 pseudorandom number generators.
+     *
+     * @tparam R
+     *     Return-type.
+     *     `static_assert` against down-casting, #PRRNG_ASSERT against loss of signedness.
+     *
+     * @return Distance.
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     template <typename R = int64_t>
     R distance(const pcg32& other)
     {
@@ -1502,18 +1504,19 @@ public:
     }
 
     /**
-    The distance between two states.
-
-    \tparam R
-        Return-type.
-        `static_assert` against down-casting, #PRRNG_ASSERT against loss of signedness.
-
-    \return Distance.
-
-    \warning The increment of used to generate must be the same. There is no way of checking here!
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * The distance between two states.
+     *
+     * @tparam R
+     *     Return-type.
+     *     `static_assert` against down-casting, #PRRNG_ASSERT against loss of signedness.
+     *
+     * @return Distance.
+     *
+     * @warning The increment of used to generate must be the same. There is no way of checking
+     * here!
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     template <
         typename R = int64_t,
         typename T,
@@ -1550,17 +1553,17 @@ public:
     }
 
     /**
-    Multi-step advance function (jump-ahead, jump-back).
-
-    \param distance Distance to jump ahead or jump back (depending on the sign).
-    This changes that state of the generator by the appropriate number of increments.
-
-    \note The method used here is based on Brown, "Random Number Generation
-    with Arbitrary Stride", Transactions of the American Nuclear Society (Nov. 1994).
-    The algorithm is very similar to fast exponentiation.
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * Multi-step advance function (jump-ahead, jump-back).
+     *
+     * @param distance Distance to jump ahead or jump back (depending on the sign).
+     * This changes that state of the generator by the appropriate number of increments.
+     *
+     * \note The method used here is based on Brown, "Random Number Generation
+     * with Arbitrary Stride", Transactions of the American Nuclear Society (Nov. 1994).
+     * The algorithm is very similar to fast exponentiation.
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     template <typename T>
     void advance(T distance)
     {
@@ -1573,8 +1576,8 @@ public:
         uint64_t acc_mult = 1u;
         uint64_t acc_plus = 0u;
 
-        /* Even though delta is an unsigned integer, we can pass a signed
-           integer to go backwards, it just goes "the long way round". */
+        // Even though delta is an unsigned integer, we can pass a signed
+        // integer to go backwards, it just goes "the long way round".
         uint64_t delta = (uint64_t)delta_;
 
         while (delta > 0) {
@@ -1590,15 +1593,15 @@ public:
     }
 
     /**
-    Draw uniformly distributed permutation and permute the given STL container.
-
-    \param begin
-    \param end
-
-    \note From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * Draw uniformly distributed permutation and permute the given STL container.
+     *
+     * @param begin
+     * @param end
+     *
+     * \note From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     template <typename Iterator>
     void shuffle(Iterator begin, Iterator end)
     {
@@ -1608,24 +1611,24 @@ public:
     }
 
     /**
-    Equality operator.
-
-    \param other The generator to which to compare.
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * Equality operator.
+     *
+     * @param other The generator to which to compare.
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     bool operator==(const pcg32& other) const
     {
         return m_state == other.m_state && m_inc == other.m_inc;
     }
 
     /**
-    Inequality operator.
-
-    \param other The generator to which to compare.
-
-    \author Wenzel Jakob, https://github.com/wjakob/pcg32.
-    */
+     * Inequality operator.
+     *
+     * @param other The generator to which to compare.
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
     bool operator!=(const pcg32& other) const
     {
         return m_state != other.m_state || m_inc != other.m_inc;
@@ -1675,12 +1678,12 @@ private:
 };
 
 /**
-Base class of an array of pseudorandom number generators.
-This class provides common methods, but itself does not really do much.
-See the description of derived classed for information.
-
-\tparam M Type to use storage of the shape and array vectors. E.g. `std::vector` or `std::array`
-*/
+ * Base class of an array of pseudorandom number generators.
+ * This class provides common methods, but itself does not really do much.
+ * See the description of derived classed for information.
+ *
+ * @tparam M Type to use storage of the shape and array vectors. E.g. `std::vector` or `std::array`
+ */
 template <class M>
 class GeneratorBase_array {
 public:
@@ -1689,31 +1692,31 @@ public:
     virtual ~GeneratorBase_array() = default;
 
     /**
-    Return the size of the array of generators.
-
-    \return unsigned int
-    */
+     * Return the size of the array of generators.
+     *
+     * @return unsigned int
+     */
     size_t size() const
     {
         return m_size;
     }
 
     /**
-    Return the shape of the array of generators.
-
-    \return vector of unsigned ints
-    */
+     * Return the shape of the array of generators.
+     *
+     * @return vector of unsigned ints
+     */
     M shape() const
     {
         return m_shape;
     }
 
     /**
-    Return the shape of the array of generators along a specific axis.
-
-    \param axis The axis.
-    \return vector of unsigned ints
-    */
+     * Return the shape of the array of generators along a specific axis.
+     *
+     * @param axis The axis.
+     * @return vector of unsigned ints
+     */
     template <class T>
     size_t shape(T axis) const
     {
@@ -1721,11 +1724,11 @@ public:
     }
 
     /**
-    Return a flat index based on an array index specified as a list.
-
-    \param index Array index, e.g. as std::vector.
-    \return Flat index.
-    */
+     * Return a flat index based on an array index specified as a list.
+     *
+     * @param index Array index, e.g. as std::vector.
+     * @return Flat index.
+     */
     template <class T>
     size_t flat_index(const T& index) const
     {
@@ -1734,10 +1737,10 @@ public:
     }
 
     /**
-    Check if an index is in bounds (and of the correct rank).
-
-    \return `false` if out-of-bounds, `true` otherwise.
-    */
+     * Check if an index is in bounds (and of the correct rank).
+     *
+     * @return `false` if out-of-bounds, `true` otherwise.
+     */
     template <class T>
     bool inbounds(const T& index) const
     {
@@ -1755,11 +1758,11 @@ public:
     }
 
     /**
-    Per generator, generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
-
-    \param ishape The shape of the nd-array drawn per generator.
-    \return The array of arrays of samples: [#shape, `ishape`]
-    */
+     * Per generator, generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
     template <class S>
     auto random(const S& ishape) -> typename detail::composite_return_type<double, M, S>::type
     {
@@ -1768,9 +1771,9 @@ public:
     }
 
     /**
-    \copydoc random(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc random(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R random(const S& ishape)
     {
@@ -1778,8 +1781,8 @@ public:
     }
 
     /**
-    \copydoc random(const S&)
-    */
+     * @copydoc random(const S&)
+     */
     template <class I, std::size_t L>
     auto random(const I (&ishape)[L]) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
@@ -1789,9 +1792,9 @@ public:
     }
 
     /**
-    \copydoc random(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc random(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R random(const I (&ishape)[L])
     {
@@ -1799,12 +1802,12 @@ public:
     }
 
     /**
-    Per generator, generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
-
-    \param ishape The shape of the nd-array drawn per generator.
-    \param high The upper bound of the interval.
-    \return The array of arrays of samples: [#shape, `ishape`]
-    */
+     * Per generator, generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param high The upper bound of the interval.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
     template <class S, typename T>
     auto randint(const S& ishape, T high) -> typename detail::composite_return_type<T, M, S>::type
     {
@@ -1813,9 +1816,9 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc randint(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S, typename T>
     R randint(const S& ishape, T high)
     {
@@ -1823,8 +1826,8 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    */
+     * @copydoc randint(const S&)
+     */
     template <class I, std::size_t L, typename T>
     auto randint(const I (&ishape)[L], T high) ->
         typename detail::composite_return_type<T, M, std::array<size_t, L>>::type
@@ -1834,9 +1837,9 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc randint(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L, typename T>
     R randint(const I (&ishape)[L], T high)
     {
@@ -1844,13 +1847,13 @@ public:
     }
 
     /**
-    Per generator, generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
-
-    \param ishape The shape of the nd-array drawn per generator.
-    \param low The lower bound of the interval.
-    \param high The upper bound of the interval.
-    \return The array of arrays of samples: [#shape, `ishape`]
-    */
+     * Per generator, generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param low The lower bound of the interval.
+     * @param high The upper bound of the interval.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
     template <class S, typename T, typename U>
     auto randint(const S& ishape, T low, U high) ->
         typename detail::composite_return_type<T, M, S>::type
@@ -1860,9 +1863,9 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc randint(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S, typename T, typename U>
     R randint(const S& ishape, T low, U high)
     {
@@ -1870,8 +1873,8 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    */
+     * @copydoc randint(const S&)
+     */
     template <class I, std::size_t L, typename T, typename U>
     auto randint(const I (&ishape)[L], T low, U high) ->
         typename detail::composite_return_type<T, M, std::array<size_t, L>>::type
@@ -1881,9 +1884,9 @@ public:
     }
 
     /**
-    \copydoc randint(const S&)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc randint(const S&)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L, typename T, typename U>
     R randint(const I (&ishape)[L], T low, U high)
     {
@@ -1891,23 +1894,23 @@ public:
     }
 
     /**
-    Per generator, generate an nd-array of random numbers distributed
-    according to a normal distribution.
-    Internally, the output of random() is converted using the cumulative density
-
-    \f$ \Phi(x) = \frac{1}{2} \left[
-        1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
-    \right]\f$
-
-    such that the output `r` from random() leads to
-
-    \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
-
-    \param ishape The shape of the nd-array drawn per generator.
-    \param mu The average.
-    \param sigma The standard deviation.
-    \return The array of arrays of samples: [#shape, `ishape`]
-    */
+     * Per generator, generate an nd-array of random numbers distributed
+     * according to a normal distribution.
+     * Internally, the output of random() is converted using the cumulative density
+     *
+     * \f$ \Phi(x) = \frac{1}{2} \left[
+     *     1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
+     * \right]\f$
+     *
+     * such that the output `r` from random() leads to
+     *
+     * \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param mu The average.
+     * @param sigma The standard deviation.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
     template <class S>
     auto normal(const S& ishape, double mu = 0.0, double sigma = 1.0) ->
         typename detail::composite_return_type<double, M, S>::type
@@ -1917,9 +1920,9 @@ public:
     }
 
     /**
-    \copydoc normal(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc normal(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R normal(const S& ishape, double mu = 0.0, double sigma = 1.0)
     {
@@ -1927,8 +1930,8 @@ public:
     }
 
     /**
-    \copydoc normal(const S&, double, double)
-    */
+     * @copydoc normal(const S&, double, double)
+     */
     template <class I, std::size_t L>
     auto normal(const I (&ishape)[L], double mu = 0.0, double sigma = 1.0) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
@@ -1938,9 +1941,9 @@ public:
     }
 
     /**
-    \copydoc normal(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc normal(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R normal(const I (&ishape)[L], double mu = 0.0, double sigma = 1.0)
     {
@@ -1948,21 +1951,21 @@ public:
     }
 
     /**
-    Per generator, generate an nd-array of random numbers distributed
-    according to a Weibull distribution.
-    Internally, the output of random() is converted using the cumulative density
-
-    \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
-
-    such that the output `r` from random() leads to
-
-    \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
-
-    \param ishape The shape of the nd-array drawn per generator.
-    \param k The "shape" parameter.
-    \param lambda The "scale" parameter.
-    \return The array of arrays of samples: [#shape, `ishape`]
-    */
+     * Per generator, generate an nd-array of random numbers distributed
+     * according to a Weibull distribution.
+     * Internally, the output of random() is converted using the cumulative density
+     *
+     * \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
+     *
+     * such that the output `r` from random() leads to
+     *
+     * \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param k The "shape" parameter.
+     * @param lambda The "scale" parameter.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
     template <class S>
     auto weibull(const S& ishape, double k = 1.0, double lambda = 1.0) ->
         typename detail::composite_return_type<double, M, S>::type
@@ -1972,9 +1975,9 @@ public:
     }
 
     /**
-    \copydoc weibull(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc weibull(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
     {
@@ -1982,8 +1985,8 @@ public:
     }
 
     /**
-    \copydoc weibull(const S&, double, double)
-    */
+     * @copydoc weibull(const S&, double, double)
+     */
     template <class I, std::size_t L>
     auto weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
@@ -1993,9 +1996,9 @@ public:
     }
 
     /**
-    \copydoc weibull(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc weibull(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
     {
@@ -2003,16 +2006,16 @@ public:
     }
 
     /**
-    Per generator, generate an nd-array of random numbers distributed
-    according to a Gamma distribution.
-    Only available when compiled with PRRNG_USE_BOOST
-    (e.g. using the CMake target `prrng::use_boost`).
-
-    \param ishape The shape of the nd-array drawn per generator.
-    \param k The "shape" parameter.
-    \param theta The "scale" parameter.
-    \return The array of arrays of samples: [#shape, `ishape`]
-    */
+     * Per generator, generate an nd-array of random numbers distributed
+     * according to a Gamma distribution.
+     * Only available when compiled with PRRNG_USE_BOOST
+     * (e.g. using the CMake target `prrng::use_boost`).
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param k The "shape" parameter.
+     * @param theta The "scale" parameter.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
     template <class S>
     auto gamma(const S& ishape, double k = 1.0, double theta = 1.0) ->
         typename detail::composite_return_type<double, M, S>::type
@@ -2022,9 +2025,9 @@ public:
     }
 
     /**
-    \copydoc gamma(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc gamma(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R gamma(const S& ishape, double k = 1.0, double theta = 1.0)
     {
@@ -2032,8 +2035,8 @@ public:
     }
 
     /**
-    \copydoc gamma(const S&, double, double)
-    */
+     * @copydoc gamma(const S&, double, double)
+     */
     template <class I, std::size_t L>
     auto gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
@@ -2043,9 +2046,9 @@ public:
     }
 
     /**
-    \copydoc gamma(const S&, double, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc gamma(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
     {
@@ -2053,13 +2056,14 @@ public:
     }
 
     /**
-    Per generator, generate an nd-array of numbers that are delta distribution.
-    These numbers are not random; calling this function does not change the state of the generators.
-
-    \param ishape The shape of the nd-array drawn per generator.
-    \param mean The value of the 'peak' of the delta distribution.
-    \return The array of arrays of samples: [#shape, `ishape`]
-    */
+     * Per generator, generate an nd-array of numbers that are delta distribution.
+     * These numbers are not random; calling this function does not change the state of the
+     * generators.
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param mean The value of the 'peak' of the delta distribution.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
     template <class S>
     auto delta(const S& ishape, double mean = 1.0) ->
         typename detail::composite_return_type<double, M, S>::type
@@ -2069,9 +2073,9 @@ public:
     }
 
     /**
-    \copydoc delta(const S&, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc delta(const S&, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class S>
     R delta(const S& ishape, double mean = 1.0)
     {
@@ -2079,8 +2083,8 @@ public:
     }
 
     /**
-    \copydoc delta(const S&, double)
-    */
+     * @copydoc delta(const S&, double)
+     */
     template <class I, std::size_t L>
     auto delta(const I (&ishape)[L], double mean = 1.0) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
@@ -2090,9 +2094,9 @@ public:
     }
 
     /**
-    \copydoc delta(const S&, double)
-    \tparam R return type, e.g. `xt::xtensor<double, 1>`
-    */
+     * @copydoc delta(const S&, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
     template <class R, class I, std::size_t L>
     R delta(const I (&ishape)[L], double mean = 1.0)
     {
@@ -2192,11 +2196,11 @@ private:
 
 protected:
     /**
-    Draw `n` random numbers and write them to list (input as pointer `data`).
-
-    \param data Pointer to the data (no bounds-check).
-    \param n Size of `data`.
-    */
+     * Draw `n` random numbers and write them to list (input as pointer `data`).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param n Size of `data`.
+     */
     virtual void draw_list(double* data, size_t n)
     {
         for (size_t i = 0; i < n; ++i) {
@@ -2205,12 +2209,12 @@ protected:
     }
 
     /**
-    Draw `n` random numbers and write them to list (input as pointer `data`).
-
-    \param data Pointer to the data (no bounds-check).
-    \param bound Upper bound of the random numbers.
-    \param n Size of `data`.
-    */
+     * Draw `n` random numbers and write them to list (input as pointer `data`).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param bound Upper bound of the random numbers.
+     * @param n Size of `data`.
+     */
     virtual void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
     {
         (void)(bound);
@@ -2227,8 +2231,8 @@ protected:
 };
 
 /**
-Base class, see pcg32_array for description.
-*/
+ * Base class, see pcg32_array for description.
+ */
 template <class M>
 class pcg32_arrayBase : public GeneratorBase_array<M> {
 public:
@@ -2237,11 +2241,11 @@ public:
     virtual ~pcg32_arrayBase() = default;
 
     /**
-    Return a reference to one generator, using an array index.
-
-    \param args Array index (number of arguments should correspond to the rank of the array).
-    \return Reference to underlying generator.
-    */
+     * Return a reference to one generator, using an array index.
+     *
+     * @param args Array index (number of arguments should correspond to the rank of the array).
+     * @return Reference to underlying generator.
+     */
     template <class... Args>
     pcg32& operator()(Args... args)
     {
@@ -2249,11 +2253,11 @@ public:
     }
 
     /**
-    Return a constant reference to one generator, using an array index.
-
-    \param args Array index (number of arguments should correspond to the rank of the array).
-    \return Reference to underlying generator.
-    */
+     * Return a constant reference to one generator, using an array index.
+     *
+     * @param args Array index (number of arguments should correspond to the rank of the array).
+     * @return Reference to underlying generator.
+     */
     template <class... Args>
     const pcg32& operator()(Args... args) const
     {
@@ -2261,11 +2265,11 @@ public:
     }
 
     /**
-    Return a reference to one generator, using a flat index.
-
-    \param i Flat index.
-    \return Reference to underlying generator.
-    */
+     * Return a reference to one generator, using a flat index.
+     *
+     * @param i Flat index.
+     * @return Reference to underlying generator.
+     */
     pcg32& operator[](size_t i)
     {
         PRRNG_ASSERT(i < m_size);
@@ -2273,11 +2277,11 @@ public:
     }
 
     /**
-    Return a constant reference to one generator, using a flat index.
-
-    \param i Flat index.
-    \return Reference to underlying generator.
-    */
+     * Return a constant reference to one generator, using a flat index.
+     *
+     * @param i Flat index.
+     * @return Reference to underlying generator.
+     */
     const pcg32& operator[](size_t i) const
     {
         PRRNG_ASSERT(i < m_size);
@@ -2285,11 +2289,11 @@ public:
     }
 
     /**
-    Return a reference to one generator, using a flat index.
-
-    \param i Flat index.
-    \return Reference to underlying generator.
-    */
+     * Return a reference to one generator, using a flat index.
+     *
+     * @param i Flat index.
+     * @return Reference to underlying generator.
+     */
     pcg32& flat(size_t i)
     {
         PRRNG_ASSERT(i < m_size);
@@ -2297,11 +2301,11 @@ public:
     }
 
     /**
-    Return a constant reference to one generator, using a flat index.
-
-    \param i Flat index.
-    \return Reference to underlying generator.
-    */
+     * Return a constant reference to one generator, using a flat index.
+     *
+     * @param i Flat index.
+     * @return Reference to underlying generator.
+     */
     const pcg32& flat(size_t i) const
     {
         PRRNG_ASSERT(i < m_size);
@@ -2309,11 +2313,11 @@ public:
     }
 
     /**
-    Return the state of all generators.
-    See pcg32::state().
-
-    \return The state of each generator.
-    */
+     * Return the state of all generators.
+     * See pcg32::state().
+     *
+     * @return The state of each generator.
+     */
     auto state() -> typename detail::return_type<uint64_t, M>::type
     {
         using R = typename detail::return_type<uint64_t, M>::type;
@@ -2321,10 +2325,11 @@ public:
     }
 
     /**
-    \copydoc state()
-
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-    */
+     * @copydoc state()
+     *
+     * @tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t,
+     * N>`
+     */
     template <class R>
     R state()
     {
@@ -2339,11 +2344,11 @@ public:
     }
 
     /**
-    Return the state initiator of all generators.
-    See pcg32::initstate().
-
-    \return The state initiator of each generator.
-    */
+     * Return the state initiator of all generators.
+     * See pcg32::initstate().
+     *
+     * @return The state initiator of each generator.
+     */
     auto initstate() -> typename detail::return_type<uint64_t, M>::type
     {
         using R = typename detail::return_type<uint64_t, M>::type;
@@ -2351,10 +2356,10 @@ public:
     }
 
     /**
-    \copydoc initstate()
-
-    \return The state initiator of each generator.
-    */
+     * @copydoc initstate()
+     *
+     * @return The state initiator of each generator.
+     */
     template <class R>
     R initstate()
     {
@@ -2369,11 +2374,11 @@ public:
     }
 
     /**
-    Return the sequence initiator of all generators.
-    See pcg32::initseq().
-
-    \return The sequence initiator of each generator.
-    */
+     * Return the sequence initiator of all generators.
+     * See pcg32::initseq().
+     *
+     * @return The sequence initiator of each generator.
+     */
     auto initseq() -> typename detail::return_type<uint64_t, M>::type
     {
         using R = typename detail::return_type<uint64_t, M>::type;
@@ -2381,10 +2386,11 @@ public:
     }
 
     /**
-    \copydoc initseq()
-
-    \tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-    */
+     * @copydoc initseq()
+     *
+     * @tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t,
+     * N>`
+     */
     template <class R>
     R initseq()
     {
@@ -2399,12 +2405,12 @@ public:
     }
 
     /**
-    Distance between two states.
-    See pcg32::distance().
-
-    \tparam T Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
-    \param arg The state to which to compare.
-    */
+     * Distance between two states.
+     * See pcg32::distance().
+     *
+     * @tparam T Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
+     * @param arg The state to which to compare.
+     */
     template <class T>
     auto distance(const T& arg) -> typename detail::return_type<int64_t, M>::type
     {
@@ -2413,13 +2419,13 @@ public:
     }
 
     /**
-    Distance between two states.
-    See pcg32::distance().
-
-    \tparam R Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
-    \tparam T Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
-    \param arg The state to which to compare.
-    */
+     * Distance between two states.
+     * See pcg32::distance().
+     *
+     * @tparam R Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
+     * @tparam T Array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`.
+     * @param arg The state to which to compare.
+     */
     template <class R, class T>
     R distance(const T& arg)
     {
@@ -2434,13 +2440,13 @@ public:
     }
 
     /**
-    Advance generators.
-    See pcg32::advance().
-
-    \tparam T The type of the input array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`
-
-    \param arg The distance (positive or negative) by which to advance each generator.
-    */
+     * Advance generators.
+     * See pcg32::advance().
+     *
+     * @tparam T The type of the input array, e.g. `xt::array<int64_t>` or `xt::xtensor<int64_t, N>`
+     *
+     * @param arg The distance (positive or negative) by which to advance each generator.
+     */
     template <class T>
     void advance(const T& arg)
     {
@@ -2450,13 +2456,14 @@ public:
     }
 
     /**
-    Restore generators from a state.
-    See pcg32::restore().
-
-    \tparam T The type of the input array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t, N>`
-
-    \param arg The state of each generator.
-    */
+     * Restore generators from a state.
+     * See pcg32::restore().
+     *
+     * @tparam T The type of the input array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t,
+     * N>`
+     *
+     * @param arg The state of each generator.
+     */
     template <class T>
     void restore(const T& arg)
     {
@@ -2611,12 +2618,12 @@ public:
 
 protected:
     /**
-    Draw `n` random numbers per array item, and write them to the correct position in `data`
-    (assuming row-major storage!).
-
-    \param data Pointer to the data (no bounds-check).
-    \param n The number of random numbers per generator.
-    */
+     * Draw `n` random numbers per array item, and write them to the correct position in `data`
+     * (assuming row-major storage!).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param n The number of random numbers per generator.
+     */
     void draw_list(double* data, size_t n) override
     {
         for (size_t i = 0; i < m_size; ++i) {
@@ -2627,13 +2634,13 @@ protected:
     }
 
     /**
-    Draw `n` random numbers per array item, and write them to the correct position in `data`
-    (assuming row-major storage!).
-
-    \param data Pointer to the data (no bounds-check).
-    \param bound The upper bound of the random numbers.
-    \param n The number of random numbers per generator.
-    */
+     * Draw `n` random numbers per array item, and write them to the correct position in `data`
+     * (assuming row-major storage!).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param bound The upper bound of the random numbers.
+     * @param n The number of random numbers per generator.
+     */
     void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n) override
     {
         for (size_t i = 0; i < m_size; ++i) {
@@ -2645,9 +2652,9 @@ protected:
 
 private:
     /**
-    implementation of `operator()`.
-    (Last call in recursion).
-    */
+     * implementation of `operator()`.
+     * (Last call in recursion).
+     */
     template <class T>
     size_t get_item(size_t sum, size_t d, T arg)
     {
@@ -2655,9 +2662,9 @@ private:
     }
 
     /**
-    implementation of `operator()`.
-    (Called recursively).
-    */
+     * implementation of `operator()`.
+     * (Called recursively).
+     */
     template <class T, class... Args>
     size_t get_item(size_t sum, size_t d, T arg, Args... args)
     {
@@ -2672,36 +2679,36 @@ protected:
 };
 
 /**
-Array of independent generators.
-The idea is that each array-entry has its own random sequence, initiated by its own seed.
-An array of random numbers can then be generated whose shape if composed of the #shape,
-the shape of the array of generators, followed by the desired shape of the random sequence
-draw per generator.
-Let us consider an example. Suppose that we have a list of n = 5 generators,
-and we want to generate i = 8 random numbers for each generator.
-Then the output will be collected in a matrix of shape [n, i] = [5, 8] where each row
-corresponds to a generator and the columns for that row are the random sequence generated
-by that generator.
-Since this class is general, you can also imagine an array of [m, n, o, p] generators with
-a random sequence reshaped in a (row-major) array of shape [a, b, c, d, e].
-The output is then collected in an array of shape [m, n, o, p, a, b, c, d, e].
-
-Note that a reference to each generator can be obtained using the `[]` and `()` operators,
-e.g. `generators[flat_index]` and `generators(i, j, k, ...)`. All functions of pcg32()
-can be used for each reference.
-In addition, convenience functions state(), initstate(), initseq(), restore() are provided
-here to store/restore the state of the entire array of generators.
-*/
+ * Array of independent generators.
+ * The idea is that each array-entry has its own random sequence, initiated by its own seed.
+ * An array of random numbers can then be generated whose shape if composed of the #shape,
+ * the shape of the array of generators, followed by the desired shape of the random sequence
+ * draw per generator.
+ * Let us consider an example. Suppose that we have a list of n = 5 generators,
+ * and we want to generate i = 8 random numbers for each generator.
+ * Then the output will be collected in a matrix of shape [n, i] = [5, 8] where each row
+ * corresponds to a generator and the columns for that row are the random sequence generated
+ * by that generator.
+ * Since this class is general, you can also imagine an array of [m, n, o, p] generators with
+ * a random sequence reshaped in a (row-major) array of shape [a, b, c, d, e].
+ * The output is then collected in an array of shape [m, n, o, p, a, b, c, d, e].
+ *
+ * Note that a reference to each generator can be obtained using the `[]` and `()` operators,
+ * e.g. `generators[flat_index]` and `generators(i, j, k, ...)`. All functions of pcg32()
+ * can be used for each reference.
+ * In addition, convenience functions state(), initstate(), initseq(), restore() are provided
+ * here to store/restore the state of the entire array of generators.
+ */
 class pcg32_array : public pcg32_arrayBase<std::vector<size_t>> {
 public:
     pcg32_array() = default;
 
     /**
-    Constructor.
-
-    \param initstate State initiator for every item (accept default sequence initiator).
-    The shape of the argument determines the shape of the generator array.
-    */
+     * Constructor.
+     *
+     * @param initstate State initiator for every item (accept default sequence initiator).
+     * The shape of the argument determines the shape of the generator array.
+     */
     template <class T>
     pcg32_array(const T& initstate)
     {
@@ -2716,12 +2723,12 @@ public:
     }
 
     /**
-    Constructor.
-
-    \param initstate State initiator for every item.
-    \param initseq Sequence initiator for every item.
-    The shape of these argument determines the shape of the generator array.
-    */
+     * Constructor.
+     *
+     * @param initstate State initiator for every item.
+     * @param initseq Sequence initiator for every item.
+     * The shape of these argument determines the shape of the generator array.
+     */
     template <class T, class U>
     pcg32_array(const T& initstate, const U& initseq)
     {
@@ -2745,19 +2752,19 @@ protected:
 };
 
 /**
-Fixed rank version of pcg32_array
-*/
+ * Fixed rank version of pcg32_array
+ */
 template <size_t N>
 class pcg32_tensor : public pcg32_arrayBase<std::array<size_t, N>> {
 public:
     pcg32_tensor() = default;
 
     /**
-    Constructor.
-
-    \param initstate State initiator for every item (accept default sequence initiator).
-    The shape of the argument determines the shape of the generator array.
-    */
+     * Constructor.
+     *
+     * @param initstate State initiator for every item (accept default sequence initiator).
+     * The shape of the argument determines the shape of the generator array.
+     */
     template <class T>
     pcg32_tensor(const T& initstate)
     {
@@ -2774,12 +2781,12 @@ public:
     }
 
     /**
-    Constructor.
-
-    \param initstate State initiator for every item.
-    \param initseq Sequence initiator for every item.
-    The shape of these argument determines the shape of the generator array.
-    */
+     * Constructor.
+     *
+     * @param initstate State initiator for every item.
+     * @param initseq Sequence initiator for every item.
+     * The shape of these argument determines the shape of the generator array.
+     */
     template <class T, class U>
     pcg32_tensor(const T& initstate, const U& initseq)
     {
@@ -2850,11 +2857,11 @@ struct auto_pcg32<T, typename std::enable_if_t<std::is_integral<T>::value>> {
 } // namespace detail
 
 /**
-Return a pcg32, a pcg32_array, or a pcg32_tensor based on input.
-
-\param initstate The sequence initiator.
-\return The allocated generator.
-*/
+ * Return a pcg32, a pcg32_array, or a pcg32_tensor based on input.
+ *
+ * @param initstate The sequence initiator.
+ * @return The allocated generator.
+ */
 template <class T>
 inline auto auto_pcg32(const T& initstate)
 {
@@ -2862,12 +2869,12 @@ inline auto auto_pcg32(const T& initstate)
 }
 
 /**
-Return a pcg32, a pcg32_array, or a pcg32_tensor based on input.
-
-\param initstate The sequence initiator.
-\param initseq The sequence initiator.
-\return The allocated generator.
-*/
+ * Return a pcg32, a pcg32_array, or a pcg32_tensor based on input.
+ *
+ * @param initstate The sequence initiator.
+ * @param initseq The sequence initiator.
+ * @return The allocated generator.
+ */
 template <class T, class S>
 inline auto auto_pcg32(const T& initstate, const S& initseq)
 {
