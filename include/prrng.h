@@ -418,9 +418,10 @@ public:
 #endif
     }
 
-private:
-    friend class GeneratorBase;
-
+    /**
+     * @brief Apply the quantile in place.
+     * @param p Probability [0, 1], modified in place.
+     */
     template <class T>
     void apply_quantile(T* p)
     {
@@ -435,6 +436,77 @@ private:
     double m_mu;
     double m_sigma;
     double m_sigma_sqrt2;
+};
+
+/**
+ * Exponential distribution.
+ *
+ * References:
+ *
+ * -   https://en.wikipedia.org/wiki/Exponential_distribution
+ */
+class exponential_distribution {
+public:
+    /**
+     * Constructor.
+     *
+     * @param scale Scale (inverse rate).
+     */
+    exponential_distribution(double scale = 1.0)
+    {
+        m_scale = scale;
+    }
+
+    /**
+     * Return the probability density function.
+     *
+     * @param x Coordinates.
+     * @return probability density for each `x`.
+     */
+    template <class T>
+    T pdf(const T& x)
+    {
+        double rate = 1.0 / m_scale;
+        return rate * xt::exp(-rate * x);
+    }
+
+    /**
+     * Return the cumulative density function.
+     *
+     * @param x Coordinates.
+     * @return cumulative density for each `x`.
+     */
+    template <class T>
+    T cdf(const T& x)
+    {
+        double rate = 1.0 / m_scale;
+        return 1.0 - xt::exp(-rate * x);
+    }
+
+    /**
+     * Return the quantile (the inverse of the cumulative density function).
+     *
+     * @param p Probability [0, 1].
+     * @return quantile for each `p`.
+     */
+    template <class T>
+    T quantile(const T& p)
+    {
+        return -xt::log(1.0 - p) * m_scale;
+    }
+
+    /**
+     * @brief Apply the quantile in place.
+     * @param p Probability [0, 1], modified in place.
+     */
+    template <class T>
+    void apply_quantile(T* p)
+    {
+        *p = -std::log(1.0 - (*p)) * m_scale;
+    }
+
+private:
+    double m_scale;
 };
 
 /**
@@ -510,9 +582,10 @@ public:
         return m_scale * xt::pow(-xt::log1p(-p), 1.0 / m_shape);
     }
 
-private:
-    friend class GeneratorBase;
-
+    /**
+     * @brief Apply the quantile in place.
+     * @param p Probability [0, 1], modified in place.
+     */
     template <class T>
     void apply_quantile(T* p)
     {
@@ -616,9 +689,10 @@ public:
 #endif
     }
 
-private:
-    friend class GeneratorBase;
-
+    /**
+     * @brief Apply the quantile in place.
+     * @param p Probability [0, 1], modified in place.
+     */
     template <class T>
     void apply_quantile(T* p)
     {
@@ -662,8 +736,8 @@ public:
      * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
      * normal distribution, see normal_distribution(),
      * @param n Number of steps.
-     * @param mu Mean of the normal distribution.
-     * @param sigma Standard deviation of the normal distribution.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
      * @return Cumulative sum.
      */
     double cumsum_normal(size_t n, double mu = 0.0, double sigma = 1.0)
@@ -679,11 +753,30 @@ public:
     }
 
     /**
+     * @brief Result of the cumulative sum of `n` random numbers, distributed according to an
+     * exponential distribution, see exponential_distribution(),
+     * @param n Number of steps.
+     * @param scale Scale.
+     * @return Cumulative sum.
+     */
+    double cumsum_exponential(size_t n, double scale = 1.0)
+    {
+        double ret = 0.0;
+        auto tranform = exponential_distribution(scale);
+        for (size_t i = 0; i < n; ++i) {
+            auto r = draw_double();
+            tranform.apply_quantile(&r);
+            ret += r;
+        }
+        return ret;
+    }
+
+    /**
      * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
      * weibull distribution, see weibull_distribution(),
      * @param n Number of steps.
-     * @param k Shape parameter.
-     * @param lambda Scale parameter.
+     * @param k Shape.
+     * @param lambda Scale.
      * @return Cumulative sum.
      */
     double cumsum_weibull(size_t n, double k = 1.0, double lambda = 1.0)
@@ -702,8 +795,8 @@ public:
      * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
      * gamma distribution, see gamma_distribution(),
      * @param n Number of steps.
-     * @param k Shape parameter.
-     * @param theta Scale parameter.
+     * @param k Shape.
+     * @param theta Scale.
      * @return Cumulative sum.
      */
     double cumsum_gamma(size_t n, double k = 1.0, double theta = 1.0)
@@ -1021,6 +1114,52 @@ public:
     }
 
     /**
+     * Generate an nd-array of random numbers distributed according to an exponential distribution.
+     *
+     * @param shape The shape of the nd-array.
+     * @param scale The scale.
+     * @return The sample of shape `shape`.
+     */
+    template <class S>
+    auto exponential(const S& shape, double scale = 1.0) ->
+        typename detail::return_type<double, S>::type
+    {
+        using R = typename detail::return_type<double, S>::type;
+        return this->exponential_impl<R>(shape, scale);
+    }
+
+    /**
+     * @copydoc exponential(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class S>
+    R exponential(const S& shape, double scale = 1.0)
+    {
+        return this->exponential_impl<R>(shape, scale);
+    }
+
+    /**
+     * @copydoc exponential(const S&, double, double)
+     */
+    template <class I, std::size_t L>
+    auto exponential(const I (&shape)[L], double scale = 1.0) ->
+        typename detail::return_type_fixed<double, L>::type
+    {
+        using R = typename detail::return_type_fixed<double, L>::type;
+        return this->exponential_impl<R>(shape, scale);
+    }
+
+    /**
+     * @copydoc exponential(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class I, std::size_t L>
+    R exponential(const I (&shape)[L], double scale = 1.0)
+    {
+        return this->exponential_impl<R>(shape, scale);
+    }
+
+    /**
      * Generate an nd-array of random numbers distributed according to a Weibull distribution.
      * Internally, the output of random() is converted using the cumulative density
      *
@@ -1241,6 +1380,13 @@ private:
     {
         R r = this->random_impl<R>(shape);
         return normal_distribution(mu, sigma).quantile(r);
+    }
+
+    template <class R, class S>
+    R exponential_impl(const S& shape, double scale)
+    {
+        R r = this->random_impl<R>(shape);
+        return exponential_distribution(scale).quantile(r);
     }
 
     template <class R, class S>
@@ -2070,6 +2216,53 @@ public:
 
     /**
      * Per generator, generate an nd-array of random numbers distributed
+     * according to an exponential distribution.
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param scale The scale.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
+    template <class S>
+    auto exponential(const S& ishape, double scale = 1.0) ->
+        typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->exponential_impl<R>(ishape, scale);
+    }
+
+    /**
+     * @copydoc exponential(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class S>
+    R exponential(const S& ishape, double scale = 1.0)
+    {
+        return this->exponential_impl<R>(ishape, scale);
+    }
+
+    /**
+     * @copydoc exponential(const S&, double, double)
+     */
+    template <class I, std::size_t L>
+    auto exponential(const I (&ishape)[L], double scale = 1.0) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->exponential_impl<R>(detail::to_array(ishape), scale);
+    }
+
+    /**
+     * @copydoc exponential(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class I, std::size_t L>
+    R exponential(const I (&ishape)[L], double scale = 1.0)
+    {
+        return this->exponential_impl<R>(detail::to_array(ishape), scale);
+    }
+
+    /**
+     * Per generator, generate an nd-array of random numbers distributed
      * according to a Weibull distribution.
      * Internally, the output of random() is converted using the cumulative density
      *
@@ -2252,8 +2445,8 @@ public:
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
      * distributed according to a normal distribution, see normal_distribution(),
      * @param n Number of steps.
-     * @param mu Mean of the normal distribution.
-     * @param sigma Standard deviation of the normal distribution.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
      * @return Cumulative sum.
      */
     template <class T>
@@ -2270,8 +2463,8 @@ public:
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
      * distributed according to a normal distribution, see normal_distribution(),
      * @param n Number of steps.
-     * @param mu Mean of the normal distribution.
-     * @param sigma Standard deviation of the normal distribution.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
      * @return Cumulative sum.
      */
     template <class R, class T>
@@ -2284,10 +2477,42 @@ public:
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
-     * distributed according to a normal distribution, see weibull_distribution(),
+     * distributed according to an exponential distribution, see exponential_distribution(),
      * @param n Number of steps.
-     * @param k Shape parameter.
-     * @param lambda Scale parameter.
+     * @param scale Scale.
+     * @return Cumulative sum.
+     */
+    template <class T>
+    auto cumsum_exponential(const T& n, double scale = 1.0) ->
+        typename detail::return_type<double, M>::type
+    {
+        using R = typename detail::return_type<double, M>::type;
+        R ret = R::from_shape(m_shape);
+        this->cumsum_exponential_impl(ret.data(), n.data(), scale);
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to an exponential distribution, see exponential_distribution(),
+     * @param n Number of steps.
+     * @param scale Scale.
+     * @return Cumulative sum.
+     */
+    template <class R, class T>
+    R cumsum_exponential(const T& n, double scale = 1.0)
+    {
+        R ret = R::from_shape(m_shape);
+        this->cumsum_exponential_impl(ret.data(), n.data(), scale);
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a weibull distribution, see weibull_distribution(),
+     * @param n Number of steps.
+     * @param k Shape.
+     * @param lambda Scale.
      * @return Cumulative sum.
      */
     template <class T>
@@ -2318,7 +2543,7 @@ public:
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
-     * distributed according to a normal distribution, see gamma_distribution(),
+     * distributed according to a gamma distribution, see gamma_distribution(),
      * @param n Number of steps.
      * @param k Shape parameter.
      * @param theta Scale parameter.
@@ -2525,6 +2750,13 @@ private:
     }
 
     template <class R, class S>
+    R exponential_impl(const S& ishape, double scale)
+    {
+        R r = this->random_impl<R>(ishape);
+        return exponential_distribution(scale).quantile(r);
+    }
+
+    template <class R, class S>
     R weibull_impl(const S& ishape, double k, double lambda)
     {
         R r = this->random_impl<R>(ishape);
@@ -2594,7 +2826,17 @@ protected:
      */
     virtual void cumsum_normal_impl(double* ret, const size_t* n, double, double)
     {
-        return cumsum_random_impl(ret, n);
+        return cumsum_random_impl(ret, n); // dummy
+    }
+
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     */
+    virtual void cumsum_exponential_impl(double* ret, const size_t* n, double)
+    {
+        return cumsum_random_impl(ret, n); // dummy
     }
 
     /**
@@ -2604,7 +2846,7 @@ protected:
      */
     virtual void cumsum_weibull_impl(double* ret, const size_t* n, double, double)
     {
-        return cumsum_random_impl(ret, n);
+        return cumsum_random_impl(ret, n); // dummy
     }
 
     /**
@@ -2614,7 +2856,7 @@ protected:
      */
     virtual void cumsum_gamma_impl(double* ret, const size_t* n, double, double)
     {
-        return cumsum_random_impl(ret, n);
+        return cumsum_random_impl(ret, n); // dummy
     }
 
     /**
@@ -2948,6 +3190,19 @@ protected:
     {
         for (size_t i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_normal(n[i], mu, sigma);
+        }
+    }
+
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     * @param scale Scale.
+     */
+    void cumsum_exponential_impl(double* ret, const size_t* n, double scale) override
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            ret[i] = m_gen[i].cumsum_exponential(n[i], scale);
         }
     }
 

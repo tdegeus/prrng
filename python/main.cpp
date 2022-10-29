@@ -81,6 +81,39 @@ PYBIND11_MODULE(_prrng, m)
             return "<prrng.normal_distribution>";
         });
 
+    py::class_<prrng::exponential_distribution>(m, "exponential_distribution")
+
+        .def(
+            py::init<double>(),
+            "exponential distribution. "
+            "See :cpp:class:`prrng::exponential_distribution`.",
+            py::arg("scale") = 1.0)
+
+        .def(
+            "pdf",
+            &prrng::exponential_distribution::pdf<xt::pytensor<double, 1>>,
+            "Probability density distribution. "
+            "See :cpp:func:`prrng::exponential_distribution::pdf`.",
+            py::arg("x"))
+
+        .def(
+            "cdf",
+            &prrng::exponential_distribution::cdf<xt::pytensor<double, 1>>,
+            "Cumulative density distribution. "
+            "See :cpp:func:`prrng::exponential_distribution::cdf`.",
+            py::arg("x"))
+
+        .def(
+            "quantile",
+            &prrng::exponential_distribution::quantile<xt::pyarray<double>>,
+            "Quantile (inverse of cumulative density distribution). "
+            "See :cpp:func:`prrng::exponential_distribution::quantile`.",
+            py::arg("r"))
+
+        .def("__repr__", [](const prrng::exponential_distribution&) {
+            return "<prrng.exponential_distribution>";
+        });
+
     py::class_<prrng::weibull_distribution>(m, "weibull_distribution")
 
         .def(
@@ -171,6 +204,14 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("n"),
             py::arg("mu") = 0.0,
             py::arg("sigma") = 1.0)
+
+        .def(
+            "cumsum_exponential",
+            &prrng::GeneratorBase::cumsum_exponential,
+            "The result of the cumsum of `n` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase::cumsum_exponential`.",
+            py::arg("n"),
+            py::arg("scale") = 1.0)
 
         .def(
             "cumsum_weibull",
@@ -269,6 +310,15 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("shape"),
             py::arg("mu") = 0.0,
             py::arg("sigma") = 1.0)
+
+        .def(
+            "exponential",
+            py::overload_cast<const std::vector<size_t>&, double>(
+                &prrng::GeneratorBase::exponential<xt::pyarray<double>, std::vector<size_t>>),
+            "ndarray of random numbers, distributed according to a exponential distribution. "
+            "See :cpp:func:`prrng::GeneratorBase::exponential`.",
+            py::arg("shape"),
+            py::arg("scale") = 1.0)
 
         .def(
             "weibull",
@@ -502,6 +552,16 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("sigma") = 1.0)
 
         .def(
+            "exponential",
+            py::overload_cast<const std::vector<size_t>&, double>(
+                &prrng::GeneratorBase_array<
+                    std::vector<size_t>>::exponential<xt::pyarray<double>, std::vector<size_t>>),
+            "ndarray of random numbers, distributed according to a exponential distribution. "
+            "See :cpp:func:`prrng::GeneratorBase_array::exponential`.",
+            py::arg("ishape"),
+            py::arg("scale") = 1.0)
+
+        .def(
             "weibull",
             py::overload_cast<const std::vector<size_t>&, double, double>(
                 &prrng::GeneratorBase_array<
@@ -550,6 +610,15 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("n"),
             py::arg("mu") = 0.0,
             py::arg("sigma") = 1.0)
+
+        .def(
+            "cumsum_exponential",
+            &prrng::GeneratorBase_array<
+                std::vector<size_t>>::cumsum_exponential<xt::pyarray<double>, xt::pyarray<size_t>>,
+            "Cumsum of ``n`` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase_array::cumsum_exponential`.",
+            py::arg("n"),
+            py::arg("scale") = 1.0)
 
         .def(
             "cumsum_weibull",
