@@ -3,5 +3,5 @@ includedir=${prefix}/include
 
 Name: @PROJECT_NAME@
 Description: Portable Reconstructible (Approximate!) Random Number Generator
-Version: @prrng_VERSION@
+Version: @PROJECT_VERSION@
 Cflags: -I${includedir}
