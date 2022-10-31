@@ -99,11 +99,11 @@
 #endif
 
 /**
- * All assertions are implementation as::
+ * All assertions are implementation as:
  *
  *     PRRNG_ASSERT(...)
  *
- * They can be enabled by::
+ * They can be enabled by:
  *
  *     #define PRRNG_ENABLE_ASSERT
  *
@@ -122,7 +122,7 @@
 #endif
 
 /**
- * Portable Reconstructible (Pseudo!) Random Number Generator
+ * @brief Portable Reconstructible (Pseudo!) Random Number Generator
  */
 namespace prrng {
 
@@ -878,7 +878,7 @@ public:
     {
         using R = typename detail::return_type<bool, P>::type;
         R ret = xt::empty<bool>(p.shape());
-        this->decide_masked(p, ret);
+        this->decide_masked(p, mask, ret);
         return ret;
     }
 
@@ -890,7 +890,7 @@ public:
     {
         using value_type = typename detail::get_value_type<R>::type;
         R ret = xt::empty<value_type>(p.shape());
-        this->decide_masked(p, ret);
+        this->decide_masked(p, mask, ret);
         return ret;
     }
 
