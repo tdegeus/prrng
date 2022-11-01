@@ -1614,7 +1614,7 @@ public:
      *
      * @return State of the generator.
      */
-    uint64_t state()
+    uint64_t state() const
     {
         return m_state;
     }
@@ -1644,7 +1644,7 @@ public:
      *
      * @return initiator.
      */
-    uint64_t initstate()
+    uint64_t initstate() const
     {
         return m_initstate;
     }
@@ -1656,7 +1656,7 @@ public:
      * store the internal state of type `uint64_t`.
      */
     template <typename R>
-    R initstate()
+    R initstate() const
     {
         static_assert(
             std::numeric_limits<R>::max() >= std::numeric_limits<decltype(m_initstate)>::max(),
@@ -1674,7 +1674,7 @@ public:
      *
      * @return initiator.
      */
-    uint64_t initseq()
+    uint64_t initseq() const
     {
         return m_initseq;
     }
@@ -1686,7 +1686,7 @@ public:
      * store the internal state of type `uint64_t`.
      */
     template <typename R>
-    R initseq()
+    R initseq() const
     {
         static_assert(
             std::numeric_limits<R>::max() >= std::numeric_limits<decltype(m_initseq)>::max(),
@@ -1751,7 +1751,7 @@ public:
      * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
      */
     template <typename R = int64_t>
-    R distance(const pcg32& other)
+    R distance(const pcg32& other) const
     {
         static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
         int64_t r = this->operator-(other);
@@ -1782,7 +1782,7 @@ public:
         typename R = int64_t,
         typename T,
         std::enable_if_t<std::is_integral<T>::value, bool> = true>
-    R distance(T other_state)
+    R distance(T other_state) const
     {
         static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
 

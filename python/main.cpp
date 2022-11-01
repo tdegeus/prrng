@@ -391,14 +391,14 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             "distance",
-            py::overload_cast<uint64_t>(&prrng::pcg32::distance<int64_t, uint64_t>),
+            py::overload_cast<uint64_t>(&prrng::pcg32::distance<int64_t, uint64_t>, py::const_),
             "Distance to another state. "
             "See :cpp:func:`prrng::pcg32::distance`.",
             py::arg("state"))
 
         .def(
             "distance",
-            py::overload_cast<const prrng::pcg32&>(&prrng::pcg32::distance<int64_t>),
+            py::overload_cast<const prrng::pcg32&>(&prrng::pcg32::distance<int64_t>, py::const_),
             "Distance to another state. "
             "See :cpp:func:`prrng::pcg32::distance`.",
             py::arg("generator"))
