@@ -1330,9 +1330,7 @@ private:
                 std::numeric_limits<T>::max(),
             "Return value_type must must be able to accommodate the bound");
 
-        static_assert(
-            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
-            "Bound too large");
+        PRRNG_ASSERT(high <= std::numeric_limits<uint32_t>::max());
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
@@ -1364,9 +1362,8 @@ private:
                 std::numeric_limits<U>::max(),
             "Return value_type must must be able to accommodate the bound");
 
-        static_assert(
-            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
-            "Bound too large");
+        PRRNG_ASSERT(high - low >= 0);
+        PRRNG_ASSERT(high - low <= std::numeric_limits<uint32_t>::max());
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
