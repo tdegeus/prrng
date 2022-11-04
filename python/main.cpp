@@ -1,5 +1,4 @@
-#include <prrng.h>
-
+#include <pybind11/functional.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -7,6 +6,9 @@
 #define FORCE_IMPORT_ARRAY
 #include <xtensor-python/pyarray.hpp>
 #include <xtensor-python/pytensor.hpp>
+
+#define PRRNG_USE_XTENSOR_PYTHON
+#include <prrng.h>
 
 namespace py = pybind11;
 
@@ -437,6 +439,98 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("shape"),
             py::arg("low"),
             py::arg("high"))
+
+        .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
+
+    py::class_<prrng::pcg32_cumsum, prrng::GeneratorBase>(m, "pcg32_cumsum")
+
+        .def(
+            py::init<uint64_t, uint64_t>(),
+            "Generator of cumulative sum of random numbers. "
+            "See :cpp:class:`prrng::pcg32_cumsum`.",
+            py::arg("initstate") = PRRNG_PCG32_INITSTATE,
+            py::arg("initseq") = PRRNG_PCG32_INITSEQ)
+
+        .def_property_readonly("size", &prrng::pcg32_cumsum::size)
+        .def_property_readonly("generator", &prrng::pcg32_cumsum::generator)
+        .def_property_readonly("generator_index", &prrng::pcg32_cumsum::generator_index)
+        .def_property_readonly("chunk", &prrng::pcg32_cumsum::chunk)
+        .def_property_readonly("start", &prrng::pcg32_cumsum::start)
+
+        .def("state", &prrng::pcg32_cumsum::state, py::arg("index"))
+
+        .def(
+            "restore",
+            &prrng::pcg32_cumsum::restore,
+            py::arg("state"),
+            py::arg("value"),
+            py::arg("index"))
+
+        .def(
+            "draw_chunk",
+            &prrng::pcg32_cumsum::draw_chunk<
+                std::function<prrng::array_type::tensor<double, 1>(size_t)>>,
+            py::arg("n"),
+            py::arg("get_chunk"))
+
+        .def(
+            "prev_chunk",
+            &prrng::pcg32_cumsum::prev_chunk<
+                std::function<prrng::array_type::tensor<double, 1>(size_t)>>,
+            py::arg("get_chunk"),
+            py::arg("margin") = 0)
+
+        .def(
+            "next_chunk",
+            &prrng::pcg32_cumsum::next_chunk<
+                std::function<prrng::array_type::tensor<double, 1>(size_t)>>,
+            py::arg("get_chunk"),
+            py::arg("margin") = 0)
+
+        .def(
+            "align_chunk",
+            &prrng::pcg32_cumsum::align_chunk<
+                std::function<prrng::array_type::tensor<double, 1>(size_t)>,
+                std::function<double(size_t)>>,
+            py::arg("get_chunk"),
+            py::arg("get_cumsum"),
+            py::arg("target"),
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
+        .def(
+            "draw_chunk_weibull",
+            &prrng::pcg32_cumsum::draw_chunk_weibull,
+            py::arg("n"),
+            py::arg("k"),
+            py::arg("scale"),
+            py::arg("offset"))
+
+        .def(
+            "prev_chunk_weibull",
+            &prrng::pcg32_cumsum::prev_chunk_weibull,
+            py::arg("k"),
+            py::arg("scale"),
+            py::arg("offset"),
+            py::arg("margin") = 0)
+
+        .def(
+            "next_chunk_weibull",
+            &prrng::pcg32_cumsum::next_chunk_weibull,
+            py::arg("k"),
+            py::arg("scale"),
+            py::arg("offset"),
+            py::arg("margin") = 0)
+
+        .def(
+            "align_chunk_weibull",
+            &prrng::pcg32_cumsum::align_chunk_weibull,
+            py::arg("k"),
+            py::arg("scale"),
+            py::arg("offset"),
+            py::arg("target"),
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
 
         .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
