@@ -121,7 +121,7 @@ PYBIND11_MODULE(_prrng, m)
             "Weibull distribution. "
             "See :cpp:class:`prrng::weibull_distribution`.",
             py::arg("k") = 1.0,
-            py::arg("l") = 1.0)
+            py::arg("scale") = 1.0)
 
         .def(
             "pdf",
@@ -220,7 +220,7 @@ PYBIND11_MODULE(_prrng, m)
             "See :cpp:func:`prrng::GeneratorBase::cumsum_weibull`.",
             py::arg("n"),
             py::arg("k") = 1.0,
-            py::arg("l") = 1.0)
+            py::arg("scale") = 1.0)
 
         .def(
             "cumsum_gamma",
@@ -328,7 +328,7 @@ PYBIND11_MODULE(_prrng, m)
             "See :cpp:func:`prrng::GeneratorBase::weibull`.",
             py::arg("shape"),
             py::arg("k") = 1.0,
-            py::arg("l") = 1.0)
+            py::arg("scale") = 1.0)
 
         .def(
             "gamma",
@@ -570,7 +570,7 @@ PYBIND11_MODULE(_prrng, m)
             "See :cpp:func:`prrng::GeneratorBase_array::weibull`.",
             py::arg("ishape"),
             py::arg("k") = 1.0,
-            py::arg("l") = 1.0)
+            py::arg("scale") = 1.0)
 
         .def(
             "gamma",
@@ -628,7 +628,7 @@ PYBIND11_MODULE(_prrng, m)
             "See :cpp:func:`prrng::GeneratorBase_array::cumsum_weibull`.",
             py::arg("n"),
             py::arg("k") = 1.0,
-            py::arg("l") = 1.0)
+            py::arg("scale") = 1.0)
 
         .def(
             "cumsum_gamma",
