@@ -372,10 +372,10 @@ public:
     }
 
     /**
-     * Return the probability density function.
+     * Probability density function.
      *
      * @param x Coordinates.
-     * @return probability density for each `x`.
+     * @return Probability density for each `x`.
      */
     template <class T>
     T pdf(const T& x)
@@ -385,10 +385,10 @@ public:
     }
 
     /**
-     * Return the cumulative density function.
+     * Cumulative density function.
      *
      * @param x Coordinates.
-     * @return cumulative density for each `x`.
+     * @return Cumulative density for each `x`.
      */
     template <class T>
     T cdf(const T& x)
@@ -397,10 +397,10 @@ public:
     }
 
     /**
-     * Return the quantile (the inverse of the cumulative density function).
+     * Quantile (the inverse of the cumulative density function).
      *
      * @param p Probability [0, 1].
-     * @return quantile for each `p`.
+     * @return Quantile for each `p`.
      */
     template <class T>
     T quantile(const T& p)
@@ -458,10 +458,10 @@ public:
     }
 
     /**
-     * Return the probability density function.
+     * Probability density function.
      *
      * @param x Coordinates.
-     * @return probability density for each `x`.
+     * @return Probability density for each `x`.
      */
     template <class T>
     T pdf(const T& x)
@@ -471,10 +471,10 @@ public:
     }
 
     /**
-     * Return the cumulative density function.
+     * Cumulative density function.
      *
      * @param x Coordinates.
-     * @return cumulative density for each `x`.
+     * @return Cumulative density for each `x`.
      */
     template <class T>
     T cdf(const T& x)
@@ -484,10 +484,10 @@ public:
     }
 
     /**
-     * Return the quantile (the inverse of the cumulative density function).
+     * Quantile (the inverse of the cumulative density function).
      *
      * @param p Probability [0, 1].
-     * @return quantile for each `p`.
+     * @return Quantile for each `p`.
      */
     template <class T>
     T quantile(const T& p)
@@ -522,20 +522,20 @@ public:
     /**
      * Constructor.
      *
-     * @param k Shape parameter.
-     * @param lambda Scale parameter.
+     * @param k Shape parameter \f$ k \f$.
+     * @param scale Scale parameter \f$ \lambda \f$.
      */
-    weibull_distribution(double k = 1.0, double lambda = 1.0)
+    weibull_distribution(double k = 1.0, double scale = 1.0)
     {
         m_shape = k;
-        m_scale = lambda;
+        m_scale = scale;
     }
 
     /**
-     * Return the probability density function.
+     * Probability density function.
      *
      * @param x Coordinates.
-     * @return probability density for each `x`.
+     * @return Probability density for each `x`.
      */
     template <class T>
     T pdf(const T& x)
@@ -559,10 +559,12 @@ public:
     }
 
     /**
-     * Return the cumulative density function.
+     * Cumulative density function.
+     *
+     * \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
      *
      * @param x Coordinates.
-     * @return cumulative density for each `x`.
+     * @return Cumulative density for each `x`.
      */
     template <class T>
     T cdf(const T& x)
@@ -571,10 +573,13 @@ public:
     }
 
     /**
-     * Return the quantile (the inverse of the cumulative density function).
+     * Quantile (the inverse of the cumulative density function).
+     * For a given probability \f$ p \f$ the output is
+     *
+     * \f$ x = \lambda (- \ln (1 - p))^{1 / k}) \f$
      *
      * @param p Probability [0, 1].
-     * @return quantile for each `p`.
+     * @return Quantile for each `p`.
      */
     template <class T>
     T quantile(const T& p)
@@ -620,12 +625,12 @@ public:
     }
 
     /**
-     * Return the probability density function.
+     * Probability density function.
      * Only available when compiled with PRRNG_USE_BOOST
      * (e.g. using the CMake target `prrng::use_boost`).
      *
      * @param x Coordinates.
-     * @return probability density for each `x`.
+     * @return Probability density for each `x`.
      */
     template <class T>
     T pdf(const T& x)
@@ -644,12 +649,12 @@ public:
     }
 
     /**
-     * Return the cumulative density function.
+     * Cumulative density function.
      * Only available when compiled with PRRNG_USE_BOOST
      * (e.g. using the CMake target `prrng::use_boost`).
      *
      * @param x Coordinates.
-     * @return cumulative density for each `x`.
+     * @return Cumulative density for each `x`.
      */
     template <class T>
     T cdf(const T& x)
@@ -667,12 +672,12 @@ public:
     }
 
     /**
-     * Return the quantile (the inverse of the cumulative density function).
+     * Quantile (the inverse of the cumulative density function).
      * Only available when compiled with PRRNG_USE_BOOST
      * (e.g. using the CMake target `prrng::use_boost`).
      *
      * @param p Probability [0, 1].
-     * @return quantile for each `p`.
+     * @return Quantile for each `p`.
      */
     template <class T>
     T quantile(const T& p)
@@ -776,13 +781,13 @@ public:
      * weibull distribution, see weibull_distribution(),
      * @param n Number of steps.
      * @param k Shape.
-     * @param lambda Scale.
+     * @param scale Scale.
      * @return Cumulative sum.
      */
-    double cumsum_weibull(size_t n, double k = 1.0, double lambda = 1.0)
+    double cumsum_weibull(size_t n, double k = 1.0, double scale = 1.0)
     {
         double ret = 0.0;
-        auto tranform = weibull_distribution(k, lambda);
+        auto tranform = weibull_distribution(k, scale);
         for (size_t i = 0; i < n; ++i) {
             auto r = draw_double();
             tranform.apply_quantile(&r);
@@ -1161,25 +1166,18 @@ public:
 
     /**
      * Generate an nd-array of random numbers distributed according to a Weibull distribution.
-     * Internally, the output of random() is converted using the cumulative density
-     *
-     * \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
-     *
-     * such that the output `r` from random() leads to
-     *
-     * \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
      *
      * @param shape The shape of the nd-array.
-     * @param k The "shape" parameter.
-     * @param lambda The "scale" parameter.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
      * @return The sample of shape `shape`.
      */
     template <class S>
-    auto weibull(const S& shape, double k = 1.0, double lambda = 1.0) ->
+    auto weibull(const S& shape, double k = 1.0, double scale = 1.0) ->
         typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
-        return this->weibull_impl<R>(shape, k, lambda);
+        return this->weibull_impl<R>(shape, k, scale);
     }
 
     /**
@@ -1187,20 +1185,20 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R weibull(const S& shape, double k = 1.0, double lambda = 1.0)
+    R weibull(const S& shape, double k = 1.0, double scale = 1.0)
     {
-        return this->weibull_impl<R>(shape, k, lambda);
+        return this->weibull_impl<R>(shape, k, scale);
     }
 
     /**
      * @copydoc weibull(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0) ->
+    auto weibull(const I (&shape)[L], double k = 1.0, double scale = 1.0) ->
         typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
-        return this->weibull_impl<R>(shape, k, lambda);
+        return this->weibull_impl<R>(shape, k, scale);
     }
 
     /**
@@ -1208,9 +1206,9 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R weibull(const I (&shape)[L], double k = 1.0, double lambda = 1.0)
+    R weibull(const I (&shape)[L], double k = 1.0, double scale = 1.0)
     {
-        return this->weibull_impl<R>(shape, k, lambda);
+        return this->weibull_impl<R>(shape, k, scale);
     }
 
     /**
@@ -1219,8 +1217,8 @@ public:
      * (e.g. using the CMake target `prrng::use_boost`).
      *
      * @param shape The shape of the nd-array.
-     * @param k The "shape" parameter.
-     * @param theta The "scale" parameter.
+     * @param k Shape parameter.
+     * @param theta Scale parameter.
      * @return The sample of shape `shape`.
      */
     template <class S>
@@ -1387,10 +1385,10 @@ private:
     }
 
     template <class R, class S>
-    R weibull_impl(const S& shape, double k, double lambda)
+    R weibull_impl(const S& shape, double k, double scale)
     {
         R r = this->random_impl<R>(shape);
-        return weibull_distribution(k, lambda).quantile(r);
+        return weibull_distribution(k, scale).quantile(r);
     }
 
     template <class R, class S>
@@ -2270,16 +2268,16 @@ public:
      * \f$ x = \lambda (- \ln (1 - r))^{1 / k}) \f$
      *
      * @param ishape The shape of the nd-array drawn per generator.
-     * @param k The "shape" parameter.
-     * @param lambda The "scale" parameter.
+     * @param k The "shape" parameter \f$ k \f$.
+     * @param scale The "scale" parameter \f$ \lambda \f$.
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
-    auto weibull(const S& ishape, double k = 1.0, double lambda = 1.0) ->
+    auto weibull(const S& ishape, double k = 1.0, double scale = 1.0) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
-        return this->weibull_impl<R>(ishape, k, lambda);
+        return this->weibull_impl<R>(ishape, k, scale);
     }
 
     /**
@@ -2287,20 +2285,20 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R weibull(const S& ishape, double k = 1.0, double lambda = 1.0)
+    R weibull(const S& ishape, double k = 1.0, double scale = 1.0)
     {
-        return this->weibull_impl<R>(ishape, k, lambda);
+        return this->weibull_impl<R>(ishape, k, scale);
     }
 
     /**
      * @copydoc weibull(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0) ->
+    auto weibull(const I (&ishape)[L], double k = 1.0, double scale = 1.0) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
-        return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
+        return this->weibull_impl<R>(detail::to_array(ishape), k, scale);
     }
 
     /**
@@ -2308,9 +2306,9 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R weibull(const I (&ishape)[L], double k = 1.0, double lambda = 1.0)
+    R weibull(const I (&ishape)[L], double k = 1.0, double scale = 1.0)
     {
-        return this->weibull_impl<R>(detail::to_array(ishape), k, lambda);
+        return this->weibull_impl<R>(detail::to_array(ishape), k, scale);
     }
 
     /**
@@ -2320,8 +2318,8 @@ public:
      * (e.g. using the CMake target `prrng::use_boost`).
      *
      * @param ishape The shape of the nd-array drawn per generator.
-     * @param k The "shape" parameter.
-     * @param theta The "scale" parameter.
+     * @param k Shape parameter.
+     * @param theta Scale parameter.
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
@@ -2509,16 +2507,16 @@ public:
      * distributed according to a weibull distribution, see weibull_distribution(),
      * @param n Number of steps.
      * @param k Shape.
-     * @param lambda Scale.
+     * @param scale Scale.
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_weibull(const T& n, double k = 1.0, double lambda = 1.0) ->
+    auto cumsum_weibull(const T& n, double k = 1.0, double scale = 1.0) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_weibull_impl(ret.data(), n.data(), k, lambda);
+        this->cumsum_weibull_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -2527,14 +2525,14 @@ public:
      * distributed according to a weibull distribution, see weibull_distribution(),
      * @param n Number of steps.
      * @param k Shape parameter.
-     * @param lambda Scale parameter.
+     * @param scale Scale parameter.
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_weibull(const T& n, double k = 1.0, double lambda = 1.0)
+    R cumsum_weibull(const T& n, double k = 1.0, double scale = 1.0)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_weibull_impl(ret.data(), n.data(), k, lambda);
+        this->cumsum_weibull_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -2754,10 +2752,10 @@ private:
     }
 
     template <class R, class S>
-    R weibull_impl(const S& ishape, double k, double lambda)
+    R weibull_impl(const S& ishape, double k, double scale)
     {
         R r = this->random_impl<R>(ishape);
-        return weibull_distribution(k, lambda).quantile(r);
+        return weibull_distribution(k, scale).quantile(r);
     }
 
     template <class R, class S>
@@ -3208,12 +3206,12 @@ protected:
      * @param ret Output, per generator.
      * @param n Number to draw, per generator.
      * @param k Shape parameter.
-     * @param lambda Scale parameter.
+     * @param scale Scale parameter.
      */
-    void cumsum_weibull_impl(double* ret, const size_t* n, double k, double lambda) override
+    void cumsum_weibull_impl(double* ret, const size_t* n, double k, double scale) override
     {
         for (size_t i = 0; i < m_size; ++i) {
-            ret[i] = m_gen[i].cumsum_weibull(n[i], k, lambda);
+            ret[i] = m_gen[i].cumsum_weibull(n[i], k, scale);
         }
     }
 
