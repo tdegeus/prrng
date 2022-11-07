@@ -6,6 +6,9 @@ import prrng
 
 class Test_pcg32_cumum(unittest.TestCase):
     def test_draw_chunk(self):
+        """
+        Draw initial chunk, with default and custom draw function.
+        """
 
         k = 2
         scale = 5
@@ -13,22 +16,28 @@ class Test_pcg32_cumum(unittest.TestCase):
         ref = prrng.pcg32()
         xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
 
-        gen = prrng.pcg32_cumsum()
-        gen.draw_chunk_weibull(100, k=k, scale=scale, offset=offset)
+        gen = prrng.pcg32_cumsum([100])
+        gen.draw_chunk_weibull(k=k, scale=scale, offset=offset)
         lwr = gen.start
         upr = gen.start + gen.size
-        self.assertTrue(np.allclose(gen.chunk, xref[: gen.size]))
+        self.assertEqual(gen.start, 0)
         self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
 
-        gen = prrng.pcg32_cumsum()
+        gen = prrng.pcg32_cumsum([100])
 
         def mydraw(n):
             return gen.generator.weibull([n], k, scale) + offset
 
-        gen.draw_chunk(100, mydraw)
-        self.assertTrue(np.allclose(gen.chunk, xref[: gen.size]))
+        gen.draw_chunk(mydraw)
+        lwr = gen.start
+        upr = gen.start + gen.size
+        self.assertEqual(gen.start, 0)
+        self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
 
     def test_prev_chunk_next_chunk(self):
+        """
+        Shift chunks right and left (use custom draw function).
+        """
 
         k = 2
         scale = 5
@@ -36,13 +45,16 @@ class Test_pcg32_cumum(unittest.TestCase):
         ref = prrng.pcg32()
         xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
 
-        gen = prrng.pcg32_cumsum()
+        gen = prrng.pcg32_cumsum([100])
 
         def mydraw(n):
             return gen.generator.weibull([n], k, scale) + offset
 
-        gen.draw_chunk(100, mydraw)
-        self.assertTrue(np.allclose(gen.chunk, xref[: gen.size]))
+        gen.draw_chunk(mydraw)
+        lwr = gen.start
+        upr = gen.start + gen.size
+        self.assertEqual(gen.start, 0)
+        self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
 
         for _ in range(5):
             gen.next_chunk(mydraw)
@@ -56,7 +68,10 @@ class Test_pcg32_cumum(unittest.TestCase):
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
 
-    def test_prev_chunk_next_chunk_mergin(self):
+    def test_prev_chunk_next_chunk_margin(self):
+        """
+        Shift chunks right and left leaving some overlap (use custom draw function).
+        """
 
         k = 2
         scale = 5
@@ -64,27 +79,37 @@ class Test_pcg32_cumum(unittest.TestCase):
         ref = prrng.pcg32()
         xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
 
-        gen = prrng.pcg32_cumsum()
+        gen = prrng.pcg32_cumsum([100])
+        margin = 10
 
         def mydraw(n):
             return gen.generator.weibull([n], k, scale) + offset
 
-        gen.draw_chunk(100, mydraw)
+        gen.draw_chunk(mydraw)
         self.assertTrue(np.allclose(gen.chunk, xref[: gen.size]))
 
         for _ in range(5):
-            gen.next_chunk(mydraw, margin=10)
+            back = gen.chunk[-1]
+            gen.next_chunk(mydraw, margin=margin)
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+            self.assertEqual(np.argmin(back >= gen.chunk), margin)
+            self.assertEqual(np.sum(back >= gen.chunk), margin)
 
         for i in range(5):
-            gen.prev_chunk(mydraw, margin=10)
+            front = gen.chunk[0]
+            gen.prev_chunk(mydraw, margin=margin)
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+            self.assertEqual(np.argmax(front <= gen.chunk), gen.size - margin)
+            self.assertEqual(np.sum(front <= gen.chunk), margin)
 
     def test_align_chunk(self):
+        """
+        Align chunk with target (use custom draw function).
+        """
 
         k = 2
         scale = 5
@@ -92,7 +117,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         ref = prrng.pcg32()
         xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
 
-        gen = prrng.pcg32_cumsum()
+        gen = prrng.pcg32_cumsum([100])
 
         def mydraw(n):
             return gen.generator.weibull([n], k, scale) + offset
@@ -101,20 +126,34 @@ class Test_pcg32_cumum(unittest.TestCase):
             return gen.generator.cumsum_weibull(n, k, scale) + n * offset
 
         n = 100
-        gen.draw_chunk(n, mydraw)
+        margin = 10
+        gen.draw_chunk(mydraw)
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
-            x = 0.5 * (xref[i] + xref[i + 1])
-            margin = 10
-            gen.align_chunk(mydraw, mycumsum, target=x, margin=margin, strict=True)
+            target = 0.5 * (xref[i] + xref[i + 1])
+            gen.align_chunk(mydraw, mycumsum, target, margin=margin, strict=True)
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
-            self.assertLessEqual(gen.chunk[0], x)
-            self.assertGreater(gen.chunk[-1], x)
-            self.assertEqual(np.argmax(x <= gen.chunk) - 1, margin)
+            self.assertLessEqual(gen.chunk[0], target)
+            self.assertGreater(gen.chunk[-1], target)
+            self.assertEqual(np.sum(target > gen.chunk), margin)
+            self.assertEqual(np.argmin(target > gen.chunk), margin)
+
+            target = 0.5 * (xref[i - 1] + xref[i])
+            gen.align_chunk(mydraw, mycumsum, target, margin=margin, strict=True)
+            lwr = gen.start
+            upr = gen.start + gen.size
+            self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+            self.assertLessEqual(gen.chunk[0], target)
+            self.assertGreater(gen.chunk[-1], target)
+            self.assertEqual(np.sum(target > gen.chunk), margin)
+            self.assertEqual(np.argmin(target > gen.chunk), margin)
 
     def test_align_chunk_internal(self):
+        """
+        Align chunk with target (use default draw function).
+        """
 
         k = 2
         scale = 5
@@ -122,23 +161,37 @@ class Test_pcg32_cumum(unittest.TestCase):
         ref = prrng.pcg32()
         xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
 
-        gen = prrng.pcg32_cumsum()
+        gen = prrng.pcg32_cumsum([100])
 
         n = 100
-        gen.draw_chunk_weibull(n, k=k, scale=scale, offset=offset)
+        margin = 10
+        gen.draw_chunk_weibull(k=k, scale=scale, offset=offset)
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
-            x = 0.5 * (xref[i] + xref[i + 1])
-            margin = 10
-            gen.align_chunk_weibull(k=k, scale=scale, offset=offset, target=x, margin=margin, strict=True)
+            target = 0.5 * (xref[i] + xref[i + 1])
+            gen.align_chunk_weibull(k, scale, offset, target, margin=margin, strict=True)
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
-            self.assertLessEqual(gen.chunk[0], x)
-            self.assertGreater(gen.chunk[-1], x)
-            self.assertEqual(np.argmax(x <= gen.chunk) - 1, margin)
+            self.assertLessEqual(gen.chunk[0], target)
+            self.assertGreater(gen.chunk[-1], target)
+            self.assertEqual(np.sum(target > gen.chunk), margin)
+            self.assertEqual(np.argmin(target > gen.chunk), margin)
+
+            target = 0.5 * (xref[i - 1] + xref[i])
+            gen.align_chunk_weibull(k, scale, offset, target, margin=margin, strict=True)
+            lwr = gen.start
+            upr = gen.start + gen.size
+            self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+            self.assertLessEqual(gen.chunk[0], target)
+            self.assertGreater(gen.chunk[-1], target)
+            self.assertEqual(np.sum(target > gen.chunk), margin)
+            self.assertEqual(np.argmin(target > gen.chunk), margin)
 
     def test_restore(self):
+        """
+        Restore state (use custom draw function).
+        """
 
         k = 2
         scale = 5
@@ -146,13 +199,14 @@ class Test_pcg32_cumum(unittest.TestCase):
         ref = prrng.pcg32()
         xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
 
-        gen = prrng.pcg32_cumsum()
+        gen = prrng.pcg32_cumsum([100])
 
         def mydraw(n):
             return gen.generator.weibull([n], k, scale) + offset
 
-        n = 100
-        gen.draw_chunk(n, mydraw)
+        # some manipulations
+
+        gen.draw_chunk(mydraw)
 
         for _ in range(3):
             gen.next_chunk(mydraw, margin=10)
@@ -163,8 +217,10 @@ class Test_pcg32_cumum(unittest.TestCase):
         for _ in range(3):
             gen.next_chunk(mydraw, margin=10)
 
+        # restore
+
         gen.restore(state, value, index)
-        gen.draw_chunk(n, mydraw)
+        gen.draw_chunk(mydraw)
         lwr = gen.start
         upr = gen.start + gen.size
         self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
