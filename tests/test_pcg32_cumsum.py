@@ -14,10 +14,10 @@ class Test_pcg32_cumum(unittest.TestCase):
         scale = 5
         offset = 0.1
         ref = prrng.pcg32()
-        xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale))
 
         gen = prrng.pcg32_cumsum([100])
-        gen.draw_chunk_weibull(k=k, scale=scale, offset=offset)
+        gen.draw_chunk_weibull(k, scale, offset=offset)
         lwr = gen.start
         upr = gen.start + gen.size
         self.assertEqual(gen.start, 0)
@@ -43,7 +43,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         scale = 5
         offset = 0.1
         ref = prrng.pcg32()
-        xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale))
 
         gen = prrng.pcg32_cumsum([100])
 
@@ -77,7 +77,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         scale = 5
         offset = 0.1
         ref = prrng.pcg32()
-        xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale))
 
         gen = prrng.pcg32_cumsum([100])
         margin = 10
@@ -115,7 +115,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         scale = 5
         offset = 0.1
         ref = prrng.pcg32()
-        xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale))
 
         n = 100
         gen = prrng.pcg32_cumsum([n])
@@ -159,13 +159,13 @@ class Test_pcg32_cumum(unittest.TestCase):
         scale = 5
         offset = 0.1
         ref = prrng.pcg32()
-        xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale))
 
         gen = prrng.pcg32_cumsum([100])
 
         n = 100
         margin = 10
-        gen.draw_chunk_weibull(k=k, scale=scale, offset=offset)
+        gen.draw_chunk_weibull(k, scale, offset=offset)
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
             target = 0.5 * (xref[i] + xref[i + 1])
@@ -197,7 +197,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         scale = 5
         offset = 0.1
         ref = prrng.pcg32()
-        xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale))
 
         gen = prrng.pcg32_cumsum([100])
 
@@ -296,6 +296,43 @@ class Test_pcg32_cumum(unittest.TestCase):
         gen.restore(state, value, index)
         gen.draw_chunk_weibull(k, scale, offset)
         self.assertTrue(np.allclose(chunk, gen.chunk))
+
+    def test_delta(self):
+        """
+        Shift chunks right and left for a delta distribution
+        """
+
+        scale = 5
+        offset = 0.1
+        ref = prrng.pcg32()
+        state = ref.state()
+        xref = np.cumsum(offset + ref.delta([10000], scale))
+        self.assertEqual(state, ref.state())
+
+        gen = prrng.pcg32_cumsum([100])
+        gen.draw_chunk_delta(scale, offset)
+        lwr = gen.start
+        upr = gen.start + gen.size
+        self.assertEqual(gen.start, 0)
+        self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+        self.assertEqual(state, gen.generator.state())
+        self.assertEqual(gen.generator_index, 0)
+
+        for _ in range(5):
+            gen.next_chunk_delta(scale, offset)
+            lwr = gen.start
+            upr = gen.start + gen.size
+            self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+            self.assertEqual(state, gen.generator.state())
+            self.assertEqual(gen.generator_index, 0)
+
+        for i in range(5):
+            gen.prev_chunk_delta(scale, offset)
+            lwr = gen.start
+            upr = gen.start + gen.size
+            self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+            self.assertEqual(state, gen.generator.state())
+            self.assertEqual(gen.generator_index, 0)
 
 
 if __name__ == "__main__":

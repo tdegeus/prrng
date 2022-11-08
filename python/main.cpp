@@ -659,6 +659,35 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
+        .def(
+            "draw_chunk_delta",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_delta,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0)
+
+        .def(
+            "prev_chunk_delta",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_delta,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0)
+
+        .def(
+            "next_chunk_delta",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_delta,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0)
+
+        .def(
+            "align_chunk_delta",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_delta,
+            py::arg("target"),
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
         .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
     py::class_<prrng::GeneratorBase_array<std::vector<size_t>>>(m, "GeneratorBase_array")
@@ -1088,6 +1117,23 @@ PYBIND11_MODULE(_prrng, m)
             "align_chunk_exponential",
             &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_exponential<
                 xt::pyarray<double>>,
+            "Align chunk with target value.",
+            py::arg("target"),
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
+        .def(
+            "draw_chunk_delta",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::draw_chunk_delta,
+            "Draw new chunk.",
+            py::arg("scale") = 1,
+            py::arg("offset") = 0)
+
+        .def(
+            "align_chunk_delta",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_delta<xt::pyarray<double>>,
             "Align chunk with target value.",
             py::arg("target"),
             py::arg("scale") = 1,
