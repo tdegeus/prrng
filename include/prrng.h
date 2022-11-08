@@ -387,7 +387,7 @@ public:
      * @param mu Average.
      * @param sigma Standard deviation.
      */
-    normal_distribution(double mu = 0.0, double sigma = 1.0)
+    normal_distribution(double mu = 0, double sigma = 1)
     {
         m_mu = mu;
         m_sigma = sigma;
@@ -475,7 +475,7 @@ public:
      *
      * @param scale Scale (inverse rate).
      */
-    exponential_distribution(double scale = 1.0)
+    exponential_distribution(double scale = 1)
     {
         m_scale = scale;
     }
@@ -768,7 +768,7 @@ public:
      * @param sigma Standard deviation.
      * @return Cumulative sum.
      */
-    double cumsum_normal(size_t n, double mu = 0.0, double sigma = 1.0)
+    double cumsum_normal(size_t n, double mu = 0, double sigma = 1)
     {
         double ret = 0.0;
         auto tranform = normal_distribution(mu, sigma);
@@ -787,7 +787,7 @@ public:
      * @param scale Scale.
      * @return Cumulative sum.
      */
-    double cumsum_exponential(size_t n, double scale = 1.0)
+    double cumsum_exponential(size_t n, double scale = 1)
     {
         double ret = 0.0;
         auto tranform = exponential_distribution(scale);
@@ -1103,7 +1103,7 @@ public:
      * @return The sample of shape `shape`.
      */
     template <class S>
-    auto normal(const S& shape, double mu = 0.0, double sigma = 1.0) ->
+    auto normal(const S& shape, double mu = 0, double sigma = 1) ->
         typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
@@ -1115,7 +1115,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R normal(const S& shape, double mu = 0.0, double sigma = 1.0)
+    R normal(const S& shape, double mu = 0, double sigma = 1)
     {
         return this->normal_impl<R>(shape, mu, sigma);
     }
@@ -1124,7 +1124,7 @@ public:
      * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto normal(const I (&shape)[L], double mu = 0.0, double sigma = 1.0) ->
+    auto normal(const I (&shape)[L], double mu = 0, double sigma = 1) ->
         typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
@@ -1136,7 +1136,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R normal(const I (&shape)[L], double mu = 0.0, double sigma = 1.0)
+    R normal(const I (&shape)[L], double mu = 0, double sigma = 1)
     {
         return this->normal_impl<R>(shape, mu, sigma);
     }
@@ -1149,7 +1149,7 @@ public:
      * @return The sample of shape `shape`.
      */
     template <class S>
-    auto exponential(const S& shape, double scale = 1.0) ->
+    auto exponential(const S& shape, double scale = 1) ->
         typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
@@ -1161,7 +1161,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R exponential(const S& shape, double scale = 1.0)
+    R exponential(const S& shape, double scale = 1)
     {
         return this->exponential_impl<R>(shape, scale);
     }
@@ -1170,7 +1170,7 @@ public:
      * @copydoc prrng::GeneratorBase::exponential(const S&, double)
      */
     template <class I, std::size_t L>
-    auto exponential(const I (&shape)[L], double scale = 1.0) ->
+    auto exponential(const I (&shape)[L], double scale = 1) ->
         typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
@@ -1182,7 +1182,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R exponential(const I (&shape)[L], double scale = 1.0)
+    R exponential(const I (&shape)[L], double scale = 1)
     {
         return this->exponential_impl<R>(shape, scale);
     }
@@ -1289,14 +1289,14 @@ public:
      * generators.
      *
      * @param shape The shape of the nd-array.
-     * @param mean The value of the 'peak' of the delta distribution.
+     * @param scale The value of the 'peak' of the delta distribution.
      * @return The sample of shape `shape`.
      */
     template <class S>
-    auto delta(const S& shape, double mean = 1.0) -> typename detail::return_type<double, S>::type
+    auto delta(const S& shape, double scale = 1) -> typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
-        return this->delta_impl<R>(shape, mean);
+        return this->delta_impl<R>(shape, scale);
     }
 
     /**
@@ -1304,20 +1304,20 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R delta(const S& shape, double mean = 1.0)
+    R delta(const S& shape, double scale = 1)
     {
-        return this->delta_impl<R>(shape, mean);
+        return this->delta_impl<R>(shape, scale);
     }
 
     /**
      * @copydoc prrng::GeneratorBase::delta(const S&, double)
      */
     template <class I, std::size_t L>
-    auto delta(const I (&shape)[L], double mean = 1.0) ->
+    auto delta(const I (&shape)[L], double scale = 1) ->
         typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
-        return this->delta_impl<R>(shape, mean);
+        return this->delta_impl<R>(shape, scale);
     }
 
     /**
@@ -1325,9 +1325,9 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R delta(const I (&shape)[L], double mean = 1.0)
+    R delta(const I (&shape)[L], double scale = 1)
     {
-        return this->delta_impl<R>(shape, mean);
+        return this->delta_impl<R>(shape, scale);
     }
 
 private:
@@ -1423,9 +1423,9 @@ private:
     }
 
     template <class R, class S>
-    R delta_impl(const S& shape, double mean)
+    R delta_impl(const S& shape, double scale)
     {
-        return mean * xt::ones<typename R::value_type>(shape);
+        return scale * xt::ones<typename R::value_type>(shape);
     }
 
 protected:
@@ -1973,6 +1973,7 @@ private:
     bool m_apply_first; ///< Signal to modify the first value of the new chunk, see restore()
     double* m_chunk; ///< Pointer to the storage of the chunk
     size_t m_size; ///< Size of the chunk
+    bool m_delta; ///< Signal if distribution is a delta, and no random numbers are generated.
 
 public:
     pcg32_cumsum_external() = default;
@@ -1996,12 +1997,39 @@ protected:
      */
     void init(double* data, size_t n, pcg32* generator, ptrdiff_t generator_index)
     {
+        m_delta = false;
         m_gen = generator;
         m_gen_index = generator_index;
         m_start = generator_index;
         m_apply_first = false;
         m_chunk = data;
         m_size = n;
+    }
+
+private:
+    /**
+     * @brief Jump the random number generator somewhere.
+     * @param delta Distance to jump.
+     */
+    void jump(ptrdiff_t delta)
+    {
+        if (m_delta) {
+            return;
+        }
+        m_gen->advance(delta);
+        m_gen_index += delta;
+    }
+
+    /**
+     * @brief Update generator index.
+     * @param n Number of drawn numbers.
+     */
+    void drawn(ptrdiff_t n)
+    {
+        if (m_delta) {
+            return;
+        }
+        m_gen_index += n;
     }
 
 public:
@@ -2060,6 +2088,9 @@ public:
      */
     uint64_t state(ptrdiff_t index)
     {
+        if (m_delta) {
+            return m_gen->state();
+        }
         uint64_t state = m_gen->state();
         m_gen->advance(index - m_gen_index);
         uint64_t ret = m_gen->state();
@@ -2108,7 +2139,7 @@ public:
         using R = decltype(get_chunk(size_t{}));
 
         R extra = get_chunk(m_size);
-        m_gen_index += static_cast<ptrdiff_t>(m_size);
+        this->drawn(static_cast<ptrdiff_t>(m_size));
 
         if (m_apply_first) {
             extra.front() += m_first - extra.front();
@@ -2130,14 +2161,12 @@ public:
         using R = decltype(get_chunk(size_t{}));
 
         ptrdiff_t n = static_cast<ptrdiff_t>(m_size);
-        ptrdiff_t d = m_start - n + margin - m_gen_index;
-        m_gen->advance(d);
-        m_gen_index += d;
+        this->jump(m_start - n + margin - m_gen_index);
 
         double front = m_chunk[0];
         size_t m = m_size - margin + 1;
         R extra = get_chunk({m});
-        m_gen_index += m;
+        this->drawn(m);
         std::partial_sum(extra.begin(), extra.end(), extra.begin());
         extra -= extra.back() - front;
 
@@ -2159,14 +2188,12 @@ public:
         using R = decltype(get_chunk(size_t{}));
         PRRNG_ASSERT(margin < m_size);
 
-        ptrdiff_t d = m_start + m_size - m_gen_index;
-        m_gen->advance(d);
-        m_gen_index += d;
+        this->jump(m_start + m_size - m_gen_index);
 
         double back = m_chunk[m_size - 1];
         size_t n = m_size - margin;
         R extra = get_chunk({n});
-        m_gen_index += n;
+        this->drawn(n);
         extra.front() += back;
         std::partial_sum(extra.begin(), extra.end(), extra.begin());
         std::copy(m_chunk + m_size - margin, m_chunk + m_size, m_chunk);
@@ -2202,10 +2229,7 @@ public:
 
         if (target > m_chunk[m_size - 1]) {
 
-            ptrdiff_t d = m_start + m_size - m_gen_index;
-            m_gen->advance(d);
-            m_gen_index += d;
-
+            this->jump(m_start + m_size - m_gen_index);
             double back = m_chunk[m_size - 1];
 
             double j = (target - m_chunk[m_size - 1]) / delta - (double)(margin) / (double)(n);
@@ -2213,10 +2237,10 @@ public:
             if (j > 1) {
                 size_t m = static_cast<size_t>((j - 1) * static_cast<double>(n));
                 back += get_cumsum(m);
-                m_gen_index += m;
+                this->drawn(m);
+                m_start += m + m_size;
                 R extra = get_chunk({n});
-                m_start = m_gen_index;
-                m_gen_index += n;
+                this->drawn(n);
                 extra.front() += back;
                 std::partial_sum(extra.begin(), extra.end(), m_chunk);
                 return this->align_chunk(get_chunk, get_cumsum, target, margin, strict);
@@ -2244,12 +2268,10 @@ public:
                 return;
             }
 
-            ptrdiff_t d = m_start + m_size - m_gen_index;
-            m_gen->advance(d);
-            m_gen_index += d;
+            this->jump(m_start + m_size - m_gen_index);
 
             R extra = get_chunk({n});
-            m_gen_index += n;
+            this->drawn(n);
             m_start += n;
             extra.front() += m_chunk[m_size - 1];
             std::partial_sum(extra.begin(), extra.end(), extra.begin());
@@ -2267,7 +2289,7 @@ public:
      */
     void draw_chunk_weibull(double k = 1, double scale = 1, double offset = 0)
     {
-        return this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+        this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
             return m_gen->weibull<xt::xtensor<double, 1>>({n}, k, scale) + offset;
         });
     }
@@ -2345,7 +2367,7 @@ public:
      */
     void draw_chunk_gamma(double k = 1, double scale = 1, double offset = 0)
     {
-        return this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+        this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
             return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
         });
     }
@@ -2423,7 +2445,7 @@ public:
      */
     void draw_chunk_normal(double mu = 0, double sigma = 1, double offset = 0)
     {
-        return this->draw_chunk([this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
+        this->draw_chunk([this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
             return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
         });
     }
@@ -2500,7 +2522,7 @@ public:
      */
     void draw_chunk_exponential(double scale = 1, double offset = 0)
     {
-        return this->draw_chunk([this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+        this->draw_chunk([this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
             return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
         });
     }
@@ -2563,6 +2585,87 @@ public:
             target,
             margin,
             strict);
+    }
+
+    /**
+     * @brief Draw new chunk.
+     *
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     */
+    void draw_chunk_delta(double scale = 1, double offset = 0)
+    {
+        m_delta = true;
+        this->draw_chunk([this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+            return m_gen->delta<xt::xtensor<double, 1>>({n}, scale) + offset;
+        });
+        m_delta = false;
+    }
+
+    /**
+     * @brief Shift left.
+     *
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep right.
+     */
+    void prev_chunk_delta(double scale = 1, double offset = 0, size_t margin = 0)
+    {
+        m_delta = true;
+        this->prev_chunk(
+            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->delta<xt::xtensor<double, 1>>({n}, scale) + offset;
+            },
+            margin);
+        m_delta = false;
+    }
+
+    /**
+     * @brief Shift right.
+     *
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep left.
+     */
+    void next_chunk_delta(double scale = 1, double offset = 0, size_t margin = 0)
+    {
+        m_delta = true;
+        this->next_chunk(
+            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->delta<xt::xtensor<double, 1>>({n}, scale) + offset;
+            },
+            margin);
+        m_delta = false;
+    }
+
+    /**
+     * @brief Align chunk with target value.
+     *
+     * @param target Target value.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
+    void align_chunk_delta(
+        double target,
+        double scale = 1,
+        double offset = 0,
+        size_t margin = 0,
+        bool strict = false)
+    {
+        m_delta = true;
+        this->align_chunk(
+            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
+            },
+            [this, scale, offset](size_t n) {
+                return m_gen->cumsum_exponential(n, scale) + static_cast<double>(n) * offset;
+            },
+            target,
+            margin,
+            strict);
+        m_delta = false;
     }
 };
 
@@ -2883,7 +2986,7 @@ public:
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
-    auto normal(const S& ishape, double mu = 0.0, double sigma = 1.0) ->
+    auto normal(const S& ishape, double mu = 0, double sigma = 1) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
@@ -2895,7 +2998,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R normal(const S& ishape, double mu = 0.0, double sigma = 1.0)
+    R normal(const S& ishape, double mu = 0, double sigma = 1)
     {
         return this->normal_impl<R>(ishape, mu, sigma);
     }
@@ -2904,7 +3007,7 @@ public:
      * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto normal(const I (&ishape)[L], double mu = 0.0, double sigma = 1.0) ->
+    auto normal(const I (&ishape)[L], double mu = 0, double sigma = 1) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
@@ -2916,7 +3019,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R normal(const I (&ishape)[L], double mu = 0.0, double sigma = 1.0)
+    R normal(const I (&ishape)[L], double mu = 0, double sigma = 1)
     {
         return this->normal_impl<R>(detail::to_array(ishape), mu, sigma);
     }
@@ -2930,7 +3033,7 @@ public:
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
-    auto exponential(const S& ishape, double scale = 1.0) ->
+    auto exponential(const S& ishape, double scale = 1) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
@@ -2942,7 +3045,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R exponential(const S& ishape, double scale = 1.0)
+    R exponential(const S& ishape, double scale = 1)
     {
         return this->exponential_impl<R>(ishape, scale);
     }
@@ -2951,7 +3054,7 @@ public:
      * @copydoc prrng::GeneratorBase_array::exponential(const S&, double)
      */
     template <class I, std::size_t L>
-    auto exponential(const I (&ishape)[L], double scale = 1.0) ->
+    auto exponential(const I (&ishape)[L], double scale = 1) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
@@ -2963,7 +3066,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R exponential(const I (&ishape)[L], double scale = 1.0)
+    R exponential(const I (&ishape)[L], double scale = 1)
     {
         return this->exponential_impl<R>(detail::to_array(ishape), scale);
     }
@@ -3079,15 +3182,15 @@ public:
      * generators.
      *
      * @param ishape The shape of the nd-array drawn per generator.
-     * @param mean The value of the 'peak' of the delta distribution.
+     * @param scale The value of the 'peak' of the delta distribution.
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
-    auto delta(const S& ishape, double mean = 1.0) ->
+    auto delta(const S& ishape, double scale = 1) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
-        return this->delta_impl<R>(ishape, mean);
+        return this->delta_impl<R>(ishape, scale);
     }
 
     /**
@@ -3095,20 +3198,20 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R delta(const S& ishape, double mean = 1.0)
+    R delta(const S& ishape, double scale = 1)
     {
-        return this->delta_impl<R>(ishape, mean);
+        return this->delta_impl<R>(ishape, scale);
     }
 
     /**
      * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
      */
     template <class I, std::size_t L>
-    auto delta(const I (&ishape)[L], double mean = 1.0) ->
+    auto delta(const I (&ishape)[L], double scale = 1) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
-        return this->delta_impl<R>(detail::to_array(ishape), mean);
+        return this->delta_impl<R>(detail::to_array(ishape), scale);
     }
 
     /**
@@ -3116,9 +3219,9 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R delta(const I (&ishape)[L], double mean = 1.0)
+    R delta(const I (&ishape)[L], double scale = 1)
     {
-        return this->delta_impl<R>(detail::to_array(ishape), mean);
+        return this->delta_impl<R>(detail::to_array(ishape), scale);
     }
 
     /**
@@ -3157,7 +3260,7 @@ public:
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_normal(const T& n, double mu = 0.0, double sigma = 1.0) ->
+    auto cumsum_normal(const T& n, double mu = 0, double sigma = 1) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
@@ -3175,7 +3278,7 @@ public:
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_normal(const T& n, double mu = 0.0, double sigma = 1.0)
+    R cumsum_normal(const T& n, double mu = 0, double sigma = 1)
     {
         R ret = R::from_shape(m_shape);
         this->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
@@ -3190,7 +3293,7 @@ public:
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_exponential(const T& n, double scale = 1.0) ->
+    auto cumsum_exponential(const T& n, double scale = 1) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
@@ -3207,7 +3310,7 @@ public:
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_exponential(const T& n, double scale = 1.0)
+    R cumsum_exponential(const T& n, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
         this->cumsum_exponential_impl(ret.data(), n.data(), scale);
@@ -3478,9 +3581,9 @@ private:
     }
 
     template <class R, class S>
-    R delta_impl(const S& ishape, double mean)
+    R delta_impl(const S& ishape, double scale)
     {
-        return mean * xt::ones<typename R::value_type>(ishape);
+        return scale * xt::ones<typename R::value_type>(ishape);
     }
 
 protected:
@@ -4597,6 +4700,45 @@ public:
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].align_chunk_exponential(target.flat(i), scale, offset, margin, strict);
+        }
+    }
+
+    /**
+     * @brief Draw a new chunk.
+     * See prrng::pcg32_cumsum::draw_delta().
+     *
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     */
+    void draw_chunk_delta(double scale = 1, double offset = 0)
+    {
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].draw_chunk_delta(scale, offset);
+        }
+    }
+
+    /**
+     * @brief Align chunks with a target value.
+     * See prrng::pcg32_cumsum::align_delta().
+     *
+     * @param target Target value.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
+    template <class T>
+    void align_chunk_delta(
+        const T& target,
+        double scale = 1,
+        double offset = 0,
+        size_t margin = 0,
+        bool strict = false)
+    {
+        PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].align_chunk_delta(target.flat(i), scale, offset, margin, strict);
         }
     }
 };
