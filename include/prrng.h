@@ -857,7 +857,7 @@ public:
     }
 
     /**
-     * @copydoc decide(const P&)
+     * @copydoc prrng::GeneratorBase::decide(const P&)
      */
     template <class P, class R>
     R decide(const P& p)
@@ -911,7 +911,7 @@ public:
     }
 
     /**
-     * @copydoc decide_masked(const P&, const T&)
+     * @copydoc prrng::GeneratorBase::decide_masked(const P&, const T&)
      */
     template <class P, class T, class R>
     R decide_masked(const P& p, const T& mask)
@@ -964,7 +964,7 @@ public:
     }
 
     /**
-     * @copydoc random(const S&)
+     * @copydoc prrng::GeneratorBase::random(const S&)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -974,7 +974,7 @@ public:
     }
 
     /**
-     * @copydoc random(const S&)
+     * @copydoc prrng::GeneratorBase::random(const S&)
      */
     template <class I, std::size_t L>
     auto random(const I (&shape)[L]) -> typename detail::return_type_fixed<double, L>::type
@@ -984,7 +984,7 @@ public:
     }
 
     /**
-     * @copydoc random(const S&)
+     * @copydoc prrng::GeneratorBase::random(const S&)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -1008,7 +1008,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase::randint(const S&, T)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S, typename T>
@@ -1018,7 +1018,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase::randint(const S&, T)
      */
     template <class I, std::size_t L, typename T>
     auto randint(const I (&shape)[L], T high) -> typename detail::return_type_fixed<T, L>::type
@@ -1028,7 +1028,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase::randint(const S&, T)
      * @tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
      */
     template <class R, class I, std::size_t L, typename T>
@@ -1053,7 +1053,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase::randint(const S&, T, U)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S, typename T, typename U>
@@ -1063,7 +1063,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase::randint(const S&, T, U)
      */
     template <class I, std::size_t L, typename T, typename U>
     auto randint(const I (&shape)[L], T low, U high) ->
@@ -1074,7 +1074,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase::randint(const S&, T, U)
      * @tparam R return type, e.g. `xt::xtensor<uint32_t, 1>`
      */
     template <class R, class I, std::size_t L, typename T, typename U>
@@ -1111,7 +1111,7 @@ public:
     }
 
     /**
-     * @copydoc normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -1121,7 +1121,7 @@ public:
     }
 
     /**
-     * @copydoc normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
      */
     template <class I, std::size_t L>
     auto normal(const I (&shape)[L], double mu = 0.0, double sigma = 1.0) ->
@@ -1132,7 +1132,7 @@ public:
     }
 
     /**
-     * @copydoc normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -1157,7 +1157,7 @@ public:
     }
 
     /**
-     * @copydoc exponential(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::exponential(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -1167,7 +1167,7 @@ public:
     }
 
     /**
-     * @copydoc exponential(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::exponential(const S&, double)
      */
     template <class I, std::size_t L>
     auto exponential(const I (&shape)[L], double scale = 1.0) ->
@@ -1178,7 +1178,7 @@ public:
     }
 
     /**
-     * @copydoc exponential(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::exponential(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -1204,7 +1204,7 @@ public:
     }
 
     /**
-     * @copydoc weibull(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::weibull(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -1214,7 +1214,7 @@ public:
     }
 
     /**
-     * @copydoc weibull(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::weibull(const S&, double, double)
      */
     template <class I, std::size_t L>
     auto weibull(const I (&shape)[L], double k = 1.0, double scale = 1.0) ->
@@ -1225,7 +1225,7 @@ public:
     }
 
     /**
-     * @copydoc weibull(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::weibull(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -1253,7 +1253,7 @@ public:
     }
 
     /**
-     * @copydoc gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -1263,7 +1263,7 @@ public:
     }
 
     /**
-     * @copydoc gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
      */
     template <class I, std::size_t L>
     auto gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0) ->
@@ -1274,7 +1274,7 @@ public:
     }
 
     /**
-     * @copydoc gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -1300,7 +1300,7 @@ public:
     }
 
     /**
-     * @copydoc delta(const S&, double)
+     * @copydoc prrng::GeneratorBase::delta(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -1310,7 +1310,7 @@ public:
     }
 
     /**
-     * @copydoc delta(const S&, double)
+     * @copydoc prrng::GeneratorBase::delta(const S&, double)
      */
     template <class I, std::size_t L>
     auto delta(const I (&shape)[L], double mean = 1.0) ->
@@ -1321,7 +1321,7 @@ public:
     }
 
     /**
-     * @copydoc delta(const S&, double)
+     * @copydoc prrng::GeneratorBase::delta(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -1642,7 +1642,7 @@ public:
     }
 
     /**
-     * @copydoc state()
+     * @copydoc prrng::pcg32::state() const
      *
      * @tparam R use a different return-type. There are some internal checks if the type is able to
      * store the internal state of type `uint64_t`.
@@ -1735,7 +1735,7 @@ public:
     }
 
     /**
-     * @copydoc distance(const pcg32 &)
+     * @copydoc prrng::pcg32::distance(const pcg32&) const
      */
     int64_t operator-(const pcg32& other) const
     {
@@ -1978,12 +1978,7 @@ public:
     pcg32_cumsum_external() = default;
 
     /**
-     * @brief Constructor.
-     *
-     * @param data Pointer to chunk storage.
-     * @param n Size of the chunk.
-     * @param generator Pointer to the generator.
-     * @param generator_index Current index in the chunk that the generator corresponds to.
+     * @copydoc prrng::pcg32_cumsum_external::init.
      */
     pcg32_cumsum_external(double* data, size_t n, pcg32* generator, ptrdiff_t generator_index)
     {
@@ -1991,6 +1986,15 @@ public:
     }
 
 protected:
+
+    /**
+     * @brief Constructor.
+     *
+     * @param data Pointer to chunk storage.
+     * @param n Size of the chunk.
+     * @param generator Pointer to the generator.
+     * @param generator_index Current index in the chunk that the generator corresponds to.
+     */
     void init(double* data, size_t n, pcg32* generator, ptrdiff_t generator_index)
     {
         m_gen = generator;
@@ -2097,7 +2101,6 @@ public:
     /**
      * @brief Draw a (the first) chunk of the cumulative sum.
      *
-     * @param n Size of the chunk.
      * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
      */
     template <class F>
@@ -2256,6 +2259,13 @@ public:
         }
     }
 
+    /**
+     * @brief Draw new chunk from a Weibull distribution.
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     */
     void draw_chunk_weibull(double k, double scale, double offset)
     {
         return this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
@@ -2263,6 +2273,14 @@ public:
         });
     }
 
+    /**
+     * @brief Shift left.
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep right.
+     */
     void prev_chunk_weibull(double k, double scale, double offset, size_t margin = 0)
     {
         this->prev_chunk(
@@ -2272,6 +2290,14 @@ public:
             margin);
     }
 
+    /**
+     * @brief Shift right.
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep left.
+     */
     void next_chunk_weibull(double k, double scale, double offset, size_t margin = 0)
     {
         this->next_chunk(
@@ -2281,6 +2307,16 @@ public:
             margin);
     }
 
+    /**
+     * @brief Align chunk with target value.
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param target Target value.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
     void align_chunk_weibull(
         double k,
         double scale,
@@ -2478,7 +2514,7 @@ public:
     }
 
     /**
-     * @copydoc random(const S&)
+     * @copydoc prrng::GeneratorBase_array::random(const S&)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -2488,7 +2524,7 @@ public:
     }
 
     /**
-     * @copydoc random(const S&)
+     * @copydoc prrng::GeneratorBase_array::random(const S&)
      */
     template <class I, std::size_t L>
     auto random(const I (&ishape)[L]) ->
@@ -2499,7 +2535,7 @@ public:
     }
 
     /**
-     * @copydoc random(const S&)
+     * @copydoc prrng::GeneratorBase_array::random(const S&)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -2523,7 +2559,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase_array::randint(const S&, T)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S, typename T>
@@ -2533,7 +2569,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase_array::randint(const S&, T)
      */
     template <class I, std::size_t L, typename T>
     auto randint(const I (&ishape)[L], T high) ->
@@ -2544,7 +2580,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase_array::randint(const S&, T)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L, typename T>
@@ -2570,7 +2606,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase_array::randint(const S&, T, U)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S, typename T, typename U>
@@ -2580,7 +2616,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase_array::randint(const S&, T, U)
      */
     template <class I, std::size_t L, typename T, typename U>
     auto randint(const I (&ishape)[L], T low, U high) ->
@@ -2591,7 +2627,7 @@ public:
     }
 
     /**
-     * @copydoc randint(const S&)
+     * @copydoc prrng::GeneratorBase_array::randint(const S&, T, U)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L, typename T, typename U>
@@ -2627,7 +2663,7 @@ public:
     }
 
     /**
-     * @copydoc normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -2637,7 +2673,7 @@ public:
     }
 
     /**
-     * @copydoc normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
      */
     template <class I, std::size_t L>
     auto normal(const I (&ishape)[L], double mu = 0.0, double sigma = 1.0) ->
@@ -2648,7 +2684,7 @@ public:
     }
 
     /**
-     * @copydoc normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -2674,7 +2710,7 @@ public:
     }
 
     /**
-     * @copydoc exponential(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::exponential(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -2684,7 +2720,7 @@ public:
     }
 
     /**
-     * @copydoc exponential(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::exponential(const S&, double)
      */
     template <class I, std::size_t L>
     auto exponential(const I (&ishape)[L], double scale = 1.0) ->
@@ -2695,7 +2731,7 @@ public:
     }
 
     /**
-     * @copydoc exponential(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::exponential(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -2729,7 +2765,7 @@ public:
     }
 
     /**
-     * @copydoc weibull(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::weibull(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -2739,7 +2775,7 @@ public:
     }
 
     /**
-     * @copydoc weibull(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::weibull(const S&, double, double)
      */
     template <class I, std::size_t L>
     auto weibull(const I (&ishape)[L], double k = 1.0, double scale = 1.0) ->
@@ -2750,7 +2786,7 @@ public:
     }
 
     /**
-     * @copydoc weibull(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::weibull(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -2779,7 +2815,7 @@ public:
     }
 
     /**
-     * @copydoc gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -2789,7 +2825,7 @@ public:
     }
 
     /**
-     * @copydoc gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
      */
     template <class I, std::size_t L>
     auto gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0) ->
@@ -2800,7 +2836,7 @@ public:
     }
 
     /**
-     * @copydoc gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -2827,7 +2863,7 @@ public:
     }
 
     /**
-     * @copydoc delta(const S&, double)
+     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
@@ -2837,7 +2873,7 @@ public:
     }
 
     /**
-     * @copydoc delta(const S&, double)
+     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
      */
     template <class I, std::size_t L>
     auto delta(const I (&ishape)[L], double mean = 1.0) ->
@@ -2848,7 +2884,7 @@ public:
     }
 
     /**
-     * @copydoc delta(const S&, double)
+     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
@@ -3037,7 +3073,7 @@ public:
     }
 
     /**
-     * @copydoc decide(const P& p)
+     * @copydoc prrng::GeneratorBase_array::decide(const P& p)
      */
     template <class P, class R>
     auto decide(const P& p)
@@ -3088,7 +3124,7 @@ public:
     }
 
     /**
-     * @copydoc decide_masked(const P& p, const T& mask)
+     * @copydoc prrng::GeneratorBase_array::decide_masked(const P&, const T&)
      */
     template <class P, class T, class R>
     R decide_masked(const P& p, const T& mask)
@@ -3343,6 +3379,13 @@ protected:
 template <class M>
 class pcg32_arrayBase : public GeneratorBase_array<M> {
 protected:
+
+    /**
+     * @brief Constructor alias.
+     *
+     * @param initstate State initiator for every item (accept default sequence initiator).
+     * The shape of the argument determines the shape of the generator array.
+     */
     template <class T>
     void init(const T& initstate)
     {
@@ -3356,6 +3399,13 @@ protected:
         }
     }
 
+    /**
+     * @brief Constructor alias.
+     *
+     * @param initstate State initiator for every item (accept default sequence initiator).
+     * @param initseq Sequence initiator for every item.
+     * The shape of the argument determines the shape of the generator array.
+     */
     template <class T, class U>
     void init(const T& initstate, const U& initseq)
     {
@@ -3461,7 +3511,7 @@ public:
     }
 
     /**
-     * @copydoc state()
+     * @copydoc prrng::pcg32_arrayBase::state()
      *
      * @tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t,
      * N>`
@@ -3492,7 +3542,7 @@ public:
     }
 
     /**
-     * @copydoc initstate()
+     * @copydoc prrng::pcg32_arrayBase::initstate()
      *
      * @return The state initiator of each generator.
      */
@@ -3522,7 +3572,7 @@ public:
     }
 
     /**
-     * @copydoc initseq()
+     * @copydoc prrng::pcg32_arrayBase::initseq()
      *
      * @tparam R The type of the return array, e.g. `xt::array<uint64_t>` or `xt::xtensor<uint64_t,
      * N>`
@@ -3942,8 +3992,8 @@ inline auto auto_pcg32(const T& initstate, const S& initseq)
 }
 
 /**
- * @brief Array of generators of a random cumulative sum of which a chunk is kept in memory
- * for each generator.
+ * @brief Array of generators of a random cumulative sum.
+ * A chunk is kept in memory for each generator, whereby all chunks are assembled to one big array.
  * The random number generated by the pcg32 algorithm.
  *
  * @tparam D Storage of the data, e.g. xt::xarray<double>.
@@ -3990,16 +4040,31 @@ protected:
 public:
     pcg32_arrayBase_cumsum() = default;
 
+    /**
+     * @brief Generator array.
+     * @return Pointer to generator array.
+     */
     const G& generators() const
     {
         return m_gen;
     }
 
+    /**
+     * @brief Chunk.
+     * @return Pointer to chunk.
+     */
     const D& chunk() const
     {
         return m_data;
     }
 
+    /**
+     * @brief Overwrite chunk.
+     * Please consider if prrng::pcg32_arrayBase_cumsum::set_state() and
+     * prrng::pcg32_arrayBase_cumsum::set_start() should be called as well.
+     *
+     * @param data New chunk.
+     */
     void set_chunk(const D& data)
     {
 #ifdef PRRNG_ENABLE_ASSERT
@@ -4020,6 +4085,11 @@ public:
         }
     }
 
+    /**
+     * @brief Current index of the generators.
+     *
+     * @return Array of indices.
+     */
     template <class R>
     R generator_index() const
     {
@@ -4033,6 +4103,11 @@ public:
         return ret;
     }
 
+    /**
+     * @brief Overwrite current index of the generators.
+     *
+     * @param index Array of indices.
+     */
     template <class T>
     void set_generator_index(const T& index)
     {
@@ -4043,6 +4118,11 @@ public:
         }
     }
 
+    /**
+     * @brief Start index of the chunk.
+     *
+     * @return Array of indices.
+     */
     template <class R>
     R start() const
     {
@@ -4056,6 +4136,11 @@ public:
         return ret;
     }
 
+    /**
+     * @brief Overwrite start index of the chunk.
+     *
+     * @param index Array of indices.
+     */
     template <class T>
     void set_start(const T& index)
     {
@@ -4066,6 +4151,11 @@ public:
         }
     }
 
+    /**
+     * @brief State of the generators.
+     *
+     * @return Array of states.
+     */
     template <class R, class T>
     R state(const T& index)
     {
@@ -4081,6 +4171,12 @@ public:
         return ret;
     }
 
+    /**
+     * @brief Overwrite state of the generators.
+     *
+     * @param state Array of states.
+     * @param index Index that the states correspond to.
+     */
     template <class S, class T>
     void set_state(const S& state, const T& index)
     {
@@ -4092,6 +4188,14 @@ public:
         }
     }
 
+    /**
+     * @brief Restore state.
+     * A `draw...` function should be called next.
+     *
+     * @param state Array of states.
+     * @param value Array of values to begin the chunk with.
+     * @param index Index that the states correspond to.
+     */
     template <class S, class V, class T>
     void restore(const S& state, const V& value, const T& index)
     {
@@ -4104,6 +4208,13 @@ public:
         }
     }
 
+    /**
+     * @brief Draw a new chunk from a Weibull distribution.
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     */
     void draw_chunk_weibull(double k, double scale, double offset)
     {
         for (size_t i = 0; i < m_gen.size(); ++i) {
@@ -4111,6 +4222,17 @@ public:
         }
     }
 
+    /**
+     * @brief Align chunks with a target value.
+     * See prrng::pcg32_cumsum::align_weibull().
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param target Target value.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
     template <class T>
     void align_chunk_weibull(
         double k,
@@ -4128,6 +4250,13 @@ public:
     }
 };
 
+/**
+ * @brief Array of generators of a random cumulative sum.
+ * A chunk is kept in memory for each generator, whereby all chunks are assembled to one big array.
+ * The random number generated by the pcg32 algorithm.
+ *
+ * @tparam D Storage of the data, e.g. xt::xarray<double>.
+ */
 template <class D>
 class pcg32_array_cumsum : public pcg32_arrayBase_cumsum<D, pcg32_array> {
 public:
@@ -4147,6 +4276,14 @@ public:
     }
 };
 
+/**
+ * @brief Array of generators of a random cumulative sum.
+ * A chunk is kept in memory for each generator, whereby all chunks are assembled to one big array.
+ * The random number generated by the pcg32 algorithm.
+ *
+ * @tparam D Storage of the data, e.g. xt::tensor<double, N + n>.
+ * @tparam N Rank of the array of generators, e.g. xt::xarray<double, N>.
+ */
 template <class D, size_t N>
 class pcg32_tensor_cumsum : public pcg32_arrayBase_cumsum<D, pcg32_tensor<N>> {
 public:
