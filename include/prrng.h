@@ -2259,7 +2259,7 @@ public:
     }
 
     /**
-     * @brief Draw new chunk from a Weibull distribution.
+     * @brief Draw new chunk.
      *
      * @param k Shape factor.
      * @param scale Scale factor.
@@ -2330,6 +2330,235 @@ public:
             },
             [this, k, scale, offset](size_t n) {
                 return m_gen->cumsum_weibull(n, k, scale) + static_cast<double>(n) * offset;
+            },
+            target,
+            margin,
+            strict);
+    }
+
+    /**
+     * @brief Draw new chunk.
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     */
+    void draw_chunk_gamma(double k = 1, double scale = 1, double offset = 0)
+    {
+        return this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+            return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
+        });
+    }
+
+    /**
+     * @brief Shift left.
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep right.
+     */
+    void prev_chunk_gamma(double k = 1, double scale = 1, double offset = 0, size_t margin = 0)
+    {
+        this->prev_chunk(
+            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
+            },
+            margin);
+    }
+
+    /**
+     * @brief Shift right.
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep left.
+     */
+    void next_chunk_gamma(double k = 1, double scale = 1, double offset = 0, size_t margin = 0)
+    {
+        this->next_chunk(
+            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
+            },
+            margin);
+    }
+
+    /**
+     * @brief Align chunk with target value.
+     *
+     * @param target Target value.
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
+    void align_chunk_gamma(
+        double target,
+        double k = 1,
+        double scale = 1,
+        double offset = 0,
+        size_t margin = 0,
+        bool strict = false)
+    {
+        this->align_chunk(
+            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
+            },
+            [this, k, scale, offset](size_t n) {
+                return m_gen->cumsum_gamma(n, k, scale) + static_cast<double>(n) * offset;
+            },
+            target,
+            margin,
+            strict);
+    }
+
+    /**
+     * @brief Draw new chunk.
+     *
+     * @param mu Mean.
+     * @param sigma Standard deviation.
+     * @param offset Fixed offset.
+     */
+    void draw_chunk_normal(double mu = 0, double sigma = 1, double offset = 0)
+    {
+        return this->draw_chunk([this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
+            return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
+        });
+    }
+
+    /**
+     * @brief Shift left.
+     *
+     * @param mu Mean.
+     * @param sigma Standard deviation.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep right.
+     */
+    void prev_chunk_normal(double mu = 0, double sigma = 1, double offset = 0, size_t margin = 0)
+    {
+        this->prev_chunk(
+            [this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
+            },
+            margin);
+    }
+
+    /**
+     * @brief Shift right.
+     *
+     * @param mu Mean.
+     * @param sigma Standard deviation.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep left.
+     */
+    void next_chunk_normal(double mu = 0, double sigma = 1, double offset = 0, size_t margin = 0)
+    {
+        this->next_chunk(
+            [this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
+            },
+            margin);
+    }
+
+    /**
+     * @brief Align chunk with target value.
+     *
+     * @param target Target value.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
+     * @param offset Fixed offset.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
+    void align_chunk_normal(
+        double target,
+        double mu = 0,
+        double sigma = 1,
+        double offset = 0,
+        size_t margin = 0,
+        bool strict = false)
+    {
+        this->align_chunk(
+            [this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
+            },
+            [this, mu, sigma, offset](size_t n) {
+                return m_gen->cumsum_normal(n, mu, sigma) + static_cast<double>(n) * offset;
+            },
+            target,
+            margin,
+            strict);
+    }
+
+    /**
+     * @brief Draw new chunk.
+     *
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     */
+    void draw_chunk_exponential(double scale = 1, double offset = 0)
+    {
+        return this->draw_chunk([this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+            return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
+        });
+    }
+
+    /**
+     * @brief Shift left.
+     *
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep right.
+     */
+    void prev_chunk_exponential(double scale = 1, double offset = 0, size_t margin = 0)
+    {
+        this->prev_chunk(
+            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
+            },
+            margin);
+    }
+
+    /**
+     * @brief Shift right.
+     *
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Overlap to keep left.
+     */
+    void next_chunk_exponential(double scale = 1, double offset = 0, size_t margin = 0)
+    {
+        this->next_chunk(
+            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
+            },
+            margin);
+    }
+
+    /**
+     * @brief Align chunk with target value.
+     *
+     * @param target Target value.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
+    void align_chunk_exponential(
+        double target,
+        double scale = 1,
+        double offset = 0,
+        size_t margin = 0,
+        bool strict = false)
+    {
+        this->align_chunk(
+            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
+                return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
+            },
+            [this, scale, offset](size_t n) {
+                return m_gen->cumsum_exponential(n, scale) + static_cast<double>(n) * offset;
             },
             target,
             margin,
@@ -4208,7 +4437,7 @@ public:
 
     /**
      * @brief Draw a new chunk.
-     * * See prrng::pcg32_cumsum::draw_weibull().
+     * See prrng::pcg32_cumsum::draw_weibull().
      *
      * @param k Shape factor.
      * @param scale Scale factor.
@@ -4245,6 +4474,129 @@ public:
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].align_chunk_weibull(target.flat(i), k, scale, offset, margin, strict);
+        }
+    }
+
+    /**
+     * @brief Draw a new chunk.
+     * See prrng::pcg32_cumsum::draw_gamma().
+     *
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     */
+    void draw_chunk_gamma(double k = 1, double scale = 1, double offset = 0)
+    {
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].draw_chunk_gamma(k, scale, offset);
+        }
+    }
+
+    /**
+     * @brief Align chunks with a target value.
+     * See prrng::pcg32_cumsum::align_gamma().
+     *
+     * @param target Target value.
+     * @param k Shape factor.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
+    template <class T>
+    void align_chunk_gamma(
+        const T& target,
+        double k = 1,
+        double scale = 1,
+        double offset = 0,
+        size_t margin = 0,
+        bool strict = false)
+    {
+        PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].align_chunk_gamma(target.flat(i), k, scale, offset, margin, strict);
+        }
+    }
+
+    /**
+     * @brief Draw a new chunk.
+     * See prrng::pcg32_cumsum::draw_normal().
+     *
+     * @param mu Mean.
+     * @param sigma Standard deviation.
+     * @param offset Fixed offset.
+     */
+    void draw_chunk_normal(double mu = 0, double sigma = 1, double offset = 0)
+    {
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].draw_chunk_normal(mu, sigma, offset);
+        }
+    }
+
+    /**
+     * @brief Align chunks with a target value.
+     * See prrng::pcg32_cumsum::align_normal().
+     *
+     * @param target Target value.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
+     * @param offset Fixed offset.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
+    template <class T>
+    void align_chunk_normal(
+        const T& target,
+        double mu = 0,
+        double sigma = 1,
+        double offset = 0,
+        size_t margin = 0,
+        bool strict = false)
+    {
+        PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].align_chunk_normal(target.flat(i), mu, sigma, offset, margin, strict);
+        }
+    }
+
+    /**
+     * @brief Draw a new chunk.
+     * See prrng::pcg32_cumsum::draw_exponential().
+     *
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     */
+    void draw_chunk_exponential(double scale = 1, double offset = 0)
+    {
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].draw_chunk_exponential(scale, offset);
+        }
+    }
+
+    /**
+     * @brief Align chunks with a target value.
+     * See prrng::pcg32_cumsum::align_exponential().
+     *
+     * @param target Target value.
+     * @param scale Scale factor.
+     * @param offset Fixed offset.
+     * @param margin Margin to leave left of the target.
+     * @param strict If `false` the margin is only approximately enforced to gain speed.
+     */
+    template <class T>
+    void align_chunk_exponential(
+        const T& target,
+        double scale = 1,
+        double offset = 0,
+        size_t margin = 0,
+        bool strict = false)
+    {
+        PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].align_chunk_exponential(target.flat(i), scale, offset, margin, strict);
         }
     }
 };
