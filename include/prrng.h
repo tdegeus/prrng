@@ -1425,7 +1425,9 @@ private:
     template <class R, class S>
     R delta_impl(const S& shape, double scale)
     {
-        return scale * xt::ones<typename R::value_type>(shape);
+        R ret = xt::empty<typename R::value_type>(shape);
+        ret.fill(scale);
+        return ret;
     }
 
 protected:
@@ -3583,7 +3585,9 @@ private:
     template <class R, class S>
     R delta_impl(const S& ishape, double scale)
     {
-        return scale * xt::ones<typename R::value_type>(ishape);
+        R ret = xt::empty<typename R::value_type>(ishape);
+        ret.fill(scale);
+        return ret;
     }
 
 protected:
