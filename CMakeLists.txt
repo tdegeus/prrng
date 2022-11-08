@@ -173,6 +173,8 @@ if(BUILD_PYTHON OR BUILD_ALL)
         install(TARGETS ${PYPROJECT_NAME} DESTINATION .)
     endif()
 
+    target_link_libraries(${PYPROJECT_NAME} PUBLIC ${PROJECT_NAME}::compiler_warnings)
+
 endif()
 
 # Build documentation

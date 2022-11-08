@@ -122,6 +122,29 @@
 #endif
 
 /**
+ * All debug assertions are implementation as:
+ *
+ *     PRRNG_DEBUG(...)
+ *
+ * They can be enabled by:
+ *
+ *     #define PRRNG_ENABLE_DEBUG
+ *
+ * (before including prrng).
+ * The advantage is that:
+ *
+ * -   File and line-number are displayed if the assertion fails.
+ * -   prrng's assertions can be enabled/disabled independently from those of other libraries.
+ *
+ * \throw std::runtime_error
+ */
+#ifdef PRRNG_ENABLE_DEBUG
+#define PRRNG_DEBUG(expr) PRRNG_ASSERT_IMPL(expr, __FILE__, __LINE__)
+#else
+#define PRRNG_DEBUG(expr)
+#endif
+
+/**
  * @brief Portable Reconstructible (Pseudo!) Random Number Generator
  */
 namespace prrng {
@@ -1328,7 +1351,8 @@ private:
                 std::numeric_limits<T>::max(),
             "Return value_type must must be able to accommodate the bound");
 
-        PRRNG_ASSERT(high <= std::numeric_limits<uint32_t>::max());
+        PRRNG_ASSERT(high >= 0);
+        PRRNG_ASSERT(static_cast<uint32_t>(high) < std::numeric_limits<uint32_t>::max());
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
@@ -1361,7 +1385,7 @@ private:
             "Return value_type must must be able to accommodate the bound");
 
         PRRNG_ASSERT(high - low >= 0);
-        PRRNG_ASSERT(high - low <= std::numeric_limits<uint32_t>::max());
+        PRRNG_ASSERT(static_cast<uint32_t>(high - low) < std::numeric_limits<uint32_t>::max());
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
@@ -1715,7 +1739,7 @@ public:
      */
     int64_t operator-(const pcg32& other) const
     {
-        PRRNG_ASSERT(m_inc == other.m_inc);
+        PRRNG_DEBUG(m_inc == other.m_inc);
 
         uint64_t cur_mult = PRRNG_PCG32_MULT;
         uint64_t cur_plus = m_inc;
@@ -1728,7 +1752,7 @@ public:
                 cur_state = cur_state * cur_mult + cur_plus;
                 distance |= the_bit;
             }
-            assert((m_state & the_bit) == (cur_state & the_bit));
+            PRRNG_DEBUG((m_state & the_bit) == (cur_state & the_bit));
             the_bit <<= 1;
             cur_plus = (cur_mult + 1ULL) * cur_plus;
             cur_mult *= cur_mult;
@@ -1742,7 +1766,7 @@ public:
      *
      * @tparam R
      *     Return-type.
-     *     `static_assert` against down-casting, #PRRNG_ASSERT against loss of signedness.
+     *     `static_assert` against down-casting, #PRRNG_DEBUG against loss of signedness.
      *
      * @return Distance.
      *
@@ -1754,9 +1778,9 @@ public:
         static_assert(sizeof(R) >= sizeof(int64_t), "Down-casting not allowed.");
         int64_t r = this->operator-(other);
 
-#ifdef PRRNG_ENABLE_ASSERT
+#ifdef PRRNG_ENABLE_DEBUG
         bool u = std::is_unsigned<R>::value;
-        PRRNG_ASSERT((r < 0 && !u) || r >= 0);
+        PRRNG_DEBUG((r < 0 && !u) || r >= 0);
 #endif
 
         return static_cast<R>(r);
@@ -1767,7 +1791,7 @@ public:
      *
      * @tparam R
      *     Return-type.
-     *     `static_assert` against down-casting, #PRRNG_ASSERT against loss of signedness.
+     *     `static_assert` against down-casting, #PRRNG_DEBUG against loss of signedness.
      *
      * @return Distance.
      *
@@ -1795,7 +1819,7 @@ public:
                 cur_state = cur_state * cur_mult + cur_plus;
                 distance |= the_bit;
             }
-            assert((m_state & the_bit) == (cur_state & the_bit));
+            PRRNG_DEBUG((m_state & the_bit) == (cur_state & the_bit));
             the_bit <<= 1;
             cur_plus = (cur_mult + 1ULL) * cur_plus;
             cur_mult *= cur_mult;
@@ -1803,9 +1827,9 @@ public:
 
         int64_t r = (int64_t)distance;
 
-#ifdef PRRNG_ENABLE_ASSERT
+#ifdef PRRNG_ENABLE_DEBUG
         bool u = std::is_unsigned<R>::value;
-        PRRNG_ASSERT((r < 0 && !u) || r >= 0);
+        PRRNG_DEBUG((r < 0 && !u) || r >= 0);
 #endif
 
         return static_cast<R>(r);
@@ -1916,9 +1940,6 @@ protected:
 private:
     void seed(uint64_t initstate, uint64_t initseq)
     {
-        PRRNG_ASSERT(initstate >= 0);
-        PRRNG_ASSERT(initseq >= 0);
-
         m_initstate = initstate;
         m_initseq = initseq;
 
@@ -2418,7 +2439,7 @@ public:
     template <class T>
     size_t flat_index(const T& index) const
     {
-        PRRNG_ASSERT(this->inbounds(index));
+        PRRNG_DEBUG(this->inbounds(index));
         return std::inner_product(index.cbegin(), index.cend(), m_strides.cbegin(), 0);
     }
 
@@ -3387,7 +3408,7 @@ public:
      */
     pcg32& operator[](size_t i)
     {
-        PRRNG_ASSERT(i < m_size);
+        PRRNG_DEBUG(i < m_size);
         return m_gen[i];
     }
 
@@ -3399,7 +3420,7 @@ public:
      */
     const pcg32& operator[](size_t i) const
     {
-        PRRNG_ASSERT(i < m_size);
+        PRRNG_DEBUG(i < m_size);
         return m_gen[i];
     }
 
@@ -3411,7 +3432,7 @@ public:
      */
     pcg32& flat(size_t i)
     {
-        PRRNG_ASSERT(i < m_size);
+        PRRNG_DEBUG(i < m_size);
         return m_gen[i];
     }
 
@@ -3423,7 +3444,7 @@ public:
      */
     const pcg32& flat(size_t i) const
     {
-        PRRNG_ASSERT(i < m_size);
+        PRRNG_DEBUG(i < m_size);
         return m_gen[i];
     }
 
