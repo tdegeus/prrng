@@ -564,6 +564,101 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
+        .def(
+            "draw_chunk_gamma",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_gamma,
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0)
+
+        .def(
+            "prev_chunk_gamma",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_gamma,
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0)
+
+        .def(
+            "next_chunk_gamma",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_gamma,
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0)
+
+        .def(
+            "align_chunk_gamma",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_gamma,
+            py::arg("target"),
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
+        .def(
+            "draw_chunk_normal",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_normal,
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1,
+            py::arg("offset") = 0)
+
+        .def(
+            "prev_chunk_normal",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_normal,
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0)
+
+        .def(
+            "next_chunk_normal",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_normal,
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0)
+
+        .def(
+            "align_chunk_normal",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_normal,
+            py::arg("target"),
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
+        .def(
+            "draw_chunk_exponential",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_exponential,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0)
+
+        .def(
+            "prev_chunk_exponential",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_exponential,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0)
+
+        .def(
+            "next_chunk_exponential",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_exponential,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0)
+
+        .def(
+            "align_chunk_exponential",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_exponential,
+            py::arg("target"),
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
         .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
     py::class_<prrng::GeneratorBase_array<std::vector<size_t>>>(m, "GeneratorBase_array")
@@ -938,6 +1033,64 @@ PYBIND11_MODULE(_prrng, m)
             "Align chunk with target value.",
             py::arg("target"),
             py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
+        .def(
+            "draw_chunk_gamma",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::draw_chunk_gamma,
+            "Draw new chunk.",
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0)
+
+        .def(
+            "align_chunk_gamma",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_gamma<
+                xt::pyarray<double>>,
+            "Align chunk with target value.",
+            py::arg("target"),
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
+        .def(
+            "draw_chunk_normal",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::draw_chunk_normal,
+            "Draw new chunk.",
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1,
+            py::arg("offset") = 0)
+
+        .def(
+            "align_chunk_normal",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_normal<
+                xt::pyarray<double>>,
+            "Align chunk with target value.",
+            py::arg("target"),
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1,
+            py::arg("offset") = 0,
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
+        .def(
+            "draw_chunk_exponential",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::draw_chunk_exponential,
+            "Draw new chunk.",
+            py::arg("scale") = 1,
+            py::arg("offset") = 0)
+
+        .def(
+            "align_chunk_exponential",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_exponential<
+                xt::pyarray<double>>,
+            "Align chunk with target value.",
+            py::arg("target"),
             py::arg("scale") = 1,
             py::arg("offset") = 0,
             py::arg("margin") = 0,
