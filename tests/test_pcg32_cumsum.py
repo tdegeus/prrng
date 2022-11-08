@@ -117,7 +117,8 @@ class Test_pcg32_cumum(unittest.TestCase):
         ref = prrng.pcg32()
         xref = np.cumsum(offset + ref.weibull([10000], k=k, scale=scale))
 
-        gen = prrng.pcg32_cumsum([100])
+        n = 100
+        gen = prrng.pcg32_cumsum([n])
 
         def mydraw(n):
             return gen.generator.weibull([n], k, scale) + offset
@@ -125,7 +126,6 @@ class Test_pcg32_cumum(unittest.TestCase):
         def mycumsum(n):
             return gen.generator.cumsum_weibull(n, k, scale) + n * offset
 
-        n = 100
         margin = 10
         gen.draw_chunk(mydraw)
 
@@ -224,6 +224,78 @@ class Test_pcg32_cumum(unittest.TestCase):
         lwr = gen.start
         upr = gen.start + gen.size
         self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+
+    def test_array(self):
+        """
+        Array: set a chunk.
+        """
+
+        k = 2
+        scale = 5
+        offset = 0.1
+        state = np.arange(6, dtype=np.uint64)
+        seq = np.zeros_like(state)
+        ref = prrng.pcg32_array(state, seq)
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale), axis=-1)
+
+        n = 100
+        gen = prrng.pcg32_array_cumsum([n], state, seq)
+        gen.draw_chunk_weibull(k, scale, offset)
+        self.assertTrue(np.allclose(xref[..., :n], gen.chunk))
+        self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
+
+        for i in [500, 2012, 101]:
+
+            margin = 10
+            target = 0.5 * (xref[..., i] + xref[..., i + 1])
+            gen.align_chunk_weibull(k, scale, offset, target, margin=margin, strict=True)
+            self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
+            self.assertTrue(np.all(gen.chunk[..., margin - 1] <= target))
+            self.assertTrue(np.all(gen.chunk[..., margin] > target))
+
+    def test_array_init(self):
+        """
+        Array: apply some custom initialisation
+        """
+
+        k = 2
+        scale = 5
+        offset = 0.1
+        state = np.arange(6, dtype=np.uint64)
+        seq = np.zeros_like(state)
+        ref = prrng.pcg32_array(state, seq)
+        x0 = ref.random([]).reshape(-1, 1)
+        ref = prrng.pcg32_array(state, seq)
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale), axis=-1) + x0
+
+        n = 100
+        gen = prrng.pcg32_array_cumsum([n], state, seq)
+        gen.draw_chunk_weibull(k, scale, offset)
+        gen.chunk += x0
+        self.assertTrue(np.allclose(xref[..., :n], gen.chunk))
+        self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
+
+        for i in [500, 2012, 101]:
+
+            margin = 10
+            target = 0.5 * (xref[..., i] + xref[..., i + 1])
+            gen.align_chunk_weibull(k, scale, offset, target, margin=margin, strict=True)
+            self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
+            self.assertTrue(np.all(gen.chunk[..., margin - 1] <= target))
+            self.assertTrue(np.all(gen.chunk[..., margin] > target))
+
+        index = gen.start
+        value = np.copy(gen.chunk[..., 0])
+        state = gen.state(index)
+        chunk = np.copy(gen.chunk)
+
+        i = 3000
+        target = 0.5 * (xref[..., i] + xref[..., i + 1])
+        gen.align_chunk_weibull(k, scale, offset, target)
+
+        gen.restore(state, value, index)
+        gen.draw_chunk_weibull(k, scale, offset)
+        self.assertTrue(np.allclose(chunk, gen.chunk))
 
 
 if __name__ == "__main__":
