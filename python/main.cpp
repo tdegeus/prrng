@@ -54,8 +54,8 @@ PYBIND11_MODULE(_prrng, m)
             py::init<double, double>(),
             "Normal distribution. "
             "See :cpp:class:`prrng::normal_distribution`.",
-            py::arg("mu") = 0.0,
-            py::arg("sigma") = 1.0)
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1)
 
         .def(
             "pdf",
@@ -88,7 +88,7 @@ PYBIND11_MODULE(_prrng, m)
             py::init<double>(),
             "exponential distribution. "
             "See :cpp:class:`prrng::exponential_distribution`.",
-            py::arg("scale") = 1.0)
+            py::arg("scale") = 1)
 
         .def(
             "pdf",
@@ -121,8 +121,8 @@ PYBIND11_MODULE(_prrng, m)
             py::init<double, double>(),
             "Weibull distribution. "
             "See :cpp:class:`prrng::weibull_distribution`.",
-            py::arg("k") = 1.0,
-            py::arg("scale") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "pdf",
@@ -155,8 +155,8 @@ PYBIND11_MODULE(_prrng, m)
             py::init<double, double>(),
             "Weibull distribution. "
             "See :cpp:class:`prrng::gamma_distribution`.",
-            py::arg("k") = 1.0,
-            py::arg("theta") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "pdf",
@@ -203,8 +203,8 @@ PYBIND11_MODULE(_prrng, m)
             "The result of the cumsum of `n` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase::cumsum_normal`.",
             py::arg("n"),
-            py::arg("mu") = 0.0,
-            py::arg("sigma") = 1.0)
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1)
 
         .def(
             "cumsum_exponential",
@@ -212,7 +212,7 @@ PYBIND11_MODULE(_prrng, m)
             "The result of the cumsum of `n` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase::cumsum_exponential`.",
             py::arg("n"),
-            py::arg("scale") = 1.0)
+            py::arg("scale") = 1)
 
         .def(
             "cumsum_weibull",
@@ -220,8 +220,8 @@ PYBIND11_MODULE(_prrng, m)
             "The result of the cumsum of `n` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase::cumsum_weibull`.",
             py::arg("n"),
-            py::arg("k") = 1.0,
-            py::arg("scale") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "cumsum_gamma",
@@ -229,8 +229,8 @@ PYBIND11_MODULE(_prrng, m)
             "The result of the cumsum of `n` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase::cumsum_gamma`.",
             py::arg("n"),
-            py::arg("k") = 1.0,
-            py::arg("theta") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "decide",
@@ -309,8 +309,8 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a normal distribution. "
             "See :cpp:func:`prrng::GeneratorBase::normal`.",
             py::arg("shape"),
-            py::arg("mu") = 0.0,
-            py::arg("sigma") = 1.0)
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1)
 
         .def(
             "exponential",
@@ -319,7 +319,7 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a exponential distribution. "
             "See :cpp:func:`prrng::GeneratorBase::exponential`.",
             py::arg("shape"),
-            py::arg("scale") = 1.0)
+            py::arg("scale") = 1)
 
         .def(
             "weibull",
@@ -328,8 +328,8 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a weibull distribution. "
             "See :cpp:func:`prrng::GeneratorBase::weibull`.",
             py::arg("shape"),
-            py::arg("k") = 1.0,
-            py::arg("scale") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "gamma",
@@ -338,8 +338,8 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a gamma distribution. "
             "See :cpp:func:`prrng::GeneratorBase::gamma`.",
             py::arg("shape"),
-            py::arg("k") = 1.0,
-            py::arg("theta") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "delta",
@@ -769,8 +769,8 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a normal distribution. "
             "See :cpp:func:`prrng::GeneratorBase_array::normal`.",
             py::arg("ishape"),
-            py::arg("mu") = 0.0,
-            py::arg("sigma") = 1.0)
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1)
 
         .def(
             "exponential",
@@ -780,7 +780,7 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a exponential distribution. "
             "See :cpp:func:`prrng::GeneratorBase_array::exponential`.",
             py::arg("ishape"),
-            py::arg("scale") = 1.0)
+            py::arg("scale") = 1)
 
         .def(
             "weibull",
@@ -790,8 +790,8 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a weibull distribution. "
             "See :cpp:func:`prrng::GeneratorBase_array::weibull`.",
             py::arg("ishape"),
-            py::arg("k") = 1.0,
-            py::arg("scale") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "gamma",
@@ -801,8 +801,8 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a gamma distribution. "
             "See :cpp:func:`prrng::GeneratorBase_array::gamma`.",
             py::arg("ishape"),
-            py::arg("k") = 1.0,
-            py::arg("theta") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "delta",
@@ -829,8 +829,8 @@ PYBIND11_MODULE(_prrng, m)
             "Cumsum of ``n`` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase_array::cumsum_normal`.",
             py::arg("n"),
-            py::arg("mu") = 0.0,
-            py::arg("sigma") = 1.0)
+            py::arg("mu") = 0,
+            py::arg("sigma") = 1)
 
         .def(
             "cumsum_exponential",
@@ -839,7 +839,7 @@ PYBIND11_MODULE(_prrng, m)
             "Cumsum of ``n`` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase_array::cumsum_exponential`.",
             py::arg("n"),
-            py::arg("scale") = 1.0)
+            py::arg("scale") = 1)
 
         .def(
             "cumsum_weibull",
@@ -848,8 +848,8 @@ PYBIND11_MODULE(_prrng, m)
             "Cumsum of ``n`` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase_array::cumsum_weibull`.",
             py::arg("n"),
-            py::arg("k") = 1.0,
-            py::arg("scale") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def(
             "cumsum_gamma",
@@ -858,8 +858,8 @@ PYBIND11_MODULE(_prrng, m)
             "Cumsum of ``n`` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase_array::cumsum_gamma`.",
             py::arg("n"),
-            py::arg("k") = 1.0,
-            py::arg("theta") = 1.0)
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
 
         .def("__repr__", [](const prrng::GeneratorBase_array<std::vector<size_t>>&) {
             return "<prrng.GeneratorBase_array>";
@@ -1048,8 +1048,7 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             "align_chunk_gamma",
-            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_gamma<
-                xt::pyarray<double>>,
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_gamma<xt::pyarray<double>>,
             "Align chunk with target value.",
             py::arg("target"),
             py::arg("k") = 1,
