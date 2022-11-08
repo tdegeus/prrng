@@ -65,5 +65,6 @@ if(NOT TARGET prrng::debug)
         TARGET prrng::debug
         PROPERTY INTERFACE_COMPILE_DEFINITIONS
         XTENSOR_ENABLE_ASSERT
-        PRRNG_ENABLE_ASSERT)
+        PRRNG_ENABLE_ASSERT
+        PRRNG_ENABLE_DEBUG)
 endif()
