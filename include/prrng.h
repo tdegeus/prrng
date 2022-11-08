@@ -548,7 +548,7 @@ public:
      * @param k Shape parameter \f$ k \f$.
      * @param scale Scale parameter \f$ \lambda \f$.
      */
-    weibull_distribution(double k = 1.0, double scale = 1.0)
+    weibull_distribution(double k = 1, double scale = 1)
     {
         m_shape = k;
         m_scale = scale;
@@ -638,13 +638,13 @@ public:
     /**
      * Constructor.
      *
-     * @param k Shape parameter.
-     * @param theta Scale parameter.
+     * @param k Shape parameter \f$ \k \f$.
+     * @param scale Scale parameter \f$ \theta \f$.
      */
-    gamma_distribution(double k = 1.0, double theta = 1.0)
+    gamma_distribution(double k = 1, double scale = 1)
     {
         m_shape = k;
-        m_scale = theta;
+        m_scale = scale;
     }
 
     /**
@@ -807,7 +807,7 @@ public:
      * @param scale Scale.
      * @return Cumulative sum.
      */
-    double cumsum_weibull(size_t n, double k = 1.0, double scale = 1.0)
+    double cumsum_weibull(size_t n, double k = 1, double scale = 1)
     {
         double ret = 0.0;
         auto tranform = weibull_distribution(k, scale);
@@ -824,13 +824,13 @@ public:
      * gamma distribution, see gamma_distribution(),
      * @param n Number of steps.
      * @param k Shape.
-     * @param theta Scale.
+     * @param scale Scale.
      * @return Cumulative sum.
      */
-    double cumsum_gamma(size_t n, double k = 1.0, double theta = 1.0)
+    double cumsum_gamma(size_t n, double k = 1, double scale = 1)
     {
         double ret = 0.0;
-        auto tranform = gamma_distribution(k, theta);
+        auto tranform = gamma_distribution(k, scale);
         for (size_t i = 0; i < n; ++i) {
             auto r = draw_double();
             tranform.apply_quantile(&r);
@@ -1196,7 +1196,7 @@ public:
      * @return The sample of shape `shape`.
      */
     template <class S>
-    auto weibull(const S& shape, double k = 1.0, double scale = 1.0) ->
+    auto weibull(const S& shape, double k = 1, double scale = 1) ->
         typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
@@ -1208,7 +1208,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R weibull(const S& shape, double k = 1.0, double scale = 1.0)
+    R weibull(const S& shape, double k = 1, double scale = 1)
     {
         return this->weibull_impl<R>(shape, k, scale);
     }
@@ -1217,7 +1217,7 @@ public:
      * @copydoc prrng::GeneratorBase::weibull(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto weibull(const I (&shape)[L], double k = 1.0, double scale = 1.0) ->
+    auto weibull(const I (&shape)[L], double k = 1, double scale = 1) ->
         typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
@@ -1229,7 +1229,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R weibull(const I (&shape)[L], double k = 1.0, double scale = 1.0)
+    R weibull(const I (&shape)[L], double k = 1, double scale = 1)
     {
         return this->weibull_impl<R>(shape, k, scale);
     }
@@ -1241,15 +1241,15 @@ public:
      *
      * @param shape The shape of the nd-array.
      * @param k Shape parameter.
-     * @param theta Scale parameter.
+     * @param scale Scale parameter.
      * @return The sample of shape `shape`.
      */
     template <class S>
-    auto gamma(const S& shape, double k = 1.0, double theta = 1.0) ->
+    auto gamma(const S& shape, double k = 1, double scale = 1) ->
         typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
-        return this->gamma_impl<R>(shape, k, theta);
+        return this->gamma_impl<R>(shape, k, scale);
     }
 
     /**
@@ -1257,20 +1257,20 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R gamma(const S& shape, double k = 1.0, double theta = 1.0)
+    R gamma(const S& shape, double k = 1, double scale = 1)
     {
-        return this->gamma_impl<R>(shape, k, theta);
+        return this->gamma_impl<R>(shape, k, scale);
     }
 
     /**
      * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0) ->
+    auto gamma(const I (&shape)[L], double k = 1, double scale = 1) ->
         typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
-        return this->gamma_impl<R>(shape, k, theta);
+        return this->gamma_impl<R>(shape, k, scale);
     }
 
     /**
@@ -1278,9 +1278,9 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R gamma(const I (&shape)[L], double k = 1.0, double theta = 1.0)
+    R gamma(const I (&shape)[L], double k = 1, double scale = 1)
     {
-        return this->gamma_impl<R>(shape, k, theta);
+        return this->gamma_impl<R>(shape, k, scale);
     }
 
     /**
@@ -1416,10 +1416,10 @@ private:
     }
 
     template <class R, class S>
-    R gamma_impl(const S& shape, double k, double theta)
+    R gamma_impl(const S& shape, double k, double scale)
     {
         R r = this->random_impl<R>(shape);
-        return gamma_distribution(k, theta).quantile(r);
+        return gamma_distribution(k, scale).quantile(r);
     }
 
     template <class R, class S>
@@ -2985,7 +2985,7 @@ public:
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
-    auto weibull(const S& ishape, double k = 1.0, double scale = 1.0) ->
+    auto weibull(const S& ishape, double k = 1, double scale = 1) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
@@ -2997,7 +2997,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R weibull(const S& ishape, double k = 1.0, double scale = 1.0)
+    R weibull(const S& ishape, double k = 1, double scale = 1)
     {
         return this->weibull_impl<R>(ishape, k, scale);
     }
@@ -3006,7 +3006,7 @@ public:
      * @copydoc prrng::GeneratorBase_array::weibull(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto weibull(const I (&ishape)[L], double k = 1.0, double scale = 1.0) ->
+    auto weibull(const I (&ishape)[L], double k = 1, double scale = 1) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
@@ -3018,7 +3018,7 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R weibull(const I (&ishape)[L], double k = 1.0, double scale = 1.0)
+    R weibull(const I (&ishape)[L], double k = 1, double scale = 1)
     {
         return this->weibull_impl<R>(detail::to_array(ishape), k, scale);
     }
@@ -3031,15 +3031,15 @@ public:
      *
      * @param ishape The shape of the nd-array drawn per generator.
      * @param k Shape parameter.
-     * @param theta Scale parameter.
+     * @param scale Scale parameter.
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
-    auto gamma(const S& ishape, double k = 1.0, double theta = 1.0) ->
+    auto gamma(const S& ishape, double k = 1, double scale = 1) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
-        return this->gamma_impl<R>(ishape, k, theta);
+        return this->gamma_impl<R>(ishape, k, scale);
     }
 
     /**
@@ -3047,20 +3047,20 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R gamma(const S& ishape, double k = 1.0, double theta = 1.0)
+    R gamma(const S& ishape, double k = 1, double scale = 1)
     {
-        return this->gamma_impl<R>(ishape, k, theta);
+        return this->gamma_impl<R>(ishape, k, scale);
     }
 
     /**
      * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0) ->
+    auto gamma(const I (&ishape)[L], double k = 1, double scale = 1) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
-        return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
+        return this->gamma_impl<R>(detail::to_array(ishape), k, scale);
     }
 
     /**
@@ -3068,9 +3068,9 @@ public:
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R gamma(const I (&ishape)[L], double k = 1.0, double theta = 1.0)
+    R gamma(const I (&ishape)[L], double k = 1, double scale = 1)
     {
-        return this->gamma_impl<R>(detail::to_array(ishape), k, theta);
+        return this->gamma_impl<R>(detail::to_array(ishape), k, scale);
     }
 
     /**
@@ -3223,7 +3223,7 @@ public:
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_weibull(const T& n, double k = 1.0, double scale = 1.0) ->
+    auto cumsum_weibull(const T& n, double k = 1, double scale = 1) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
@@ -3241,7 +3241,7 @@ public:
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_weibull(const T& n, double k = 1.0, double scale = 1.0)
+    R cumsum_weibull(const T& n, double k = 1, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
         this->cumsum_weibull_impl(ret.data(), n.data(), k, scale);
@@ -3253,16 +3253,16 @@ public:
      * distributed according to a gamma distribution, see gamma_distribution(),
      * @param n Number of steps.
      * @param k Shape parameter.
-     * @param theta Scale parameter.
+     * @param scale Scale parameter.
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_gamma(const T& n, double k = 1.0, double theta = 1.0) ->
+    auto cumsum_gamma(const T& n, double k = 1, double scale = 1) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_gamma_impl(ret.data(), n.data(), k, theta);
+        this->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -3271,14 +3271,14 @@ public:
      * distributed according to a gamma distribution, see gamma_distribution(),
      * @param n Number of steps.
      * @param k Shape parameter.
-     * @param theta Scale parameter.
+     * @param scale Scale parameter.
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_gamma(const T& n, double k = 1.0, double theta = 1.0)
+    R cumsum_gamma(const T& n, double k = 1, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_gamma_impl(ret.data(), n.data(), k, theta);
+        this->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -3471,10 +3471,10 @@ private:
     }
 
     template <class R, class S>
-    R gamma_impl(const S& ishape, double k, double theta)
+    R gamma_impl(const S& ishape, double k, double scale)
     {
         R r = this->random_impl<R>(ishape);
-        return gamma_distribution(k, theta).quantile(r);
+        return gamma_distribution(k, scale).quantile(r);
     }
 
     template <class R, class S>
@@ -3974,12 +3974,12 @@ protected:
      * @param ret Output, per generator.
      * @param n Number to draw, per generator.
      * @param k Shape parameter.
-     * @param theta Scale parameter.
+     * @param scale Scale parameter.
      */
-    void cumsum_gamma_impl(double* ret, const size_t* n, double k, double theta) override
+    void cumsum_gamma_impl(double* ret, const size_t* n, double k, double scale) override
     {
         for (size_t i = 0; i < m_size; ++i) {
-            ret[i] = m_gen[i].cumsum_gamma(n[i], k, theta);
+            ret[i] = m_gen[i].cumsum_gamma(n[i], k, scale);
         }
     }
 
