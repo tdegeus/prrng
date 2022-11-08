@@ -1986,7 +1986,6 @@ public:
     }
 
 protected:
-
     /**
      * @brief Constructor.
      *
@@ -2266,7 +2265,7 @@ public:
      * @param scale Scale factor.
      * @param offset Fixed offset.
      */
-    void draw_chunk_weibull(double k, double scale, double offset)
+    void draw_chunk_weibull(double k = 1, double scale = 1, double offset = 0)
     {
         return this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
             return m_gen->weibull<xt::xtensor<double, 1>>({n}, k, scale) + offset;
@@ -2281,7 +2280,7 @@ public:
      * @param offset Fixed offset.
      * @param margin Overlap to keep right.
      */
-    void prev_chunk_weibull(double k, double scale, double offset, size_t margin = 0)
+    void prev_chunk_weibull(double k = 1, double scale = 1, double offset = 0, size_t margin = 0)
     {
         this->prev_chunk(
             [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
@@ -2298,7 +2297,7 @@ public:
      * @param offset Fixed offset.
      * @param margin Overlap to keep left.
      */
-    void next_chunk_weibull(double k, double scale, double offset, size_t margin = 0)
+    void next_chunk_weibull(double k = 1, double scale = 1, double offset = 0, size_t margin = 0)
     {
         this->next_chunk(
             [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
@@ -2310,18 +2309,18 @@ public:
     /**
      * @brief Align chunk with target value.
      *
+     * @param target Target value.
      * @param k Shape factor.
      * @param scale Scale factor.
      * @param offset Fixed offset.
-     * @param target Target value.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     void align_chunk_weibull(
-        double k,
-        double scale,
-        double offset,
         double target,
+        double k = 1,
+        double scale = 1,
+        double offset = 0,
         size_t margin = 0,
         bool strict = false)
     {
@@ -3379,7 +3378,6 @@ protected:
 template <class M>
 class pcg32_arrayBase : public GeneratorBase_array<M> {
 protected:
-
     /**
      * @brief Constructor alias.
      *
@@ -4209,13 +4207,14 @@ public:
     }
 
     /**
-     * @brief Draw a new chunk from a Weibull distribution.
+     * @brief Draw a new chunk.
+     * * See prrng::pcg32_cumsum::draw_weibull().
      *
      * @param k Shape factor.
      * @param scale Scale factor.
      * @param offset Fixed offset.
      */
-    void draw_chunk_weibull(double k, double scale, double offset)
+    void draw_chunk_weibull(double k = 1, double scale = 1, double offset = 0)
     {
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].draw_chunk_weibull(k, scale, offset);
@@ -4226,26 +4225,26 @@ public:
      * @brief Align chunks with a target value.
      * See prrng::pcg32_cumsum::align_weibull().
      *
+     * @param target Target value.
      * @param k Shape factor.
      * @param scale Scale factor.
      * @param offset Fixed offset.
-     * @param target Target value.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     template <class T>
     void align_chunk_weibull(
-        double k,
-        double scale,
-        double offset,
         const T& target,
+        double k = 1,
+        double scale = 1,
+        double offset = 0,
         size_t margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].align_chunk_weibull(k, scale, offset, target.flat(i), margin, strict);
+            m_cumsum[i].align_chunk_weibull(target.flat(i), k, scale, offset, margin, strict);
         }
     }
 };

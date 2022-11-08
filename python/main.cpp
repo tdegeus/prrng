@@ -534,33 +534,33 @@ PYBIND11_MODULE(_prrng, m)
         .def(
             "draw_chunk_weibull",
             &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_weibull,
-            py::arg("k"),
-            py::arg("scale"),
-            py::arg("offset"))
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0)
 
         .def(
             "prev_chunk_weibull",
             &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_weibull,
-            py::arg("k"),
-            py::arg("scale"),
-            py::arg("offset"),
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
             py::arg("margin") = 0)
 
         .def(
             "next_chunk_weibull",
             &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_weibull,
-            py::arg("k"),
-            py::arg("scale"),
-            py::arg("offset"),
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
             py::arg("margin") = 0)
 
         .def(
             "align_chunk_weibull",
             &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_weibull,
-            py::arg("k"),
-            py::arg("scale"),
-            py::arg("offset"),
             py::arg("target"),
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -927,19 +927,19 @@ PYBIND11_MODULE(_prrng, m)
             "draw_chunk_weibull",
             &prrng::pcg32_array_cumsum<xt::pyarray<double>>::draw_chunk_weibull,
             "Draw new chunk.",
-            py::arg("k"),
-            py::arg("scale"),
-            py::arg("offset"))
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0)
 
         .def(
             "align_chunk_weibull",
             &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_weibull<
                 xt::pyarray<double>>,
             "Align chunk with target value.",
-            py::arg("k"),
-            py::arg("scale"),
-            py::arg("offset"),
             py::arg("target"),
+            py::arg("k") = 1,
+            py::arg("scale") = 1,
+            py::arg("offset") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
