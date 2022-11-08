@@ -11,6 +11,8 @@ option(BUILD_ALL "${PROJECT_NAME}: Build tests, Python API & docs" OFF)
 option(BUILD_TESTS "${PROJECT_NAME}: Build tests" OFF)
 option(BUILD_PYTHON "${PROJECT_NAME}: Build Python API" OFF)
 option(BUILD_DOCS "${PROJECT_NAME}: Build docs" OFF)
+option(USE_ASSERT "${PROJECT_NAME}: Build with assertions" ON)
+option(USE_DEBUG "${PROJECT_NAME}: Build with debug assertions" OFF)
 option(USE_SIMD "${PROJECT_NAME}: Build with hardware optimization" OFF)
 
 if(SKBUILD)

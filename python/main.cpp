@@ -446,20 +446,52 @@ PYBIND11_MODULE(_prrng, m)
         .def(
             py::init<const std::vector<size_t>&, uint64_t, uint64_t>(),
             "Generator of cumulative sum of random numbers. "
-            "See :cpp:class:`prrng::pcg32_cumsum<xt::pyarray<double>>`.",
+            "See :cpp:class:`prrng::pcg32_cumsum`.",
             py::arg("shape"),
             py::arg("initstate") = PRRNG_PCG32_INITSTATE,
             py::arg("initseq") = PRRNG_PCG32_INITSEQ)
 
-        .def_property_readonly("shape", &prrng::pcg32_cumsum<xt::pyarray<double>>::shape)
-        .def_property_readonly("size", &prrng::pcg32_cumsum<xt::pyarray<double>>::size)
-        .def_property_readonly("chunk", &prrng::pcg32_cumsum<xt::pyarray<double>>::chunk)
-        .def_property_readonly("start", &prrng::pcg32_cumsum<xt::pyarray<double>>::start)
-        .def_property_readonly("generator", &prrng::pcg32_cumsum<xt::pyarray<double>>::generator)
         .def_property_readonly(
-            "generator_index", &prrng::pcg32_cumsum<xt::pyarray<double>>::generator_index)
+            "shape", &prrng::pcg32_cumsum<xt::pyarray<double>>::shape, "Shape of the chunk.")
 
-        .def("state", &prrng::pcg32_cumsum<xt::pyarray<double>>::state, py::arg("index"))
+        .def_property_readonly(
+            "size", &prrng::pcg32_cumsum<xt::pyarray<double>>::size, "Size of the chunk.")
+
+        .def_property_readonly(
+            "generator",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::generator,
+            "Underlying generator.")
+
+        .def_property(
+            "chunk",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::chunk,
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_chunk,
+            "Current chunk.")
+
+        .def_property(
+            "generator_index",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::generator_index,
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_generator_index,
+            "Current index that the generator is at.")
+
+        .def_property(
+            "start",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::start,
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_start,
+            "Index of the first entry of the chunk.")
+
+        .def(
+            "state",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::state,
+            py::arg("index"),
+            "State of the generator at any index.")
+
+        .def(
+            "set_state",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_state,
+            py::arg("state"),
+            py::arg("index"),
+            "Update the state of the generator.")
 
         .def(
             "restore",
@@ -836,5 +868,83 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("initseq"))
 
         .def("__repr__", [](const prrng::pcg32_array&) { return "<prrng.pcg32_array>"; });
+
+    py::class_<prrng::pcg32_array_cumsum<xt::pyarray<double>>>(m, "pcg32_array_cumsum")
+
+        .def(
+            py::init<std::vector<size_t>, xt::pyarray<uint64_t>, xt::pyarray<uint64_t>>(),
+            "Random number generator. "
+            "See :cpp:class:`prrng::pcg32_array`.",
+            py::arg("shape"),
+            py::arg("initstate"),
+            py::arg("initseq"))
+
+        .def_property_readonly(
+            "generators", &prrng::pcg32_array_cumsum<xt::pyarray<double>>::generators)
+
+        .def_property(
+            "chunk",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::chunk,
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::set_chunk)
+
+        .def_property(
+            "generator_index",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::generator_index<
+                xt::pyarray<ptrdiff_t>>,
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::set_generator_index<
+                xt::pyarray<ptrdiff_t>>)
+
+        .def_property(
+            "start",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::start<xt::pyarray<ptrdiff_t>>,
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::set_start<xt::pyarray<ptrdiff_t>>)
+
+        .def(
+            "state",
+            &prrng::pcg32_array_cumsum<
+                xt::pyarray<double>>::state<xt::pyarray<uint64_t>, xt::pyarray<ptrdiff_t>>,
+            "Get state at some index.",
+            py::arg("index"))
+
+        .def(
+            "set_state",
+            &prrng::pcg32_array_cumsum<
+                xt::pyarray<double>>::set_state<xt::pyarray<uint64_t>, xt::pyarray<ptrdiff_t>>,
+            "Set state at some index.",
+            py::arg("state"),
+            py::arg("index"))
+
+        .def(
+            "restore",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::
+                restore<xt::pyarray<uint64_t>, xt::pyarray<double>, xt::pyarray<ptrdiff_t>>,
+            "Restore state.",
+            py::arg("state"),
+            py::arg("value"),
+            py::arg("index"))
+
+        .def(
+            "draw_chunk_weibull",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::draw_chunk_weibull,
+            "Draw new chunk.",
+            py::arg("k"),
+            py::arg("scale"),
+            py::arg("offset"))
+
+        .def(
+            "align_chunk_weibull",
+            &prrng::pcg32_array_cumsum<xt::pyarray<double>>::align_chunk_weibull<
+                xt::pyarray<double>>,
+            "Align chunk with target value.",
+            py::arg("k"),
+            py::arg("scale"),
+            py::arg("offset"),
+            py::arg("target"),
+            py::arg("margin") = 0,
+            py::arg("strict") = false)
+
+        .def("__repr__", [](const prrng::pcg32_array_cumsum<xt::pyarray<double>>&) {
+            return "<prrng.pcg32_array_cumsum>";
+        });
 
 } // PYBIND11_MODULE
