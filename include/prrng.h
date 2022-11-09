@@ -2209,28 +2209,36 @@ public:
      * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
      * @param get_cumsum Function to get the cumsum of random numbers, called: `get_cumsum(n)`.
      * @param target Target value.
-     * @param margin Buffer to keep left of the target.
+     *
+     * @param buffer
+     *      If positive, only change the chunk if the target is outside chunk,
+     *      or in the `buffer` from the left or right edge from the chunk.
+     *
+     * @param margin
+     *      Index of the chunk to place the target.
      *
      * @param strict
-     *      If `true` the margin is respected strictly. Otherwise the real margin can be larger
-     *      or equal to the specified margin if significant efficiency can be gained.
+     *      If `true`, `margin` is respected strictly: `argmin(target > chunk) == margin`.
+     *      If `false` `argmin(target > chunk) >= margin` (but generally close)
+     *      if efficiency can be gained.
      */
     template <class F, class G>
     void align_chunk(
         const F& get_chunk,
         const G& get_cumsum,
         double target,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
         using R = decltype(get_chunk(size_t{}));
         PRRNG_ASSERT(margin < m_size);
-
-        double delta = m_chunk[m_size - 1] - m_chunk[0];
-        size_t n = m_size;
+        PRRNG_ASSERT(buffer < m_size);
 
         if (target > m_chunk[m_size - 1]) {
 
+            double delta = m_chunk[m_size - 1] - m_chunk[0];
+            size_t n = m_size;
             this->jump(m_start + m_size - m_gen_index);
             double back = m_chunk[m_size - 1];
 
@@ -2245,24 +2253,27 @@ public:
                 this->drawn(n);
                 extra.front() += back;
                 std::partial_sum(extra.begin(), extra.end(), m_chunk);
-                return this->align_chunk(get_chunk, get_cumsum, target, margin, strict);
+                return this->align_chunk(get_chunk, get_cumsum, target, buffer, margin, strict);
             }
 
             this->next_chunk(get_chunk, 1 + margin);
-            return this->align_chunk(get_chunk, get_cumsum, target, margin, strict);
+            return this->align_chunk(get_chunk, get_cumsum, target, buffer, margin, strict);
         }
         else if (target < m_chunk[0]) {
             this->prev_chunk(get_chunk);
-            return this->align_chunk(get_chunk, get_cumsum, target, margin, strict);
+            return this->align_chunk(get_chunk, get_cumsum, target, buffer, margin, strict);
         }
         else {
             size_t i = std::lower_bound(m_chunk, m_chunk + m_size, target) - m_chunk - 1;
+            if (buffer > 0 && i >= buffer && i + buffer < m_size) {
+                return;
+            }
             if (i + 1 < margin) {
                 if (!strict) {
                     return;
                 }
                 this->prev_chunk(get_chunk);
-                return this->align_chunk(get_chunk, get_cumsum, target, margin, strict);
+                return this->align_chunk(get_chunk, get_cumsum, target, buffer, margin, strict);
             }
 
             size_t n = i + 1 - margin;
@@ -2337,6 +2348,7 @@ public:
      * @param k Shape factor.
      * @param scale Scale factor.
      * @param offset Fixed offset.
+     * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -2345,6 +2357,7 @@ public:
         double k = 1,
         double scale = 1,
         double offset = 0,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
@@ -2356,6 +2369,7 @@ public:
                 return m_gen->cumsum_weibull(n, k, scale) + static_cast<double>(n) * offset;
             },
             target,
+            buffer,
             margin,
             strict);
     }
@@ -2415,6 +2429,7 @@ public:
      * @param k Shape factor.
      * @param scale Scale factor.
      * @param offset Fixed offset.
+     * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -2423,6 +2438,7 @@ public:
         double k = 1,
         double scale = 1,
         double offset = 0,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
@@ -2434,6 +2450,7 @@ public:
                 return m_gen->cumsum_gamma(n, k, scale) + static_cast<double>(n) * offset;
             },
             target,
+            buffer,
             margin,
             strict);
     }
@@ -2493,6 +2510,7 @@ public:
      * @param mu Mean.
      * @param sigma Standard deviation.
      * @param offset Fixed offset.
+     * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -2501,6 +2519,7 @@ public:
         double mu = 0,
         double sigma = 1,
         double offset = 0,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
@@ -2512,6 +2531,7 @@ public:
                 return m_gen->cumsum_normal(n, mu, sigma) + static_cast<double>(n) * offset;
             },
             target,
+            buffer,
             margin,
             strict);
     }
@@ -2567,6 +2587,7 @@ public:
      * @param target Target value.
      * @param scale Scale factor.
      * @param offset Fixed offset.
+     * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -2574,6 +2595,7 @@ public:
         double target,
         double scale = 1,
         double offset = 0,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
@@ -2585,6 +2607,7 @@ public:
                 return m_gen->cumsum_exponential(n, scale) + static_cast<double>(n) * offset;
             },
             target,
+            buffer,
             margin,
             strict);
     }
@@ -2646,6 +2669,7 @@ public:
      * @param target Target value.
      * @param scale Scale factor.
      * @param offset Fixed offset.
+     * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -2653,6 +2677,7 @@ public:
         double target,
         double scale = 1,
         double offset = 0,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
@@ -2665,6 +2690,7 @@ public:
                 return m_gen->cumsum_exponential(n, scale) + static_cast<double>(n) * offset;
             },
             target,
+            buffer,
             margin,
             strict);
         m_delta = false;
@@ -2748,8 +2774,11 @@ public:
      */
     void set_chunk(const R& data)
     {
-        m_data = data;
-        this->set_data(&m_data.flat(0), m_data.size());
+        static_assert(std::is_same<typename R::value_type, double>::value, "Data must be double");
+
+        PRRNG_ASSERT(xt::has_shape(m_data, data.shape()));
+
+        std::copy(data.cbegin(), data.cend(), m_data.begin());
     }
 };
 
@@ -4402,22 +4431,11 @@ public:
      */
     void set_chunk(const D& data)
     {
-#ifdef PRRNG_ENABLE_ASSERT
-        std::vector<size_t> shape(m_gen.shape().size());
-        std::copy(data.shape().cbegin(), data.shape().cend(), shape.begin());
-        PRRNG_ASSERT(std::equal(shape.begin(), shape.end(), m_gen.shape().cbegin()));
-#endif
-        m_data = data;
+        static_assert(std::is_same<typename D::value_type, double>::value, "Data must be double");
 
-        size_t n = static_cast<size_t>(std::accumulate(
-            data.shape().cbegin() + m_gen.shape().size(),
-            data.shape().cend(),
-            1,
-            std::multiplies<typename D::size_type>{}));
+        PRRNG_ASSERT(xt::has_shape(m_data, data.shape()));
 
-        for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].set_data(&m_data.flat(i * n), n);
-        }
+        std::copy(data.cbegin(), data.cend(), m_data.begin());
     }
 
     /**
@@ -4566,6 +4584,7 @@ public:
      * @param k Shape factor.
      * @param scale Scale factor.
      * @param offset Fixed offset.
+     * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -4575,13 +4594,15 @@ public:
         double k = 1,
         double scale = 1,
         double offset = 0,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].align_chunk_weibull(target.flat(i), k, scale, offset, margin, strict);
+            m_cumsum[i].align_chunk_weibull(
+                target.flat(i), k, scale, offset, buffer, margin, strict);
         }
     }
 
@@ -4608,6 +4629,7 @@ public:
      * @param k Shape factor.
      * @param scale Scale factor.
      * @param offset Fixed offset.
+     * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -4616,6 +4638,7 @@ public:
         const T& target,
         double k = 1,
         double scale = 1,
+        double buffer = 0,
         double offset = 0,
         size_t margin = 0,
         bool strict = false)
@@ -4623,7 +4646,7 @@ public:
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].align_chunk_gamma(target.flat(i), k, scale, offset, margin, strict);
+            m_cumsum[i].align_chunk_gamma(target.flat(i), k, scale, offset, buffer, margin, strict);
         }
     }
 
@@ -4650,6 +4673,7 @@ public:
      * @param mu Mean.
      * @param sigma Standard deviation.
      * @param offset Fixed offset.
+     * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -4658,6 +4682,7 @@ public:
         const T& target,
         double mu = 0,
         double sigma = 1,
+        double buffer = 0,
         double offset = 0,
         size_t margin = 0,
         bool strict = false)
@@ -4665,7 +4690,8 @@ public:
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].align_chunk_normal(target.flat(i), mu, sigma, offset, margin, strict);
+            m_cumsum[i].align_chunk_normal(
+                target.flat(i), mu, sigma, offset, buffer, margin, strict);
         }
     }
 
@@ -4690,6 +4716,7 @@ public:
      * @param target Target value.
      * @param scale Scale factor.
      * @param offset Fixed offset.
+     * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -4698,13 +4725,15 @@ public:
         const T& target,
         double scale = 1,
         double offset = 0,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].align_chunk_exponential(target.flat(i), scale, offset, margin, strict);
+            m_cumsum[i].align_chunk_exponential(
+                target.flat(i), scale, offset, buffer, margin, strict);
         }
     }
 
@@ -4729,6 +4758,7 @@ public:
      * @param target Target value.
      * @param scale Scale factor.
      * @param offset Fixed offset.
+     * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
@@ -4737,13 +4767,14 @@ public:
         const T& target,
         double scale = 1,
         double offset = 0,
+        size_t buffer = 0,
         size_t margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].align_chunk_delta(target.flat(i), scale, offset, margin, strict);
+            m_cumsum[i].align_chunk_delta(target.flat(i), scale, offset, buffer, margin, strict);
         }
     }
 };

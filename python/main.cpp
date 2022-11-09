@@ -528,6 +528,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("get_chunk"),
             py::arg("get_cumsum"),
             py::arg("target"),
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -561,6 +562,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("k") = 1,
             py::arg("scale") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -594,6 +596,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("k") = 1,
             py::arg("scale") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -627,6 +630,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("mu") = 0,
             py::arg("sigma") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -656,6 +660,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("target"),
             py::arg("scale") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -685,6 +690,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("target"),
             py::arg("scale") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -1064,6 +1070,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("k") = 1,
             py::arg("scale") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -1083,6 +1090,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("k") = 1,
             py::arg("scale") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -1103,6 +1111,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("mu") = 0,
             py::arg("sigma") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -1121,6 +1130,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("target"),
             py::arg("scale") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
@@ -1138,6 +1148,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("target"),
             py::arg("scale") = 1,
             py::arg("offset") = 0,
+            py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("strict") = false)
 
