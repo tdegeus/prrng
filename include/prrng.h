@@ -3543,7 +3543,8 @@ private:
             "Return value_type must must be able to accommodate the bound");
 
         static_assert(
-            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
+            static_cast<uint32_t>(std::numeric_limits<T>::max()) <
+                std::numeric_limits<uint32_t>::max(),
             "Bound too large");
 
         auto n = detail::size(ishape);
@@ -4412,7 +4413,7 @@ public:
             data.shape().cbegin() + m_gen.shape().size(),
             data.shape().cend(),
             1,
-            std::multiplies<size_t>{}));
+            std::multiplies<typename D::size_type>{}));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].set_data(&m_data.flat(i * n), n);
