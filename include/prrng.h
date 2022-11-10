@@ -2230,10 +2230,12 @@ public:
      * @param margin
      *      Index of the chunk to place the target.
      *
+     * @param min_margin
+     *      Minimal index to accept is `strict = false`.
+     *
      * @param strict
      *      If `true`, `margin` is respected strictly: `argmin(target > chunk) == margin`.
-     *      If `false` `argmin(target > chunk) >= margin` (but generally close)
-     *      if efficiency can be gained.
+     *      If `false` `min_margin <= argmin(target > chunk) <= margin` if efficiency can be gained.
      */
     template <class F, class G>
     void align_chunk(
@@ -2242,10 +2244,12 @@ public:
         double target,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         using R = decltype(get_chunk(size_t{}));
         PRRNG_ASSERT(margin < m_size);
+        PRRNG_ASSERT(min_margin <= margin);
         PRRNG_ASSERT(buffer < m_size);
 
         if (target > m_chunk[m_size - 1]) {
@@ -2266,15 +2270,18 @@ public:
                 this->drawn(n);
                 extra.front() += back;
                 std::partial_sum(extra.begin(), extra.end(), m_chunk);
-                return this->align_chunk(get_chunk, get_cumsum, target, buffer, margin, strict);
+                return this->align_chunk(
+                    get_chunk, get_cumsum, target, buffer, margin, min_margin, strict);
             }
 
             this->next_chunk(get_chunk, 1 + margin);
-            return this->align_chunk(get_chunk, get_cumsum, target, buffer, margin, strict);
+            return this->align_chunk(
+                get_chunk, get_cumsum, target, buffer, margin, min_margin, strict);
         }
         else if (target < m_chunk[0]) {
             this->prev_chunk(get_chunk);
-            return this->align_chunk(get_chunk, get_cumsum, target, buffer, margin, strict);
+            return this->align_chunk(
+                get_chunk, get_cumsum, target, buffer, margin, min_margin, strict);
         }
         else {
             size_t i = std::lower_bound(m_chunk, m_chunk + m_size, target) - m_chunk - 1;
@@ -2282,11 +2289,12 @@ public:
                 return;
             }
             if (i + 1 < margin) {
-                if (!strict) {
+                if (!strict && i >= min_margin) {
                     return;
                 }
                 this->prev_chunk(get_chunk);
-                return this->align_chunk(get_chunk, get_cumsum, target, buffer, margin, strict);
+                return this->align_chunk(
+                    get_chunk, get_cumsum, target, buffer, margin, min_margin, strict);
             }
 
             size_t n = i + 1 - margin;
@@ -2363,6 +2371,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Mininal margin if `strict = false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     void align_chunk_weibull(
@@ -2372,6 +2381,7 @@ public:
         double offset = 0,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         this->align_chunk(
@@ -2384,6 +2394,7 @@ public:
             target,
             buffer,
             margin,
+            min_margin,
             strict);
     }
 
@@ -2444,6 +2455,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Mininal margin if `strict = false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     void align_chunk_gamma(
@@ -2453,6 +2465,7 @@ public:
         double offset = 0,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         this->align_chunk(
@@ -2465,6 +2478,7 @@ public:
             target,
             buffer,
             margin,
+            min_margin,
             strict);
     }
 
@@ -2525,6 +2539,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Mininal margin if `strict = false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     void align_chunk_normal(
@@ -2534,6 +2549,7 @@ public:
         double offset = 0,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         this->align_chunk(
@@ -2546,6 +2562,7 @@ public:
             target,
             buffer,
             margin,
+            min_margin,
             strict);
     }
 
@@ -2602,6 +2619,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Mininal margin if `strict = false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     void align_chunk_exponential(
@@ -2610,6 +2628,7 @@ public:
         double offset = 0,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         this->align_chunk(
@@ -2622,6 +2641,7 @@ public:
             target,
             buffer,
             margin,
+            min_margin,
             strict);
     }
 
@@ -2684,6 +2704,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within buffer left/right: to do change chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Mininal margin if `strict = false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     void align_chunk_delta(
@@ -2692,6 +2713,7 @@ public:
         double offset = 0,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         m_delta = true;
@@ -2705,6 +2727,7 @@ public:
             target,
             buffer,
             margin,
+            min_margin,
             strict);
         m_delta = false;
     }
@@ -2725,7 +2748,7 @@ private:
 
 public:
     /**
-     * @brief Construct a new pcg32 cumsum object
+     * @brief Constructor.
      *
      * @param shape Shape of the chunk.
      * @param initstate State initiator.
@@ -2739,7 +2762,7 @@ public:
     {
         m_data = xt::empty<typename R::value_type>(shape);
         m_gen = pcg32(initstate, initseq);
-        this->init(m_data.data(), m_data.size(), &m_gen, 0);
+        this->init(&m_data.flat(0), m_data.size(), &m_gen, 0);
     }
 
     /**
@@ -2788,7 +2811,7 @@ public:
     void set_chunk(const R& data)
     {
         static_assert(std::is_same<typename R::value_type, double>::value, "Data must be double");
-        PRRNG_ASSERT(xt::has_shape(m_data, data.shape()));
+        PRRNG_ASSERT(xt::same_shape(m_data.shape(), data.shape()));
         std::copy(data.cbegin(), data.cend(), m_data.begin());
     }
 };
@@ -4419,16 +4442,16 @@ protected:
     /**
      * @brief Constructor.
      *
-     * @param data The data array.
-     * @param initstate State initiator for every item.
-     * @param initseq Sequence initiator for every item.
-     *
+     * @param data The chunk.
      * @param copy
      *      Elect to copy the data to a member variable (safe),
      *      or keep as pointer (risky: you have to keep the external object alive)
+     *
+     * @param initstate State initiator for every item.
+     * @param initseq Sequence initiator for every item.
      */
     template <class T, class U>
-    void init(D& data, const T& initstate, const U& initseq, bool copy)
+    void init(D& data, bool copy, const T& initstate, const U& initseq)
     {
         PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
         PRRNG_ASSERT(data.dimension() > initstate.dimension());
@@ -4450,8 +4473,11 @@ protected:
         m_gen = G(initstate, initseq);
 
         m_cumsum.reserve(m_gen.size());
-        size_t n = static_cast<size_t>(
-            std::accumulate(data.shape().cbegin() + initstate.dimension(), data.shape().cend(), 1, std::multiplies<typename D::size_type>{}));
+        size_t n = static_cast<size_t>(std::accumulate(
+            data.shape().cbegin() + initstate.dimension(),
+            data.shape().cend(),
+            1,
+            std::multiplies<typename D::size_type>{}));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum.push_back(pcg32_cumsum_external(&m_data->flat(i * n), n, &m_gen[i], 0));
@@ -4641,6 +4667,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Minimal margin if `strict == false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     template <class T>
@@ -4651,13 +4678,14 @@ public:
         double offset = 0,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].align_chunk_weibull(
-                target.flat(i), k, scale, offset, buffer, margin, strict);
+                target.flat(i), k, scale, offset, buffer, margin, min_margin, strict);
         }
     }
 
@@ -4686,6 +4714,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Minimal margin if `strict == false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     template <class T>
@@ -4696,12 +4725,14 @@ public:
         double buffer = 0,
         double offset = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].align_chunk_gamma(target.flat(i), k, scale, offset, buffer, margin, strict);
+            m_cumsum[i].align_chunk_gamma(
+                target.flat(i), k, scale, offset, buffer, margin, min_margin, strict);
         }
     }
 
@@ -4730,6 +4761,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Minimal margin if `strict == false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     template <class T>
@@ -4740,13 +4772,14 @@ public:
         double buffer = 0,
         double offset = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].align_chunk_normal(
-                target.flat(i), mu, sigma, offset, buffer, margin, strict);
+                target.flat(i), mu, sigma, offset, buffer, margin, min_margin, strict);
         }
     }
 
@@ -4773,6 +4806,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Minimal margin if `strict == false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     template <class T>
@@ -4782,13 +4816,14 @@ public:
         double offset = 0,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].align_chunk_exponential(
-                target.flat(i), scale, offset, buffer, margin, strict);
+                target.flat(i), scale, offset, buffer, margin, min_margin, strict);
         }
     }
 
@@ -4815,6 +4850,7 @@ public:
      * @param offset Fixed offset.
      * @param buffer If within `buffer` left/right: do not change the chunk.
      * @param margin Margin to leave left of the target.
+     * @param min_margin Minimal margin if `strict == false`.
      * @param strict If `false` the margin is only approximately enforced to gain speed.
      */
     template <class T>
@@ -4824,12 +4860,14 @@ public:
         double offset = 0,
         size_t buffer = 0,
         size_t margin = 0,
+        size_t min_margin = 0,
         bool strict = false)
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].align_chunk_delta(target.flat(i), scale, offset, buffer, margin, strict);
+            m_cumsum[i].align_chunk_delta(
+                target.flat(i), scale, offset, buffer, margin, min_margin, strict);
         }
     }
 };
@@ -4856,12 +4894,12 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_arrayBase_cumsum::init(D&, const T&, const U&, bool)
+     * @copydoc prrng::pcg32_arrayBase_cumsum::init(D&, bool, const T&, const U&)
      */
     template <class T, class U>
-    pcg32_array_cumsum(D& data, const T& initstate, const U& initseq, bool copy)
+    pcg32_array_cumsum(D& data, bool copy, const T& initstate, const U& initseq)
     {
-        this->init(data, initstate, initseq, copy);
+        this->init(data, copy, initstate, initseq);
     }
 };
 
