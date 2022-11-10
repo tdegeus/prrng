@@ -188,6 +188,45 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertEqual(np.sum(target > gen.chunk), margin)
             self.assertEqual(np.argmin(target > gen.chunk), margin)
 
+    def test_align_chunk_minmargin(self):
+        """
+        Align chunk with target (use default draw function).
+        """
+
+        k = 2
+        scale = 5
+        offset = 0.1
+        ref = prrng.pcg32()
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale))
+
+        n = 5
+        margin = 2
+        min_margin = 1
+        opts = dict(margin=margin, min_margin=min_margin, strict=False)
+        gen = prrng.pcg32_cumsum([n])
+        gen.draw_chunk_weibull(k, scale, offset=offset)
+
+        for i in [n + 10, 10 * n + 10, 40, n + 20]:
+            target = 0.5 * (xref[i] + xref[i + 1])
+            gen.align_chunk_weibull(target, k, scale, offset, **opts)
+            lwr = gen.start
+            upr = gen.start + gen.size
+            self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+            self.assertLessEqual(gen.chunk[0], target)
+            self.assertGreater(gen.chunk[-1], target)
+            self.assertGreater(np.sum(target > gen.chunk), min_margin)
+            self.assertGreater(np.argmin(target > gen.chunk), min_margin)
+
+            target = 0.5 * (xref[i - 1] + xref[i])
+            gen.align_chunk_weibull(target, k, scale, offset, **opts)
+            lwr = gen.start
+            upr = gen.start + gen.size
+            self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
+            self.assertLessEqual(gen.chunk[0], target)
+            self.assertGreater(gen.chunk[-1], target)
+            self.assertGreater(np.sum(target > gen.chunk), min_margin)
+            self.assertGreater(np.argmin(target > gen.chunk), min_margin)
+
     def test_restore(self):
         """
         Restore state (use custom draw function).
@@ -268,7 +307,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         n = 100
         chunk = np.empty(list(state.shape) + [n], dtype=np.float64)
-        gen = prrng.pcg32_array_cumsum(chunk, state, seq, copy=False)
+        gen = prrng.pcg32_array_cumsum(chunk, False, state, seq)
         gen.draw_chunk_weibull(k, scale, offset)
         self.assertTrue(np.allclose(xref[..., :n], chunk))
         self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], chunk[..., 0]))

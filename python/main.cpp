@@ -530,6 +530,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("target"),
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -564,6 +565,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -598,6 +600,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -632,6 +635,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -662,6 +666,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -692,6 +697,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
@@ -1010,13 +1016,17 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("initseq"))
 
         .def(
-            py::init<xt::pyarray<double>&, const xt::pyarray<uint64_t>&, const xt::pyarray<uint64_t>&, bool>(),
+            py::init<
+                xt::pyarray<double>&,
+                bool,
+                const xt::pyarray<uint64_t>&,
+                const xt::pyarray<uint64_t>&>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32_array`.",
             py::arg("data"),
+            py::arg("copy"),
             py::arg("initstate"),
-            py::arg("initseq"),
-            py::arg("copy"))
+            py::arg("initseq"))
 
         .def_property_readonly(
             "generators", &prrng::pcg32_array_cumsum<xt::pyarray<double>>::generators)
@@ -1081,6 +1091,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -1101,6 +1112,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -1122,6 +1134,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -1141,6 +1154,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def(
@@ -1159,6 +1173,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("offset") = 0,
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
         .def("__repr__", [](const prrng::pcg32_array_cumsum<xt::pyarray<double>>&) {
