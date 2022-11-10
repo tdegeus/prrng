@@ -1009,6 +1009,15 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("initstate"),
             py::arg("initseq"))
 
+        .def(
+            py::init<xt::pyarray<double>&, const xt::pyarray<uint64_t>&, const xt::pyarray<uint64_t>&, bool>(),
+            "Random number generator. "
+            "See :cpp:class:`prrng::pcg32_array`.",
+            py::arg("data"),
+            py::arg("initstate"),
+            py::arg("initseq"),
+            py::arg("copy"))
+
         .def_property_readonly(
             "generators", &prrng::pcg32_array_cumsum<xt::pyarray<double>>::generators)
 
