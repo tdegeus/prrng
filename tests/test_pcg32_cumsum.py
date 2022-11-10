@@ -253,6 +253,35 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertTrue(np.all(gen.chunk[..., margin - 1] <= target))
             self.assertTrue(np.all(gen.chunk[..., margin] > target))
 
+    def test_array_external(self):
+        """
+        Array: use external storage
+        """
+
+        k = 2
+        scale = 5
+        offset = 0.1
+        state = np.arange(6, dtype=np.uint64)
+        seq = np.zeros_like(state)
+        ref = prrng.pcg32_array(state, seq)
+        xref = np.cumsum(offset + ref.weibull([10000], k, scale), axis=-1)
+
+        n = 100
+        chunk = np.empty(list(state.shape) + [n], dtype=np.float64)
+        gen = prrng.pcg32_array_cumsum(chunk, state, seq, copy=False)
+        gen.draw_chunk_weibull(k, scale, offset)
+        self.assertTrue(np.allclose(xref[..., :n], chunk))
+        self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], chunk[..., 0]))
+
+        for i in [500, 2012, 101]:
+
+            margin = 10
+            target = 0.5 * (xref[..., i] + xref[..., i + 1])
+            gen.align_chunk_weibull(target, k, scale, offset, margin=margin, strict=True)
+            self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], chunk[..., 0]))
+            self.assertTrue(np.all(chunk[..., margin - 1] <= target))
+            self.assertTrue(np.all(chunk[..., margin] > target))
+
     def test_array_init(self):
         """
         Array: apply some custom initialisation
