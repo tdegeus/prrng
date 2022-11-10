@@ -2285,10 +2285,13 @@ public:
         }
         else {
             size_t i = std::lower_bound(m_chunk, m_chunk + m_size, target) - m_chunk - 1;
+            if (i == margin) {
+                return;
+            }
             if (buffer > 0 && i >= buffer && i + buffer < m_size) {
                 return;
             }
-            if (i + 1 < margin) {
+            if (i < margin) {
                 if (!strict && i >= min_margin) {
                     return;
                 }
@@ -2297,13 +2300,8 @@ public:
                     get_chunk, get_cumsum, target, buffer, margin, min_margin, strict);
             }
 
-            size_t n = i + 1 - margin;
-            if (n == 0) {
-                return;
-            }
-
             this->jump(m_start + m_size - m_gen_index);
-
+            size_t n = i - margin;
             R extra = get_chunk({n});
             this->drawn(n);
             m_start += n;
