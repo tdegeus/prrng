@@ -2764,7 +2764,7 @@ public:
     }
 
     /**
-     * @brief Access the generator.
+     * @brief Pointer to the generator.
      * @return const pcg32&
      */
     const pcg32& generator() const

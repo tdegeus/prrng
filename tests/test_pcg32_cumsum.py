@@ -17,7 +17,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         xref = np.cumsum(offset + ref.weibull([10000], k, scale))
 
         gen = prrng.pcg32_cumsum([100])
-        gen.draw_chunk_weibull(k, scale, offset=offset)
+        gen.draw_chunk_weibull(k, scale, offset)
         lwr = gen.start
         upr = gen.start + gen.size
         self.assertEqual(gen.start, 0)
@@ -165,7 +165,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         n = 100
         margin = 10
-        gen.draw_chunk_weibull(k, scale, offset=offset)
+        gen.draw_chunk_weibull(k, scale, offset)
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
             target = 0.5 * (xref[i] + xref[i + 1])
@@ -202,7 +202,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         n = 5
         gen = prrng.pcg32_cumsum([n])
         margin = 0
-        gen.draw_chunk_weibull(k, scale, offset=offset)
+        gen.draw_chunk_weibull(k, scale, offset)
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
             target = 0.5 * (xref[i] + xref[i + 1])
@@ -241,7 +241,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         min_margin = 1
         opts = dict(margin=margin, min_margin=min_margin, strict=False)
         gen = prrng.pcg32_cumsum([n])
-        gen.draw_chunk_weibull(k, scale, offset=offset)
+        gen.draw_chunk_weibull(k, scale, offset)
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
             target = 0.5 * (xref[i] + xref[i + 1])

@@ -57,6 +57,48 @@ In addition one can advance and reverse in the random sequence, and compute the 
 uniquely done on any system and any compiler, on any platform (as long as you save the `uint64_t` properly, naturally).
 As a convenience the output can be recast by specifying a template parameter, while static assertions shield you from losing data. For example, `auto state = generator.state<size_t>();` would be allowed, but `auto state = generator.state<int>();` would not.
 
+### cumsum
+
+The advance of being able to restore and advance the random number generator is exploited in a wrapper in which chunks of the cumulated sum of the sequence of random numbers can be accessed in chunks.
+
+#### Basic usage
+
+For example:
+```python
+k = 2
+scale = 5
+offset = 0.1
+generator = prrng.pcg32()
+x = np.cumsum(offset + generator.weibull([10000], k, scale))
+```
+The sequence `x` can potentially be very long, and one might want to access it in chunks. This can be done using:
+```python
+k = 2
+scale = 5
+offset = 0.1
+nchunk = 100
+
+# initialise the generator, allocate the chunk
+generator = prrng.pcg32_cumsum([nchunk])
+
+# initialise the sequence (based on current state of generator)
+generator.draw_chunk_weibull(k, scale, offset)
+
+# access the sequence at some location
+# if the target is far away, this can be costly, especially if the target is 'left' of the chunk
+target = 12345.6
+generator.align_chunk_weibull(target, k, scale, offset)
+```
+
+#### Customisation
+
+You can modify the sequence by modifying the chunk. For example, to apply an offset:
+```python
+generator = prrng.pcg32_cumsum([nchunk])
+generator.draw_chunk_weibull(k, scale, offset)
+generator.chunk += offset
+```
+
 ### Python API
 
 A Python API is provided allowing one to obtain the same random sequence from C++ and Python when the same seed is used.
