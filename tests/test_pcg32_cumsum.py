@@ -131,7 +131,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
             target = 0.5 * (xref[i] + xref[i + 1])
-            gen.align_chunk(mydraw, mycumsum, target, margin=margin, strict=True)
+            gen.align_chunk(mydraw, mycumsum, target, prrng.alignment(margin=margin, strict=True))
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
@@ -141,7 +141,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertEqual(np.argmin(target > gen.chunk), margin + 1)
 
             target = 0.5 * (xref[i - 1] + xref[i])
-            gen.align_chunk(mydraw, mycumsum, target, margin=margin, strict=True)
+            gen.align_chunk(mydraw, mycumsum, target, prrng.alignment(margin=margin, strict=True))
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
@@ -169,7 +169,9 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
             target = 0.5 * (xref[i] + xref[i + 1])
-            gen.align_chunk_weibull(target, k, scale, offset, margin=margin, strict=True)
+            gen.align_chunk_weibull(
+                target, k, scale, offset, prrng.alignment(margin=margin, strict=True)
+            )
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
@@ -179,7 +181,9 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertEqual(np.argmin(target > gen.chunk), margin + 1)
 
             target = 0.5 * (xref[i - 1] + xref[i])
-            gen.align_chunk_weibull(target, k, scale, offset, margin=margin, strict=True)
+            gen.align_chunk_weibull(
+                target, k, scale, offset, prrng.alignment(margin=margin, strict=True)
+            )
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
@@ -206,7 +210,9 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
             target = 0.5 * (xref[i] + xref[i + 1])
-            gen.align_chunk_weibull(target, k, scale, offset, margin=margin, strict=True)
+            gen.align_chunk_weibull(
+                target, k, scale, offset, prrng.alignment(margin=margin, strict=True)
+            )
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
@@ -216,7 +222,9 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertEqual(np.argmin(target > gen.chunk), margin + 1)
 
             target = 0.5 * (xref[i - 1] + xref[i])
-            gen.align_chunk_weibull(target, k, scale, offset, margin=margin, strict=True)
+            gen.align_chunk_weibull(
+                target, k, scale, offset, prrng.alignment(margin=margin, strict=True)
+            )
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
@@ -239,13 +247,13 @@ class Test_pcg32_cumum(unittest.TestCase):
         n = 5
         margin = 2
         min_margin = 1
-        opts = dict(margin=margin, min_margin=min_margin, strict=False)
+        align = prrng.alignment(margin=margin, min_margin=min_margin, strict=False)
         gen = prrng.pcg32_cumsum([n])
         gen.draw_chunk_weibull(k, scale, offset)
 
         for i in [n + 10, 10 * n + 10, 40, n + 20]:
             target = 0.5 * (xref[i] + xref[i + 1])
-            gen.align_chunk_weibull(target, k, scale, offset, **opts)
+            gen.align_chunk_weibull(target, k, scale, offset, align)
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
@@ -255,7 +263,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertGreater(np.argmin(target > gen.chunk), min_margin)
 
             target = 0.5 * (xref[i - 1] + xref[i])
-            gen.align_chunk_weibull(target, k, scale, offset, **opts)
+            gen.align_chunk_weibull(target, k, scale, offset, align)
             lwr = gen.start
             upr = gen.start + gen.size
             self.assertTrue(np.allclose(gen.chunk, xref[lwr:upr]))
@@ -315,8 +323,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         xref = np.cumsum(offset + ref.weibull([10000], k, scale), axis=-1)
 
         n = 100
-        gen = prrng.pcg32_array_cumsum([n], state, seq)
-        gen.draw_chunk_weibull(k, scale, offset)
+        gen = prrng.pcg32_array_cumsum([n], state, seq, prrng.weibull, [k, scale, offset])
         self.assertTrue(np.allclose(xref[..., :n], gen.chunk))
         self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
 
@@ -324,14 +331,14 @@ class Test_pcg32_cumum(unittest.TestCase):
 
             margin = 10
             target = 0.5 * (xref[..., i] + xref[..., i + 1])
-            gen.align_chunk_weibull(target, k, scale, offset, margin=margin, strict=True)
+            gen.align(target, prrng.alignment(margin=margin, strict=True))
             self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
             self.assertTrue(np.all(gen.chunk[..., margin] <= target))
             self.assertTrue(np.all(gen.chunk[..., margin + 1] > target))
 
-    def test_array_init(self):
+    def test_array_weibull(self):
         """
-        Array: apply some custom initialisation
+        Array (weibull)
         """
 
         k = 2
@@ -345,8 +352,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         xref = np.cumsum(offset + ref.weibull([10000], k, scale), axis=-1) + x0
 
         n = 100
-        gen = prrng.pcg32_array_cumsum([n], state, seq)
-        gen.draw_chunk_weibull(k, scale, offset)
+        gen = prrng.pcg32_array_cumsum([n], state, seq, prrng.weibull, [k, scale, offset])
         gen.chunk += x0
         self.assertTrue(np.allclose(xref[..., :n], gen.chunk))
         self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
@@ -355,7 +361,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
             margin = 10
             target = 0.5 * (xref[..., i] + xref[..., i + 1])
-            gen.align_chunk_weibull(target, k, scale, offset, margin=margin, strict=True)
+            gen.align(target, prrng.alignment(margin=margin, strict=True))
             self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
             self.assertTrue(np.all(gen.chunk[..., margin] <= target))
             self.assertTrue(np.all(gen.chunk[..., margin + 1] > target))
@@ -367,10 +373,50 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         i = 3000
         target = 0.5 * (xref[..., i] + xref[..., i + 1])
-        gen.align_chunk_weibull(target, k, scale, offset)
+        gen.align(target, prrng.alignment())
 
         gen.restore(state, value, index)
-        gen.draw_chunk_weibull(k, scale, offset)
+        self.assertTrue(np.allclose(chunk, gen.chunk))
+
+    def test_array_delta(self):
+        """
+        Array (delta)
+        """
+
+        scale = 5
+        offset = 0.1
+        state = np.arange(6, dtype=np.uint64)
+        seq = np.zeros_like(state)
+        ref = prrng.pcg32_array(state, seq)
+        x0 = ref.random([]).reshape(-1, 1)
+        ref = prrng.pcg32_array(state, seq)
+        xref = np.cumsum(offset + ref.delta([10000], scale), axis=-1) + x0
+
+        n = 100
+        gen = prrng.pcg32_array_cumsum([n], state, seq, prrng.delta, [scale, offset])
+        gen.chunk += x0
+        self.assertTrue(np.allclose(xref[..., :n], gen.chunk))
+        self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
+
+        for i in [500, 2012, 101]:
+
+            margin = 10
+            target = 0.5 * (xref[..., i] + xref[..., i + 1])
+            gen.align(target, prrng.alignment(margin=margin, strict=True))
+            self.assertTrue(np.allclose(xref[np.arange(state.size), gen.start], gen.chunk[..., 0]))
+            self.assertTrue(np.all(gen.chunk[..., margin] <= target))
+            self.assertTrue(np.all(gen.chunk[..., margin + 1] > target))
+
+        index = gen.start
+        value = np.copy(gen.chunk[..., 0])
+        state = gen.state(index)
+        chunk = np.copy(gen.chunk)
+
+        i = 3000
+        target = 0.5 * (xref[..., i] + xref[..., i + 1])
+        gen.align(target, prrng.alignment())
+
+        gen.restore(state, value, index)
         self.assertTrue(np.allclose(chunk, gen.chunk))
 
     def test_delta(self):
