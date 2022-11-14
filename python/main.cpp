@@ -68,12 +68,7 @@ void init_pcg32_arrayBase_cumsum(C& cls)
         py::arg("value"),
         py::arg("index"));
 
-    cls.def(
-        "align",
-        &Parent::template align<Value>,
-        "Align chunk with target.",
-        py::arg("target"),
-        py::arg("param") = prrng::alignment());
+    cls.def("align", &Parent::template align<Value>, "Align chunk with target.", py::arg("target"));
 }
 
 PYBIND11_MODULE(_prrng, m)
@@ -515,12 +510,13 @@ PYBIND11_MODULE(_prrng, m)
     py::class_<prrng::pcg32_cumsum<xt::pyarray<double>>>(m, "pcg32_cumsum")
 
         .def(
-            py::init<const std::vector<size_t>&, uint64_t, uint64_t>(),
+            py::init<const std::vector<size_t>&, uint64_t, uint64_t, const std::vector<size_t>&>(),
             "Generator of cumulative sum of random numbers. "
             "See :cpp:class:`prrng::pcg32_cumsum`.",
             py::arg("shape"),
             py::arg("initstate") = PRRNG_PCG32_INITSTATE,
-            py::arg("initseq") = PRRNG_PCG32_INITSEQ)
+            py::arg("initseq") = PRRNG_PCG32_INITSEQ,
+            py::arg("align") = prrng::alignment())
 
         .def_property_readonly(
             "shape", &prrng::pcg32_cumsum<xt::pyarray<double>>::shape, "Shape of the chunk.")
@@ -598,8 +594,7 @@ PYBIND11_MODULE(_prrng, m)
                 std::function<double(size_t)>>,
             py::arg("get_chunk"),
             py::arg("get_cumsum"),
-            py::arg("target"),
-            py::arg("param") = prrng::alignment())
+            py::arg("target"))
 
         .def(
             "draw_chunk_random",
@@ -626,8 +621,7 @@ PYBIND11_MODULE(_prrng, m)
             &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_random,
             py::arg("target"),
             py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("param") = prrng::alignment())
+            py::arg("offset") = 0)
 
         .def(
             "draw_chunk_weibull",
@@ -658,8 +652,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("target"),
             py::arg("k") = 1,
             py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("param") = prrng::alignment())
+            py::arg("offset") = 0)
 
         .def(
             "draw_chunk_gamma",
@@ -690,8 +683,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("target"),
             py::arg("k") = 1,
             py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("param") = prrng::alignment())
+            py::arg("offset") = 0)
 
         .def(
             "draw_chunk_normal",
@@ -722,8 +714,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("target"),
             py::arg("mu") = 0,
             py::arg("sigma") = 1,
-            py::arg("offset") = 0,
-            py::arg("param") = prrng::alignment())
+            py::arg("offset") = 0)
 
         .def(
             "draw_chunk_exponential",
@@ -750,8 +741,7 @@ PYBIND11_MODULE(_prrng, m)
             &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_exponential,
             py::arg("target"),
             py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("param") = prrng::alignment())
+            py::arg("offset") = 0)
 
         .def(
             "draw_chunk_delta",
@@ -778,8 +768,7 @@ PYBIND11_MODULE(_prrng, m)
             &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_delta,
             py::arg("target"),
             py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("param") = prrng::alignment())
+            py::arg("offset") = 0)
 
         .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
@@ -1111,14 +1100,16 @@ PYBIND11_MODULE(_prrng, m)
                 const State&,
                 const State&,
                 prrng::distribution,
-                const std::vector<double>&>(),
+                const std::vector<double>&,
+                const std::vector<size_t>&>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32_array`.",
             py::arg("shape"),
             py::arg("initstate"),
             py::arg("initseq"),
             py::arg("distribution"),
-            py::arg("parameters"));
+            py::arg("parameters"),
+            py::arg("align") = prrng::alignment());
 
         init_pcg32_arrayBase_cumsum<Class, Parent, State, Value, Index>(cls);
 
@@ -1141,14 +1132,16 @@ PYBIND11_MODULE(_prrng, m)
                 const State&,
                 const State&,
                 prrng::distribution,
-                const std::vector<double>&>(),
+                const std::vector<double>&,
+                const std::vector<size_t>&>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32_array`.",
             py::arg("shape"),
             py::arg("initstate"),
             py::arg("initseq"),
             py::arg("distribution"),
-            py::arg("parameters"));
+            py::arg("parameters"),
+            py::arg("align") = prrng::alignment());
 
         init_pcg32_arrayBase_cumsum<Class, Parent, State, Value, Index>(cls);
 
