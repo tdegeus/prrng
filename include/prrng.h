@@ -2040,19 +2040,6 @@ public:
         this->init(data, n, generator, generator_index);
     }
 
-    /**
-     * @brief Constructor.
-     *
-     * @param data Tensor object: a reference is taken.
-     * @param generator Pointer to the generator.
-     * @param generator_index Current index in the chunk that the generator corresponds to.
-     */
-    template <class T>
-    pcg32_cumsum_external(const T& data, pcg32* generator, ptrdiff_t generator_index)
-    {
-        this->init(data.data(), data.size(), generator, generator_index);
-    }
-
 protected:
     /**
      * @brief Constructor.
@@ -2110,6 +2097,15 @@ public:
     {
         m_chunk = data;
         m_size = n;
+    }
+
+    /**
+     * @brief Return size of the data.
+     * @return Size.
+     */
+    size_t size() const
+    {
+        return m_size;
     }
 
     /**
@@ -4645,10 +4641,46 @@ protected:
         }
     }
 
+    /**
+     * @brief Copy constructor.
+     * This function resets all internal pointers.
+     *
+     * @param other Object to copy.
+     */
+    void copy_from(const pcg32_arrayBase_cumsum& other)
+    {
+        m_data = other.m_data;
+        m_cumsum = other.m_cumsum;
+        m_gen = other.m_gen;
+        m_param = other.m_param;
+        m_distribution = other.m_distribution;
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            size_t n = m_cumsum[i].size();
+            m_cumsum[i].set_data(&m_data.flat(i * n), n);
+        }
+    }
+
 public:
     pcg32_arrayBase_cumsum() = default;
 
     virtual ~pcg32_arrayBase_cumsum() = default;
+
+    /**
+     * @copydoc prrng::pcg32_arrayBase_cumsum::copy_from(const prrng::pcg32_arrayBase_cumsum&)
+     */
+    pcg32_arrayBase_cumsum(const pcg32_arrayBase_cumsum& other)
+    {
+        this->copy_from(other);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_arrayBase_cumsum::copy_from(const prrng::pcg32_arrayBase_cumsum&)
+     */
+    void operator=(const pcg32_arrayBase_cumsum& other)
+    {
+        this->copy_from(other);
+    }
 
     /**
      * @brief Align chunks with a target values.
