@@ -149,7 +149,59 @@
  */
 namespace prrng {
 
+/**
+ * @brief Distribution identifier.
+ */
+enum distribution {
+    random, ///< flat
+    weibull, ///< weibull
+    gamma, ///< gamma
+    normal, ///< normal
+    exponential, ///< exponential
+    delta, ///< delta
+    custom ///< unknown
+};
+
 namespace detail {
+
+/**
+ * @brief Default parameters
+ * @param distribution Distribution.
+ * @param parameters Parameters.
+ * @return Parameters with defaults filled.
+ */
+std::vector<double>
+default_parameters_cumsum(enum distribution distribution, const std::vector<double>& parameters)
+{
+    std::vector<double> ret;
+    switch (distribution) {
+    case distribution::random:
+        ret = std::vector<double>{1, 0};
+        break;
+    case distribution::exponential:
+        ret = std::vector<double>{1, 0};
+        break;
+    case distribution::delta:
+        ret = std::vector<double>{1, 0};
+        break;
+    case distribution::weibull:
+        ret = std::vector<double>{1, 1, 0};
+        break;
+    case distribution::gamma:
+        ret = std::vector<double>{1, 1, 0};
+        break;
+    case distribution::normal:
+        ret = std::vector<double>{1, 0, 0};
+        break;
+    case distribution::custom:
+        std::vector<double>{};
+        break;
+    }
+
+    PRRNG_ASSERT(parameters.size() <= ret.size());
+    std::copy(parameters.begin(), parameters.end(), ret.begin());
+    return ret;
+}
 
 /**
  * Remove " from string.
@@ -371,19 +423,6 @@ inline std::string version()
 }
 
 /**
- * @brief Distribution identifier.
- */
-enum distribution {
-    random, ///< flat
-    weibull, ///< weibull
-    gamma, ///< gamma
-    normal, ///< normal
-    exponential, ///< exponential
-    delta, ///< delta
-    custom ///< unknown
-};
-
-/**
  * Normal distribution.
  *
  * References:
@@ -423,6 +462,12 @@ public:
     /**
      * Cumulative density function.
      *
+     * \f$
+     *      \Phi(x) = \frac{1}{2} \left[
+     *          1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
+     *      \right]
+     * \f$
+     *
      * @param x Coordinates.
      * @return Cumulative density for each `x`.
      */
@@ -434,6 +479,9 @@ public:
 
     /**
      * Quantile (the inverse of the cumulative density function).
+     * For a given probability \f$ p \f$ the output is
+     *
+     * \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2p - 1) \f$
      *
      * @param p Probability [0, 1].
      * @return Quantile for each `p`.
@@ -640,6 +688,7 @@ private:
 
 /**
  * Gamma distribution.
+ * Only available when compiled with PRRNG_USE_BOOST.
  *
  * References:
  *
@@ -1110,17 +1159,6 @@ public:
 
     /**
      * Generate an nd-array of random numbers distributed according to a normal distribution.
-     * Internally, the output of random() is converted using the cumulative density
-     *
-     * \f$
-     *      \Phi(x) = \frac{1}{2} \left[
-     *          1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
-     *      \right]
-     * \f$
-     *
-     * such that the output `r` from random() leads to
-     *
-     * \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
      *
      * @param shape The shape of the nd-array.
      * @param mu The average.
@@ -1261,8 +1299,7 @@ public:
 
     /**
      * Generate an nd-array of random numbers distributed according to a Gamma distribution.
-     * Only available when compiled with PRRNG_USE_BOOST
-     * (e.g. using the CMake target `prrng::use_boost`).
+     * Only available when compiled with PRRNG_USE_BOOST.
      *
      * @param shape The shape of the nd-array.
      * @param k Shape parameter.
@@ -2008,7 +2045,7 @@ private:
 std::vector<size_t>
 alignment(size_t buffer = 0, size_t margin = 0, size_t min_margin = 0, bool strict = false)
 {
-    return std::vector<size_t>{buffer, margin, min_margin, strict};
+    return std::vector<size_t>{buffer, margin, min_margin, static_cast<size_t>(strict)};
 }
 
 /**
@@ -2025,13 +2062,14 @@ private:
     ptrdiff_t m_start; ///< Index of the start of the chunk
     double m_first; ///< Value of the first entry of the chunk: optional, used for restoring
     bool m_apply_first; ///< Signal to modify the first value of the new chunk, see restore()
-    double* m_chunk; ///< Pointer to the storage of the chunk
+    double* m_data; ///< Pointer to the storage of the chunk
     size_t m_size; ///< Size of the chunk
-    bool m_delta; ///< Signal if distribution is a delta, and no random numbers are generated.
+    bool m_delta; ///< Signal if distribution is a delta(-like), and no random numbers are drawn.
     size_t m_buffer; ///< See prrng::alignment().
     size_t m_margin; ///< See prrng::alignment().
     size_t m_min_margin; ///< See prrng::alignment().
     bool m_strict; ///< See prrng::alignment().
+    bool m_recursive; ///< Signal if align is called from align.
 
 public:
     pcg32_cumsum_external() = default;
@@ -2045,31 +2083,39 @@ public:
         size_t n,
         pcg32* generator,
         ptrdiff_t generator_index,
-        const T& align)
+        const T& align,
+        bool use_generator)
     {
-        this->init(data, n, generator, generator_index, align);
+        this->init(data, n, generator, generator_index, align, use_generator);
     }
 
 protected:
     /**
-     * @brief Constructor.
-     *
      * @param data Pointer to chunk storage.
      * @param n Size of the chunk.
      * @param generator Pointer to the generator.
      * @param generator_index Current index in the chunk that the generator corresponds to.
      * @param align Alignment parameters, see prrng::alignment().
+     * @param use_generator Signal if the generator is used to draw random numbers.
      */
     template <class T>
-    void init(double* data, size_t n, pcg32* generator, ptrdiff_t generator_index, const T& align)
+    void init(
+        double* data,
+        size_t n,
+        pcg32* generator,
+        ptrdiff_t generator_index,
+        const T& align,
+        bool use_generator)
     {
         m_delta = false;
         m_gen = generator;
         m_gen_index = generator_index;
         m_start = generator_index;
         m_apply_first = false;
-        m_chunk = data;
+        m_data = data;
         m_size = n;
+        m_delta = !use_generator;
+        m_recursive = false;
 
         auto default_align = alignment();
         PRRNG_ASSERT(align.size() <= default_align.size());
@@ -2111,6 +2157,15 @@ private:
 
 public:
     /**
+     * @brief Overwrite signal if the random number generator is used.
+     * @param uses_generator Set `true` is the random generator is used.
+     */
+    void set_uses_generator(bool uses_generator)
+    {
+        m_delta = !uses_generator;
+    }
+
+    /**
      * @brief Overwrite the data.
      *
      * @param data Pointer to the data.
@@ -2118,7 +2173,7 @@ public:
      */
     void set_data(double* data, size_t n)
     {
-        m_chunk = data;
+        m_data = data;
         m_size = n;
     }
 
@@ -2198,8 +2253,7 @@ public:
 
     /**
      * @brief Restore a specific state in the cumulative sum.
-     * This function should be followed by draw_chunk() or on of its wrappers
-     * (e.g. draw_chunk_weibull()).
+     * This function should be followed by draw().
      *
      * @param state The state at the beginning of the new chunk.
      * @param value The value of the first entry of the new chunk.
@@ -2221,16 +2275,15 @@ public:
      */
     bool contains(double target) const
     {
-        return target >= m_chunk[0] && target <= m_chunk[m_size - 1];
+        return target >= m_data[0] && target <= m_data[m_size - 1];
     }
 
     /**
      * @brief Draw a (the first) chunk of the cumulative sum.
-     *
      * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
      */
     template <class F>
-    void draw_chunk(const F& get_chunk)
+    void draw(const F& get_chunk)
     {
         using R = decltype(get_chunk(size_t{}));
 
@@ -2242,7 +2295,7 @@ public:
             m_apply_first = false;
         }
 
-        std::partial_sum(extra.begin(), extra.end(), m_chunk);
+        std::partial_sum(extra.begin(), extra.end(), m_data);
     }
 
     /**
@@ -2252,22 +2305,22 @@ public:
      * @param margin Overlap to keep with the current chunk.
      */
     template <class F>
-    void prev_chunk(const F& get_chunk, size_t margin = 0)
+    void prev(const F& get_chunk, size_t margin = 0)
     {
         using R = decltype(get_chunk(size_t{}));
 
         ptrdiff_t n = static_cast<ptrdiff_t>(m_size);
         this->jump(m_start - n + margin - m_gen_index);
 
-        double front = m_chunk[0];
+        double front = m_data[0];
         size_t m = m_size - margin + 1;
         R extra = get_chunk({m});
         this->drawn(m);
         std::partial_sum(extra.begin(), extra.end(), extra.begin());
         extra -= extra.back() - front;
 
-        std::copy(m_chunk, m_chunk + margin, m_chunk + m_size - margin);
-        std::copy(extra.begin(), extra.end() - 1, m_chunk);
+        std::copy(m_data, m_data + margin, m_data + m_size - margin);
+        std::copy(extra.begin(), extra.end() - 1, m_data);
 
         m_start -= static_cast<ptrdiff_t>(m_size - margin);
     }
@@ -2279,21 +2332,21 @@ public:
      * @param margin Overlap to keep with the current chunk.
      */
     template <class F>
-    void next_chunk(const F& get_chunk, size_t margin = 0)
+    void next(const F& get_chunk, size_t margin = 0)
     {
         using R = decltype(get_chunk(size_t{}));
         PRRNG_ASSERT(margin < m_size);
 
         this->jump(m_start + m_size - m_gen_index);
 
-        double back = m_chunk[m_size - 1];
+        double back = m_data[m_size - 1];
         size_t n = m_size - margin;
         R extra = get_chunk({n});
         this->drawn(n);
         extra.front() += back;
         std::partial_sum(extra.begin(), extra.end(), extra.begin());
-        std::copy(m_chunk + m_size - margin, m_chunk + m_size, m_chunk);
-        std::copy(extra.begin(), extra.end(), m_chunk + margin);
+        std::copy(m_data + m_size - margin, m_data + m_size, m_data);
+        std::copy(extra.begin(), extra.end(), m_data + margin);
         m_start += n;
     }
 
@@ -2305,18 +2358,18 @@ public:
      * @param target Target value.
      */
     template <class F, class G>
-    void align_chunk(const F& get_chunk, const G& get_cumsum, double target)
+    void align(const F& get_chunk, const G& get_cumsum, double target)
     {
         using R = decltype(get_chunk(size_t{}));
 
-        if (target > m_chunk[m_size - 1]) {
+        if (target > m_data[m_size - 1]) {
 
-            double delta = m_chunk[m_size - 1] - m_chunk[0];
+            double delta = m_data[m_size - 1] - m_data[0];
             size_t n = m_size;
             this->jump(m_start + m_size - m_gen_index);
-            double back = m_chunk[m_size - 1];
+            double back = m_data[m_size - 1];
 
-            double j = (target - m_chunk[m_size - 1]) / delta - (double)(m_margin) / (double)(n);
+            double j = (target - m_data[m_size - 1]) / delta - (double)(m_margin) / (double)(n);
 
             if (j > 1) {
                 size_t m = static_cast<size_t>((j - 1) * static_cast<double>(n));
@@ -2326,31 +2379,35 @@ public:
                 R extra = get_chunk({n});
                 this->drawn(n);
                 extra.front() += back;
-                std::partial_sum(extra.begin(), extra.end(), m_chunk);
-                return this->align_chunk(get_chunk, get_cumsum, target);
+                std::partial_sum(extra.begin(), extra.end(), m_data);
+                m_recursive = true;
+                return this->align(get_chunk, get_cumsum, target);
             }
 
-            this->next_chunk(get_chunk, 1 + m_margin);
-            return this->align_chunk(get_chunk, get_cumsum, target);
+            this->next(get_chunk, 1 + m_margin);
+            m_recursive = true;
+            return this->align(get_chunk, get_cumsum, target);
         }
-        else if (target < m_chunk[0]) {
-            this->prev_chunk(get_chunk);
-            return this->align_chunk(get_chunk, get_cumsum, target);
+        else if (target < m_data[0]) {
+            this->prev(get_chunk);
+            m_recursive = true;
+            return this->align(get_chunk, get_cumsum, target);
         }
         else {
-            size_t i = std::lower_bound(m_chunk, m_chunk + m_size, target) - m_chunk - 1;
+            size_t i = std::lower_bound(m_data, m_data + m_size, target) - m_data - 1;
             if (i == m_margin) {
                 return;
             }
-            if (m_buffer > 0 && i >= m_buffer && i + m_buffer < m_size) {
+            if (!m_recursive && m_buffer > 0 && i >= m_buffer && i + m_buffer < m_size) {
                 return;
             }
             if (i < m_margin) {
                 if (!m_strict && i >= m_min_margin) {
                     return;
                 }
-                this->prev_chunk(get_chunk);
-                return this->align_chunk(get_chunk, get_cumsum, target);
+                this->prev(get_chunk);
+                m_recursive = true;
+                return this->align(get_chunk, get_cumsum, target);
             }
 
             this->jump(m_start + m_size - m_gen_index);
@@ -2358,415 +2415,12 @@ public:
             R extra = get_chunk({n});
             this->drawn(n);
             m_start += n;
-            extra.front() += m_chunk[m_size - 1];
+            extra.front() += m_data[m_size - 1];
             std::partial_sum(extra.begin(), extra.end(), extra.begin());
-            std::copy(m_chunk + n, m_chunk + m_size, m_chunk);
-            std::copy(extra.begin(), extra.end(), m_chunk + m_size - n);
+            std::copy(m_data + n, m_data + m_size, m_data);
+            std::copy(extra.begin(), extra.end(), m_data + m_size - n);
+            m_recursive = false;
         }
-    }
-
-    /**
-     * @brief Draw new chunk.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void draw_chunk_random(double scale = 1, double offset = 0)
-    {
-        this->draw_chunk([this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-            return m_gen->random<xt::xtensor<double, 1>>({n}) * scale + offset;
-        });
-    }
-
-    /**
-     * @brief Shift left.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep right.
-     */
-    void prev_chunk_random(double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        this->prev_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->random<xt::xtensor<double, 1>>({n}) * scale + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Shift right.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep left.
-     */
-    void next_chunk_random(double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        this->next_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->random<xt::xtensor<double, 1>>({n}) * scale + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Align chunk with target value.
-     *
-     * @param target Target value.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void align_chunk_random(double target, double scale = 1, double offset = 0)
-    {
-        this->align_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->random<xt::xtensor<double, 1>>({n}) * scale + offset;
-            },
-            [this, scale, offset](size_t n) {
-                return m_gen->cumsum_random(n) * scale + static_cast<double>(n) * offset;
-            },
-            target);
-    }
-
-    /**
-     * @brief Draw new chunk.
-     *
-     * @param k Shape factor.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void draw_chunk_weibull(double k = 1, double scale = 1, double offset = 0)
-    {
-        this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-            return m_gen->weibull<xt::xtensor<double, 1>>({n}, k, scale) + offset;
-        });
-    }
-
-    /**
-     * @brief Shift left.
-     *
-     * @param k Shape factor.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep right.
-     */
-    void prev_chunk_weibull(double k = 1, double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        this->prev_chunk(
-            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->weibull<xt::xtensor<double, 1>>({n}, k, scale) + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Shift right.
-     *
-     * @param k Shape factor.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep left.
-     */
-    void next_chunk_weibull(double k = 1, double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        this->next_chunk(
-            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->weibull<xt::xtensor<double, 1>>({n}, k, scale) + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Align chunk with target value.
-     *
-     * @param target Target value.
-     * @param k Shape factor.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void align_chunk_weibull(double target, double k = 1, double scale = 1, double offset = 0)
-    {
-        this->align_chunk(
-            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->weibull<xt::xtensor<double, 1>>({n}, k, scale) + offset;
-            },
-            [this, k, scale, offset](size_t n) {
-                return m_gen->cumsum_weibull(n, k, scale) + static_cast<double>(n) * offset;
-            },
-            target);
-    }
-
-    /**
-     * @brief Draw new chunk.
-     *
-     * @param k Shape factor.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void draw_chunk_gamma(double k = 1, double scale = 1, double offset = 0)
-    {
-        this->draw_chunk([this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-            return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
-        });
-    }
-
-    /**
-     * @brief Shift left.
-     *
-     * @param k Shape factor.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep right.
-     */
-    void prev_chunk_gamma(double k = 1, double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        this->prev_chunk(
-            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Shift right.
-     *
-     * @param k Shape factor.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep left.
-     */
-    void next_chunk_gamma(double k = 1, double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        this->next_chunk(
-            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Align chunk with target value.
-     *
-     * @param target Target value.
-     * @param k Shape factor.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void align_chunk_gamma(double target, double k = 1, double scale = 1, double offset = 0)
-    {
-        this->align_chunk(
-            [this, k, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->gamma<xt::xtensor<double, 1>>({n}, k, scale) + offset;
-            },
-            [this, k, scale, offset](size_t n) {
-                return m_gen->cumsum_gamma(n, k, scale) + static_cast<double>(n) * offset;
-            },
-            target);
-    }
-
-    /**
-     * @brief Draw new chunk.
-     *
-     * @param mu Mean.
-     * @param sigma Standard deviation.
-     * @param offset Fixed offset.
-     */
-    void draw_chunk_normal(double mu = 0, double sigma = 1, double offset = 0)
-    {
-        this->draw_chunk([this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
-            return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
-        });
-    }
-
-    /**
-     * @brief Shift left.
-     *
-     * @param mu Mean.
-     * @param sigma Standard deviation.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep right.
-     */
-    void prev_chunk_normal(double mu = 0, double sigma = 1, double offset = 0, size_t margin = 0)
-    {
-        this->prev_chunk(
-            [this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Shift right.
-     *
-     * @param mu Mean.
-     * @param sigma Standard deviation.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep left.
-     */
-    void next_chunk_normal(double mu = 0, double sigma = 1, double offset = 0, size_t margin = 0)
-    {
-        this->next_chunk(
-            [this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Align chunk with target value.
-     *
-     * @param target Target value.
-     * @param mu Mean.
-     * @param sigma Standard deviation.
-     * @param offset Fixed offset.
-     */
-    void align_chunk_normal(double target, double mu = 0, double sigma = 1, double offset = 0)
-    {
-        this->align_chunk(
-            [this, mu, sigma, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->normal<xt::xtensor<double, 1>>({n}, mu, sigma) + offset;
-            },
-            [this, mu, sigma, offset](size_t n) {
-                return m_gen->cumsum_normal(n, mu, sigma) + static_cast<double>(n) * offset;
-            },
-            target);
-    }
-
-    /**
-     * @brief Draw new chunk.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void draw_chunk_exponential(double scale = 1, double offset = 0)
-    {
-        this->draw_chunk([this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-            return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
-        });
-    }
-
-    /**
-     * @brief Shift left.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep right.
-     */
-    void prev_chunk_exponential(double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        this->prev_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Shift right.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep left.
-     */
-    void next_chunk_exponential(double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        this->next_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
-            },
-            margin);
-    }
-
-    /**
-     * @brief Align chunk with target value.
-     *
-     * @param target Target value.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void align_chunk_exponential(double target, double scale = 1, double offset = 0)
-    {
-        this->align_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->exponential<xt::xtensor<double, 1>>({n}, scale) + offset;
-            },
-            [this, scale, offset](size_t n) {
-                return m_gen->cumsum_exponential(n, scale) + static_cast<double>(n) * offset;
-            },
-            target);
-    }
-
-    /**
-     * @brief Draw new chunk.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void draw_chunk_delta(double scale = 1, double offset = 0)
-    {
-        m_delta = true;
-        this->draw_chunk([this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-            return m_gen->delta<xt::xtensor<double, 1>>({n}, scale) + offset;
-        });
-        m_delta = false;
-    }
-
-    /**
-     * @brief Shift left.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep right.
-     */
-    void prev_chunk_delta(double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        m_delta = true;
-        this->prev_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->delta<xt::xtensor<double, 1>>({n}, scale) + offset;
-            },
-            margin);
-        m_delta = false;
-    }
-
-    /**
-     * @brief Shift right.
-     *
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     * @param margin Overlap to keep left.
-     */
-    void next_chunk_delta(double scale = 1, double offset = 0, size_t margin = 0)
-    {
-        m_delta = true;
-        this->next_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->delta<xt::xtensor<double, 1>>({n}, scale) + offset;
-            },
-            margin);
-        m_delta = false;
-    }
-
-    /**
-     * @brief Align chunk with target value.
-     *
-     * @param target Target value.
-     * @param scale Scale factor.
-     * @param offset Fixed offset.
-     */
-    void align_chunk_delta(double target, double scale = 1, double offset = 0)
-    {
-        m_delta = true;
-        this->align_chunk(
-            [this, scale, offset](size_t n) -> xt::xtensor<double, 1> {
-                return m_gen->delta<xt::xtensor<double, 1>>({n}, scale) + offset;
-            },
-            [this, scale, offset](size_t n) {
-                return m_gen->cumsum_delta(n, scale) + static_cast<double>(n) * offset;
-            },
-            target);
-        m_delta = false;
     }
 };
 
@@ -2777,11 +2431,29 @@ public:
  * @tparam Storage of the data.
  */
 template <class R>
-class pcg32_cumsum : public pcg32_cumsum_external {
+class pcg32_cumsum {
 private:
-    R m_data;
-    pcg32 m_gen;
-    using pcg32_cumsum_external::set_data;
+    R m_data; ///< The chunk.
+    pcg32 m_gen; ///< The generator used.
+    pcg32_cumsum_external m_cumsum; ///< Wrapper to update the chunk (points to m_data and m_gen)
+    std::function<R(size_t)> m_draw; ///< Function to draw the random numbers.
+    std::function<double(size_t)> m_sum; ///< Function to get the cumsum of random numbers.
+
+    /**
+     * @brief Copy constructor.
+     * This function resets all internal pointers.
+     *
+     * @param other Object to copy.
+     */
+    void copy_from(const pcg32_cumsum& other)
+    {
+        m_gen = other.m_gen;
+        m_data = other.m_data;
+        m_cumsum = other.m_cumsum;
+        m_draw = other.m_draw;
+        m_sum = other.m_sum;
+        m_cumsum.set_data(&m_data.flat(0), m_data.size());
+    }
 
 public:
     /**
@@ -2790,6 +2462,22 @@ public:
      * @param shape Shape of the chunk.
      * @param initstate State initiator.
      * @param initseq Sequence initiator.
+     * @param distribution Distribution type, see prrng::distribution().
+     *
+     * @param parameters
+     *      Parameters for the distribution. The following is default (and the expected order):
+     *
+     *      -   prrng::distribution::random: {scale = 1, offset = 0}
+     *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
+     *      -   prrng::distribution::weibull: {k = 1, scale = 1, offset = 0}
+     *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
+     *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
+     *      -   prrng::distribution::delta: {scale = 1, offset = 0}
+     *      -   prrng::distribution::custom: {}
+     *
+     *      Warning: if you want to use a custom distribution, you have to call
+     *      prrng::pcg32_cumsum::set_functions().
+     *
      * @param align Alignment parameters, see prrng::alignment().
      */
     template <class D, typename T = uint64_t, typename S = uint64_t>
@@ -2797,11 +2485,113 @@ public:
         const D& shape,
         T initstate = PRRNG_PCG32_INITSTATE,
         S initseq = PRRNG_PCG32_INITSEQ,
+        enum distribution distribution = distribution::custom,
+        const std::vector<double>& parameters = std::vector<double>{},
         const std::vector<size_t>& align = alignment())
     {
         m_data = xt::empty<typename R::value_type>(shape);
         m_gen = pcg32(initstate, initseq);
-        this->init(&m_data.flat(0), m_data.size(), &m_gen, 0, align);
+
+        switch (distribution) {
+        case random:
+            m_draw = [this, parameters](size_t n) -> R {
+                return m_gen.random<R>({n}) * parameters[0] + parameters[1];
+            };
+            m_sum = [this, parameters](size_t n) -> double {
+                return m_gen.cumsum_random({n}) * parameters[0] +
+                       static_cast<double>(n) * parameters[1];
+            };
+            break;
+        case exponential:
+            m_draw = [this, parameters](size_t n) -> R {
+                return m_gen.exponential<R>({n}, parameters[0]) + parameters[1];
+            };
+            m_sum = [this, parameters](size_t n) -> double {
+                return m_gen.cumsum_exponential({n}, parameters[0]) +
+                       static_cast<double>(n) * parameters[1];
+            };
+            break;
+        case delta:
+            m_draw = [this, parameters](size_t n) -> R {
+                return m_gen.delta<R>({n}, parameters[0]) + parameters[1];
+            };
+            m_sum = [this, parameters](size_t n) -> double {
+                return m_gen.cumsum_delta({n}, parameters[0]) +
+                       static_cast<double>(n) * parameters[1];
+            };
+            break;
+        case weibull:
+            m_draw = [this, parameters](size_t n) -> R {
+                return m_gen.weibull<R>({n}, parameters[0], parameters[1]) + parameters[2];
+            };
+            m_sum = [this, parameters](size_t n) -> double {
+                return m_gen.cumsum_weibull({n}, parameters[0], parameters[1]) +
+                       static_cast<double>(n) * parameters[2];
+            };
+            break;
+        case gamma:
+            m_draw = [this, parameters](size_t n) -> R {
+                return m_gen.gamma<R>({n}, parameters[0], parameters[1]) + parameters[2];
+            };
+            m_sum = [this, parameters](size_t n) -> double {
+                return m_gen.cumsum_gamma({n}, parameters[0], parameters[1]) +
+                       static_cast<double>(n) * parameters[2];
+            };
+            break;
+        case normal:
+            m_draw = [this, parameters](size_t n) -> R {
+                return m_gen.normal<R>({n}, parameters[0], parameters[1]) + parameters[2];
+            };
+            m_sum = [this, parameters](size_t n) -> double {
+                return m_gen.cumsum_normal({n}, parameters[0], parameters[1]) +
+                       static_cast<double>(n) * parameters[2];
+            };
+            break;
+        case custom:
+            break;
+        }
+
+        m_cumsum = pcg32_cumsum_external(
+            &m_data.flat(0), m_data.size(), &m_gen, 0, align, distribution != distribution::delta);
+
+        if (distribution == distribution::custom) {
+            return;
+        }
+
+        m_cumsum.draw(m_draw);
+    }
+
+    /**
+     * @brief Use external functions to draw the random numbers.
+     * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
+     * @param get_cumsum Function to get the cumsum of random numbers, called: `get_cumsum(n)`.
+     * @param uses_generator Set `true` is the random generator is used by the functions.
+     */
+    void set_functions(
+        std::function<R(size_t)> get_chunk,
+        std::function<double(size_t)> get_cumsum,
+        bool uses_generator = true)
+    {
+        m_draw = get_chunk;
+        m_sum = get_cumsum;
+        m_cumsum.set_uses_generator(uses_generator);
+        m_cumsum.draw(m_draw);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::copy_from(const prrng::pcg32_cumsum&)
+     */
+    pcg32_cumsum(const pcg32_cumsum& other)
+    {
+        this->copy_from(other);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::copy_from(const prrng::pcg32_cumsum&)
+     */
+    void operator=(const pcg32_cumsum& other)
+    {
+        this->copy_from(other);
     }
 
     /**
@@ -2832,10 +2622,22 @@ public:
     }
 
     /**
-     * @brief Pointer to the chunk.
-     * @return const R&
+     * @brief Add value(s) to the chunk.
+     * @param value Value(s) to add.
      */
-    const R& chunk() const
+    template <class T>
+    pcg32_cumsum& operator+=(const T& value)
+    {
+        m_data += value;
+        m_cumsum.set_data(&m_data.flat(0), m_data.size());
+        return *this;
+    }
+
+    /**
+     * @brief Chunk.
+     * @return Pointer to the chunk.
+     */
+    const R& data() const
     {
         return m_data;
     }
@@ -2847,11 +2649,103 @@ public:
      *
      * @param data The chunk.
      */
-    void set_chunk(const R& data)
+    void set_data(const R& data)
     {
         static_assert(std::is_same<typename R::value_type, double>::value, "Data must be double");
         PRRNG_ASSERT(xt::same_shape(m_data.shape(), data.shape()));
         std::copy(data.cbegin(), data.cend(), m_data.begin());
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::generator_index()
+     */
+    ptrdiff_t generator_index() const
+    {
+        return m_cumsum.generator_index();
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::set_generator_index()
+     */
+    void set_generator_index(ptrdiff_t index)
+    {
+        m_cumsum.set_generator_index(index);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::start()
+     */
+    ptrdiff_t start() const
+    {
+        return m_cumsum.start();
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::set_start()
+     */
+    void set_start(ptrdiff_t index)
+    {
+        return m_cumsum.set_start(index);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::state()
+     */
+    uint64_t state(ptrdiff_t index)
+    {
+        return m_cumsum.state(index);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::set_state()
+     */
+    void set_state(uint64_t state, ptrdiff_t index)
+    {
+        return m_cumsum.set_state(state, index);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::restore()
+     */
+    void restore(uint64_t state, double value, ptrdiff_t index)
+    {
+        m_cumsum.restore(state, value, index);
+        m_cumsum.draw(m_draw);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::contains()
+     */
+    bool contains(double target) const
+    {
+        return m_cumsum.contains(target);
+    }
+
+    /**
+     * @brief Shift chunk left.
+     * @param margin Overlap to keep with the current chunk.
+     */
+    void prev(size_t margin = 0)
+    {
+        return m_cumsum.prev(m_draw, margin);
+    }
+
+    /**
+     * @brief Shift chunk right.
+     * @param margin Overlap to keep with the current chunk.
+     */
+    void next(size_t margin = 0)
+    {
+        return m_cumsum.next(m_draw, margin);
+    }
+
+    /**
+     * @brief Align the chunk to encompass a target value.
+     * @param target Target value.
+     */
+    void align(double target)
+    {
+        return m_cumsum.align(m_draw, m_sum, target);
     }
 };
 
@@ -4475,12 +4369,11 @@ inline auto auto_pcg32(const T& initstate, const S& initseq)
 template <class D, class G>
 class pcg32_arrayBase_cumsum {
 protected:
+    G m_gen; ///< Array of generators
     D m_data; ///< Data container
     std::vector<pcg32_cumsum_external> m_cumsum; ///< 'Array' of cumsums
-    G m_gen; ///< Array of generators
-    distribution m_distribution; ///< Distribution type
-    std::array<double, 3> m_param; ///< Parameters for the distribution
-    std::array<size_t, 4> m_align; ///< Alignment parameters
+    std::vector<std::function<xt::xtensor<double, 1>(size_t)>> m_draw; ///< Draw functions
+    std::vector<std::function<double(size_t)>> m_sum; ///< Result of cumsum fuctions
 
 protected:
     /**
@@ -4516,48 +4409,6 @@ protected:
         PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
         using shape_type = typename S::value_type;
 
-        switch (distribution) {
-        case distribution::random:
-            PRRNG_ASSERT(parameters.size() <= 2);
-            m_param[0] = 1; // scale
-            m_param[1] = 0; // offset
-            break;
-        case distribution::exponential:
-            PRRNG_ASSERT(parameters.size() <= 2);
-            m_param[0] = 1; // scale
-            m_param[1] = 0; // offset
-            break;
-        case distribution::delta:
-            PRRNG_ASSERT(parameters.size() <= 2);
-            m_param[0] = 1; // scale
-            m_param[1] = 0; // offset
-            break;
-        case distribution::weibull:
-            PRRNG_ASSERT(parameters.size() <= 3);
-            m_param[0] = 1; // k
-            m_param[1] = 1; // scale
-            m_param[2] = 0; // offset
-            break;
-        case distribution::gamma:
-            PRRNG_ASSERT(parameters.size() <= 3);
-            m_param[0] = 1; // k
-            m_param[1] = 1; // scale
-            m_param[2] = 0; // offset
-            break;
-        case distribution::normal:
-            PRRNG_ASSERT(parameters.size() <= 3);
-            m_param[0] = 1; // mu
-            m_param[1] = 0; // sigma
-            m_param[2] = 0; // offset
-            break;
-        case distribution::custom:
-            PRRNG_ASSERT(parameters.size() == 0);
-            break;
-        }
-
-        m_distribution = distribution;
-        std::copy(parameters.begin(), parameters.end(), m_param.begin());
-
         std::vector<size_t> data_shape;
         data_shape.resize(initstate.dimension() + shape.size());
         std::copy(initstate.shape().begin(), initstate.shape().end(), data_shape.begin());
@@ -4565,56 +4416,98 @@ protected:
         m_data = xt::empty<typename D::value_type>(data_shape);
 
         m_gen = G(initstate, initseq);
-
         m_cumsum.reserve(m_gen.size());
+        m_draw.reserve(m_gen.size());
+        m_sum.reserve(m_gen.size());
+
+        bool use_gen = distribution != distribution::delta;
         size_t n = static_cast<size_t>(
             std::accumulate(shape.cbegin(), shape.cend(), 1, std::multiplies<shape_type>{}));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum.push_back(pcg32_cumsum_external(&m_data.flat(i * n), n, &m_gen[i], 0, align));
+            m_cumsum.push_back(
+                pcg32_cumsum_external(&m_data.flat(i * n), n, &m_gen[i], 0, align, use_gen));
         }
 
-        this->draw_first_chunk();
-    }
+        using R = xt::xtensor<double, 1>;
+        auto par = detail::default_parameters_cumsum(distribution, parameters);
 
-    /**
-     * @brief Draw a chunk from the curent state of the generators.
-     */
-    void draw_first_chunk()
-    {
-        switch (m_distribution) {
-        case random:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].draw_chunk_random(m_param[0], m_param[1]);
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            switch (distribution) {
+            case random:
+                for (size_t i = 0; i < m_gen.size(); ++i) {
+                    m_draw.push_back([this, i, par](size_t n) -> R {
+                        return m_gen[i].template random<R>({n}) * par[0] + par[1];
+                    });
+                    m_sum.push_back([this, i, par](size_t n) -> double {
+                        return m_gen[i].cumsum_random(n) * par[0] + static_cast<double>(n) * par[1];
+                    });
+                }
+                break;
+            case exponential:
+                for (size_t i = 0; i < m_gen.size(); ++i) {
+                    m_draw.push_back([this, i, par](size_t n) -> R {
+                        return m_gen[i].template exponential<R>({n}, par[0]) + par[1];
+                    });
+                    m_sum.push_back([this, i, par](size_t n) -> double {
+                        return m_gen[i].cumsum_exponential(n, par[0]) +
+                               static_cast<double>(n) * par[1];
+                    });
+                }
+                break;
+            case delta:
+                for (size_t i = 0; i < m_gen.size(); ++i) {
+                    m_draw.push_back([this, i, par](size_t n) -> R {
+                        return m_gen[i].template delta<R>({n}, par[0]) + par[1];
+                    });
+                    m_sum.push_back([this, i, par](size_t n) -> double {
+                        return m_gen[i].cumsum_delta(n, par[0]) + static_cast<double>(n) * par[1];
+                    });
+                }
+                break;
+            case weibull:
+                for (size_t i = 0; i < m_gen.size(); ++i) {
+                    m_draw.push_back([this, i, par](size_t n) -> R {
+                        return m_gen[i].template weibull<R>({n}, par[0], par[1]) + par[2];
+                    });
+                    m_sum.push_back([this, i, par](size_t n) -> double {
+                        return m_gen[i].cumsum_weibull(n, par[0], par[1]) +
+                               static_cast<double>(n) * par[2];
+                    });
+                }
+                break;
+            case gamma:
+                for (size_t i = 0; i < m_gen.size(); ++i) {
+                    m_draw.push_back([this, i, par](size_t n) -> R {
+                        return m_gen[i].template gamma<R>({n}, par[0], par[1]) + par[2];
+                    });
+                    m_sum.push_back([this, i, par](size_t n) -> double {
+                        return m_gen[i].cumsum_gamma(n, par[0], par[1]) +
+                               static_cast<double>(n) * par[2];
+                    });
+                }
+                break;
+            case normal:
+                for (size_t i = 0; i < m_gen.size(); ++i) {
+                    m_draw.push_back([this, i, par](size_t n) -> R {
+                        return m_gen[i].template normal<R>({n}, par[0], par[1]) + par[2];
+                    });
+                    m_sum.push_back([this, i, par](size_t n) -> double {
+                        return m_gen[i].cumsum_normal(n, par[0], par[1]) +
+                               static_cast<double>(n) * par[2];
+                    });
+                }
+                break;
+            case custom:
+                throw std::runtime_error(
+                    std::string(__FILE__) + ":" + std::to_string(__LINE__) +
+                    " custom distribution not implemented for array of cumsum");
+                break;
             }
-            break;
-        case exponential:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].draw_chunk_exponential(m_param[0], m_param[1]);
-            }
-            break;
-        case delta:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].draw_chunk_delta(m_param[0], m_param[1]);
-            }
-            break;
-        case weibull:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].draw_chunk_weibull(m_param[0], m_param[1], m_param[2]);
-            }
-            break;
-        case gamma:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].draw_chunk_gamma(m_param[0], m_param[1], m_param[2]);
-            }
-            break;
-        case normal:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].draw_chunk_normal(m_param[0], m_param[1], m_param[2]);
-            }
-            break;
-        case custom:
-            break;
+        }
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].draw(m_draw[i]);
         }
     }
 
@@ -4626,11 +4519,11 @@ protected:
      */
     void copy_from(const pcg32_arrayBase_cumsum& other)
     {
+        m_gen = other.m_gen;
         m_data = other.m_data;
         m_cumsum = other.m_cumsum;
-        m_gen = other.m_gen;
-        m_param = other.m_param;
-        m_distribution = other.m_distribution;
+        m_draw = other.m_draw;
+        m_sum = other.m_sum;
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             size_t n = m_cumsum[i].size();
@@ -4660,6 +4553,23 @@ public:
     }
 
     /**
+     * @brief Add values to each chunk.
+     * @param values Values to add.
+     */
+    template <class T>
+    pcg32_arrayBase_cumsum& operator+=(const T& values)
+    {
+        m_data += values;
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            size_t n = m_cumsum[i].size();
+            m_cumsum[i].set_data(&m_data.flat(i * n), n);
+        }
+
+        return *this;
+    }
+
+    /**
      * @brief Align chunks with a target values.
      * @param target Target values.
      */
@@ -4668,42 +4578,8 @@ public:
     {
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
-        switch (m_distribution) {
-        case random:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].align_chunk_random(target.flat(i), m_param[0], m_param[1]);
-            }
-            break;
-        case exponential:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].align_chunk_exponential(target.flat(i), m_param[0], m_param[1]);
-            }
-            break;
-        case delta:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].align_chunk_delta(target.flat(i), m_param[0], m_param[1]);
-            }
-            break;
-        case weibull:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].align_chunk_weibull(target.flat(i), m_param[0], m_param[1], m_param[2]);
-            }
-            break;
-        case gamma:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].align_chunk_gamma(target.flat(i), m_param[0], m_param[1], m_param[2]);
-            }
-            break;
-        case normal:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_cumsum[i].align_chunk_normal(target.flat(i), m_param[0], m_param[1], m_param[2]);
-            }
-            break;
-        case custom:
-            throw std::runtime_error(
-                std::string(__FILE__) + ":" + std::to_string(__LINE__) +
-                " alignment() not implemented for custom distribution");
-            break;
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_cumsum[i].align(m_draw[i], m_sum[i], target.flat(i));
         }
     }
 
@@ -4742,7 +4618,7 @@ public:
      * @brief Chunk.
      * @return Pointer to chunk.
      */
-    const D& chunk() const
+    const D& data() const
     {
         return m_data;
     }
@@ -4754,7 +4630,7 @@ public:
      *
      * @param data New chunk.
      */
-    void set_chunk(const D& data)
+    void set_data(const D& data)
     {
         static_assert(std::is_same<typename D::value_type, double>::value, "Data must be double");
         PRRNG_ASSERT(xt::has_shape(data, m_data.shape()));
@@ -4881,9 +4757,8 @@ public:
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].restore(state.flat(i), value.flat(i), index.flat(i));
+            m_cumsum[i].draw(m_draw[i]);
         }
-
-        this->draw_first_chunk();
     }
 
     /**

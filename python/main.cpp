@@ -33,12 +33,14 @@ private:
     py::object original_name_;
 };
 
-template <class C, class Parent, class State, class Value, class Index>
+template <class C, class Parent, class Data, class State, class Value, class Index>
 void init_pcg32_arrayBase_cumsum(C& cls)
 {
+    cls.def(py::self += Data());
+
     cls.def_property_readonly("generators", &Parent::generators);
 
-    cls.def_property("chunk", &Parent::chunk, &Parent::set_chunk);
+    cls.def_property("data", &Parent::data, &Parent::set_data);
 
     cls.def_property(
         "generator_index",
@@ -510,13 +512,31 @@ PYBIND11_MODULE(_prrng, m)
     py::class_<prrng::pcg32_cumsum<xt::pyarray<double>>>(m, "pcg32_cumsum")
 
         .def(
-            py::init<const std::vector<size_t>&, uint64_t, uint64_t, const std::vector<size_t>&>(),
+            py::init<
+                const std::vector<size_t>&,
+                uint64_t,
+                uint64_t,
+                enum prrng::distribution,
+                const std::vector<double>&,
+                const std::vector<size_t>&>(),
             "Generator of cumulative sum of random numbers. "
             "See :cpp:class:`prrng::pcg32_cumsum`.",
             py::arg("shape"),
             py::arg("initstate") = PRRNG_PCG32_INITSTATE,
             py::arg("initseq") = PRRNG_PCG32_INITSEQ,
+            py::arg("distribution") = prrng::distribution::custom,
+            py::arg("parameters") = std::vector<double>{},
             py::arg("align") = prrng::alignment())
+
+        .def(
+            "set_functions",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_functions,
+            py::arg("get_chunk"),
+            py::arg("get_cumsum"),
+            py::arg("uses_generator") = true,
+            "Set draw function and draw the first chunk.")
+
+        .def(py::self += double())
 
         .def_property_readonly(
             "shape", &prrng::pcg32_cumsum<xt::pyarray<double>>::shape, "Shape of the chunk.")
@@ -530,9 +550,9 @@ PYBIND11_MODULE(_prrng, m)
             "Underlying generator.")
 
         .def_property(
-            "chunk",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::chunk,
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_chunk,
+            "data",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::data,
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_data,
             "Current chunk.")
 
         .def_property(
@@ -567,210 +587,13 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("value"),
             py::arg("index"))
 
-        .def(
-            "draw_chunk",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk<
-                std::function<xt::pytensor<double, 1>(size_t)>>,
-            py::arg("get_chunk"))
+        .def("prev", &prrng::pcg32_cumsum<xt::pyarray<double>>::prev, py::arg("margin") = 0)
+        .def("next", &prrng::pcg32_cumsum<xt::pyarray<double>>::next, py::arg("margin") = 0)
+        .def("align", &prrng::pcg32_cumsum<xt::pyarray<double>>::align, py::arg("target"))
 
-        .def(
-            "prev_chunk",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk<
-                std::function<xt::pytensor<double, 1>(size_t)>>,
-            py::arg("get_chunk"),
-            py::arg("margin") = 0)
-
-        .def(
-            "next_chunk",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk<
-                std::function<xt::pytensor<double, 1>(size_t)>>,
-            py::arg("get_chunk"),
-            py::arg("margin") = 0)
-
-        .def(
-            "align_chunk",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk<
-                std::function<xt::pytensor<double, 1>(size_t)>,
-                std::function<double(size_t)>>,
-            py::arg("get_chunk"),
-            py::arg("get_cumsum"),
-            py::arg("target"))
-
-        .def(
-            "draw_chunk_random",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_random,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "prev_chunk_random",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_random,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "next_chunk_random",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_random,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "align_chunk_random",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_random,
-            py::arg("target"),
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "draw_chunk_weibull",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_weibull,
-            py::arg("k") = 1,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "prev_chunk_weibull",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_weibull,
-            py::arg("k") = 1,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "next_chunk_weibull",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_weibull,
-            py::arg("k") = 1,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "align_chunk_weibull",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_weibull,
-            py::arg("target"),
-            py::arg("k") = 1,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "draw_chunk_gamma",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_gamma,
-            py::arg("k") = 1,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "prev_chunk_gamma",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_gamma,
-            py::arg("k") = 1,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "next_chunk_gamma",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_gamma,
-            py::arg("k") = 1,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "align_chunk_gamma",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_gamma,
-            py::arg("target"),
-            py::arg("k") = 1,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "draw_chunk_normal",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_normal,
-            py::arg("mu") = 0,
-            py::arg("sigma") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "prev_chunk_normal",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_normal,
-            py::arg("mu") = 0,
-            py::arg("sigma") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "next_chunk_normal",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_normal,
-            py::arg("mu") = 0,
-            py::arg("sigma") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "align_chunk_normal",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_normal,
-            py::arg("target"),
-            py::arg("mu") = 0,
-            py::arg("sigma") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "draw_chunk_exponential",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_exponential,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "prev_chunk_exponential",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_exponential,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "next_chunk_exponential",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_exponential,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "align_chunk_exponential",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_exponential,
-            py::arg("target"),
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "draw_chunk_delta",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::draw_chunk_delta,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def(
-            "prev_chunk_delta",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::prev_chunk_delta,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "next_chunk_delta",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::next_chunk_delta,
-            py::arg("scale") = 1,
-            py::arg("offset") = 0,
-            py::arg("margin") = 0)
-
-        .def(
-            "align_chunk_delta",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::align_chunk_delta,
-            py::arg("target"),
-            py::arg("scale") = 1,
-            py::arg("offset") = 0)
-
-        .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
+        .def("__repr__", [](const prrng::pcg32_cumsum<xt::pyarray<double>>&) {
+            return "<prrng.pcg32_cumsum>";
+        });
 
     py::class_<prrng::GeneratorBase_array<std::vector<size_t>>>(m, "GeneratorBase_array")
 
@@ -1111,7 +934,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("parameters"),
             py::arg("align") = prrng::alignment());
 
-        init_pcg32_arrayBase_cumsum<Class, Parent, State, Value, Index>(cls);
+        init_pcg32_arrayBase_cumsum<Class, Parent, Data, State, Value, Index>(cls);
 
         cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_array_cumsum>"; });
     }
@@ -1143,7 +966,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("parameters"),
             py::arg("align") = prrng::alignment());
 
-        init_pcg32_arrayBase_cumsum<Class, Parent, State, Value, Index>(cls);
+        init_pcg32_arrayBase_cumsum<Class, Parent, Data, State, Value, Index>(cls);
 
         cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_tensor_cumsum_1_1>"; });
     }
