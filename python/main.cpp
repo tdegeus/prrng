@@ -105,6 +105,56 @@ PYBIND11_MODULE(_prrng, m)
         "See :cpp:func:`prrng::version_compiler`.");
 
     m.def(
+        "lower_bound",
+        py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<double>&>(
+            &prrng::lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<long>>),
+        "Find column for each row.",
+        py::arg("matrix"),
+        py::arg("value"));
+
+    m.def(
+        "lower_bound",
+        py::overload_cast<
+            const xt::pyarray<double>&,
+            const xt::pyarray<double>&,
+            const xt::pyarray<ptrdiff_t>&,
+            size_t>(
+            &prrng::lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<ptrdiff_t>>),
+        "Find column for each row.",
+        py::arg("matrix"),
+        py::arg("value"),
+        py::arg("index"),
+        py::arg("proximity") = 10);
+
+    m.def(
+        "cumsum_chunk",
+        &prrng::cumsum_chunk<xt::pyarray<double>, xt::pyarray<ptrdiff_t>>,
+        "Compute chunk of chunked cumsum",
+        py::arg("cumsum"),
+        py::arg("delta"),
+        py::arg("shift"));
+
+    py::module minplace = m.def_submodule("inplace", "In-place operations");
+
+    minplace.def(
+        "lower_bound",
+        &prrng::inplace::
+            lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<ptrdiff_t>>,
+        "Find column for each row.",
+        py::arg("matrix"),
+        py::arg("value"),
+        py::arg("index"),
+        py::arg("proximity") = 10);
+
+    minplace.def(
+        "cumsum_chunk",
+        &prrng::inplace::cumsum_chunk<xt::pyarray<double>, xt::pyarray<ptrdiff_t>>,
+        "Compute chunk of chunked cumsum",
+        py::arg("cumsum"),
+        py::arg("delta"),
+        py::arg("shift"));
+
+    m.def(
         "alignment",
         &prrng::alignment,
         "Alignment options. "
