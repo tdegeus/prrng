@@ -44,6 +44,8 @@ void init_pcg32_arrayBase_cumsum(C& cls)
 
     cls.def_property_readonly("generators", &Parent::generators);
 
+    cls.def_property_readonly("is_extendible", &Parent::is_extendible);
+
     cls.def_property("data", &Parent::data, &Parent::set_data);
 
     cls.def_property(
@@ -616,6 +618,9 @@ PYBIND11_MODULE(_prrng, m)
 
         .def_property_readonly(
             "size", &prrng::pcg32_cumsum<xt::pyarray<double>>::size, "Size of the chunk.")
+
+        .def_property_readonly(
+            "is_extendible", &prrng::pcg32_cumsum<xt::pyarray<double>>::is_extendible)
 
         .def_property_readonly(
             "generator",

@@ -2831,6 +2831,7 @@ private:
     pcg32_cumsum_external m_cumsum; ///< Wrapper to update the chunk (points to m_data and m_gen)
     std::function<R(size_t)> m_draw; ///< Function to draw the random numbers.
     std::function<double(size_t)> m_sum; ///< Function to get the cumsum of random numbers.
+    bool m_extendible; ///< Whether the chunk can be extended.
 
     /**
      * @brief Update internal pointers
@@ -2956,9 +2957,11 @@ public:
             &m_data.flat(0), m_data.size(), &m_gen, 0, align, distribution != distribution::delta);
 
         if (distribution == distribution::custom) {
+            m_extendible = false;
             return;
         }
 
+        m_extendible = true;
         m_cumsum.draw(m_draw);
     }
 
@@ -2973,6 +2976,7 @@ public:
         std::function<double(size_t)> get_cumsum,
         bool uses_generator = true)
     {
+        m_extendible = true;
         m_draw = get_chunk;
         m_sum = get_cumsum;
         m_cumsum.set_uses_generator(uses_generator);
@@ -2993,6 +2997,15 @@ public:
     void operator=(const pcg32_cumsum& other)
     {
         this->copy_from(other);
+    }
+
+    /**
+     * @brief `true` if the chunk is extendible.
+     * @return bool
+     */
+    bool is_extendible() const
+    {
+        return m_extendible;
     }
 
     /**
@@ -3154,6 +3167,7 @@ public:
      */
     void prev(size_t margin = 0)
     {
+        PRRNG_ASSERT(m_extendible);
         return m_cumsum.prev(m_draw, margin);
     }
 
@@ -3163,6 +3177,7 @@ public:
      */
     void next(size_t margin = 0)
     {
+        PRRNG_ASSERT(m_extendible);
         return m_cumsum.next(m_draw, margin);
     }
 
@@ -3172,6 +3187,7 @@ public:
      */
     void align(double target)
     {
+        PRRNG_ASSERT(m_extendible);
         return m_cumsum.align(m_draw, m_sum, target);
     }
 };
@@ -5007,6 +5023,15 @@ public:
     {
         xt::noalias(m_data) -= values;
         return *this;
+    }
+
+    /**
+     * @brief `true` if the chunk is extendible.
+     * @return bool
+     */
+    bool is_extendible() const
+    {
+        return m_draw.size() > 0;
     }
 
     /**
