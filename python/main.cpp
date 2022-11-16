@@ -6,6 +6,7 @@
 #define FORCE_IMPORT_ARRAY
 #include <xtensor-python/pyarray.hpp>
 #include <xtensor-python/pytensor.hpp>
+#include <xtensor-python/xtensor_python_config.hpp> // todo: remove for xtensor-python >0.26.1
 
 #include <prrng.h>
 
@@ -90,6 +91,18 @@ PYBIND11_MODULE(_prrng, m)
         &prrng::version,
         "Return version string. "
         "See :cpp:func:`prrng::version`.");
+
+    m.def(
+        "version_dependencies",
+        &prrng::version_dependencies,
+        "Return version string of all dependencies. "
+        "See :cpp:func:`prrng::version_dependencies`.");
+
+    m.def(
+        "version_compiler",
+        &prrng::version_compiler,
+        "Return version information of the used compiler. "
+        "See :cpp:func:`prrng::version_compiler`.");
 
     m.def(
         "alignment",

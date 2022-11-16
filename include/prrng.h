@@ -217,6 +217,23 @@ inline std::string unquote(const std::string& arg)
     return ret;
 }
 
+/**
+ * @brief Replace a character (or a sequence of characters) in a string.
+ * @param str The string.
+ * @param from Search string.
+ * @param to Replacement string.
+ * @return `str` with `from` replaced by `to`.
+ */
+inline std::string replace(std::string str, const std::string& from, const std::string& to)
+{
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+    return str;
+}
+
 template <class T>
 struct is_std_array : std::false_type {
 };
@@ -421,6 +438,114 @@ std::array<I, L> to_array(const I (&shape)[L])
 inline std::string version()
 {
     return detail::unquote(std::string(QUOTE(PRRNG_VERSION)));
+}
+
+/**
+ * Return versions of this library and of all of its dependencies.
+ * The output is a list of strings, e.g.:
+ *
+ *     "prrng=1.7.0",
+ *     "xtensor=0.20.1"
+ *     ...
+ *
+ * @return List of strings.
+ */
+inline std::vector<std::string> version_dependencies()
+{
+    std::vector<std::string> ret;
+
+    ret.push_back("prrng=" + version());
+
+    ret.push_back(
+        "xtensor=" + detail::unquote(std::string(QUOTE(XTENSOR_VERSION_MAJOR))) + "." +
+        detail::unquote(std::string(QUOTE(XTENSOR_VERSION_MINOR))) + "." +
+        detail::unquote(std::string(QUOTE(XTENSOR_VERSION_PATCH))));
+
+#ifdef XSIMD_VERSION_MAJOR
+    ret.push_back(
+        "xsimd=" + detail::unquote(std::string(QUOTE(XSIMD_VERSION_MAJOR))) + "." +
+        detail::unquote(std::string(QUOTE(XSIMD_VERSION_MINOR))) + "." +
+        detail::unquote(std::string(QUOTE(XSIMD_VERSION_PATCH))));
+#endif
+
+#ifdef XTL_VERSION_MAJOR
+    ret.push_back(
+        "xtl=" + detail::unquote(std::string(QUOTE(XTL_VERSION_MAJOR))) + "." +
+        detail::unquote(std::string(QUOTE(XTL_VERSION_MINOR))) + "." +
+        detail::unquote(std::string(QUOTE(XTL_VERSION_PATCH))));
+#endif
+
+#if defined(XTENSOR_PYTHON_VERSION_MAJOR)
+    ret.push_back(
+        "xtensor-python=" + detail::unquote(std::string(QUOTE(XTENSOR_PYTHON_VERSION_MAJOR))) +
+        "." + detail::unquote(std::string(QUOTE(XTENSOR_PYTHON_VERSION_MINOR))) + "." +
+        detail::unquote(std::string(QUOTE(XTENSOR_PYTHON_VERSION_PATCH))));
+#endif
+
+#ifdef BOOST_VERSION
+    ret.push_back(
+        "boost=" + detail::unquote(std::to_string(BOOST_VERSION / 100000)) + "." +
+        detail::unquote(std::to_string((BOOST_VERSION / 100) % 1000)) + "." +
+        detail::unquote(std::to_string(BOOST_VERSION % 100)));
+#endif
+
+    std::sort(ret.begin(), ret.end(), std::greater<std::string>());
+
+    return ret;
+}
+
+/**
+ * Return information on the compiler, the platform, the C++ standard, and the compilation data.
+ * @return List of strings.
+ */
+inline std::vector<std::string> version_compiler()
+{
+    std::vector<std::string> ret;
+
+#ifdef __DATE__
+    std::string date = detail::unquote(std::string(QUOTE(__DATE__)));
+    ret.push_back("date=" + detail::replace(detail::replace(date, " ", "-"), "--", "-"));
+#endif
+
+#ifdef __APPLE__
+    ret.push_back("platform=apple");
+#endif
+
+#ifdef __MINGW32__
+    ret.push_back("platform=mingw");
+#endif
+
+#ifdef __linux__
+    ret.push_back("platform=linux");
+#endif
+
+#ifdef __clang_version__
+    ret.push_back(
+        "clang=" + detail::unquote(std::string(QUOTE(__clang_major__))) + "." +
+        detail::unquote(std::string(QUOTE(__clang_minor__))) + "." +
+        detail::unquote(std::string(QUOTE(__clang_patchlevel__))));
+#endif
+
+#ifdef __GNUC__
+    ret.push_back(
+        "gcc=" + detail::unquote(std::string(QUOTE(__GNUC__))) + "." +
+        detail::unquote(std::string(QUOTE(__GNUC_MINOR__))) + "." +
+        detail::unquote(std::string(QUOTE(__GNUC_PATCHLEVEL__))));
+#endif
+
+#ifdef _MSC_VER
+    ret.push_back("msvc=" + std::to_string(_MSC_VER));
+#endif
+
+    // c++ version
+
+#ifdef __cplusplus
+    ret.push_back("c++=" + detail::unquote(std::string(QUOTE(__cplusplus))));
+#endif
+
+    std::sort(ret.begin(), ret.end(), std::greater<std::string>());
+
+    return ret;
 }
 
 /**
