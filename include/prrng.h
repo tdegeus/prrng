@@ -2440,6 +2440,14 @@ private:
     std::function<double(size_t)> m_sum; ///< Function to get the cumsum of random numbers.
 
     /**
+     * @brief Update internal pointers
+     */
+    void update_pointers()
+    {
+        m_cumsum.set_data(&m_data.flat(0), m_data.size());
+    }
+
+    /**
      * @brief Copy constructor.
      * This function resets all internal pointers.
      *
@@ -2452,7 +2460,7 @@ private:
         m_cumsum = other.m_cumsum;
         m_draw = other.m_draw;
         m_sum = other.m_sum;
-        m_cumsum.set_data(&m_data.flat(0), m_data.size());
+        this->update_pointers();
     }
 
 public:
@@ -2629,7 +2637,19 @@ public:
     pcg32_cumsum& operator+=(const T& value)
     {
         m_data += value;
-        m_cumsum.set_data(&m_data.flat(0), m_data.size());
+        this->update_pointers();
+        return *this;
+    }
+
+    /**
+     * @brief Subtract value(s) from the chunk.
+     * @param value Value(s) to subtract.
+     */
+    template <class T>
+    pcg32_cumsum& operator-=(const T& value)
+    {
+        m_data -= value;
+        this->update_pointers();
         return *this;
     }
 
@@ -4417,8 +4437,10 @@ protected:
 
         m_gen = G(initstate, initseq);
         m_cumsum.reserve(m_gen.size());
-        m_draw.reserve(m_gen.size());
-        m_sum.reserve(m_gen.size());
+        if (distribution != distribution::custom) {
+            m_draw.reserve(m_gen.size());
+            m_sum.reserve(m_gen.size());
+        }
 
         bool use_gen = distribution != distribution::delta;
         size_t n = static_cast<size_t>(
@@ -4499,15 +4521,25 @@ protected:
                 }
                 break;
             case custom:
-                throw std::runtime_error(
-                    std::string(__FILE__) + ":" + std::to_string(__LINE__) +
-                    " custom distribution not implemented for array of cumsum");
                 break;
             }
         }
 
+        if (m_draw.size() > 0) {
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_cumsum[i].draw(m_draw[i]);
+            }
+        }
+    }
+
+    /**
+     * @brief Update internal pointers.
+     */
+    void update_pointers()
+    {
         for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_cumsum[i].draw(m_draw[i]);
+            size_t n = m_cumsum[i].size();
+            m_cumsum[i].set_data(&m_data.flat(i * n), n);
         }
     }
 
@@ -4524,11 +4556,7 @@ protected:
         m_cumsum = other.m_cumsum;
         m_draw = other.m_draw;
         m_sum = other.m_sum;
-
-        for (size_t i = 0; i < m_gen.size(); ++i) {
-            size_t n = m_cumsum[i].size();
-            m_cumsum[i].set_data(&m_data.flat(i * n), n);
-        }
+        this->update_pointers();
     }
 
 public:
@@ -4560,12 +4588,19 @@ public:
     pcg32_arrayBase_cumsum& operator+=(const T& values)
     {
         m_data += values;
+        this->update_pointers();
+        return *this;
+    }
 
-        for (size_t i = 0; i < m_gen.size(); ++i) {
-            size_t n = m_cumsum[i].size();
-            m_cumsum[i].set_data(&m_data.flat(i * n), n);
-        }
-
+    /**
+     * @brief Subtract values from each chunk.
+     * @param values Values to subtract.
+     */
+    template <class T>
+    pcg32_arrayBase_cumsum& operator-=(const T& values)
+    {
+        m_data -= values;
+        this->update_pointers();
         return *this;
     }
 
@@ -4576,6 +4611,7 @@ public:
     template <class T>
     void align(const T& target)
     {
+        PRRNG_ASSERT(m_draw.size() > 0);
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
