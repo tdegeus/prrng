@@ -673,8 +673,8 @@ inline void cumsum_chunk(V& cumsum, const V& delta, const I& shift)
         auto* c = &cumsum.flat(i * n);
 
         if (shift.flat(i) > 0) {
-            PRRNG_ASSERT(shift.flat(i) <= n);
-            PRRNG_ASSERT(ndelta >= shift.flat(i));
+            PRRNG_ASSERT(shift.flat(i) <= static_cast<typename I::value_type>(n));
+            PRRNG_ASSERT(static_cast<typename I::value_type>(ndelta) >= shift.flat(i));
             size_t nadd = static_cast<size_t>(shift.flat(i));
             size_t nkeep = n - nadd;
             auto offset = *(c + n - 1);
@@ -684,8 +684,8 @@ inline void cumsum_chunk(V& cumsum, const V& delta, const I& shift)
             std::partial_sum(c + nkeep, c + n, c + nkeep);
         }
         else {
-            PRRNG_ASSERT(-shift.flat(i) < n);
-            PRRNG_ASSERT(ndelta > -shift.flat(i));
+            PRRNG_ASSERT(-shift.flat(i) < static_cast<typename I::value_type>(n));
+            PRRNG_ASSERT(static_cast<typename I::value_type>(ndelta) > -shift.flat(i));
             size_t nadd = static_cast<size_t>(-shift.flat(i));
             size_t nkeep = n - nadd;
             auto offset = *(c);
@@ -2432,6 +2432,7 @@ private:
     size_t m_min_margin; ///< See prrng::alignment().
     bool m_strict; ///< See prrng::alignment().
     bool m_recursive; ///< Signal if align is called from align.
+    size_t m_i; ///< Last know index of `target` in align.
 
 public:
     pcg32_cumsum_external() = default;
@@ -2478,6 +2479,7 @@ protected:
         m_size = n;
         m_delta = !use_generator;
         m_recursive = false;
+        m_i = m_size;
 
         auto default_align = alignment();
         PRRNG_ASSERT(align.size() <= default_align.size());
@@ -2585,6 +2587,16 @@ public:
     }
 
     /**
+     * @brief The position of the target in the chunk,
+     * at the last time prrng::pcg32_cumsum_external::align() was called.
+     * @return Index (relative to chunk).
+     */
+    size_t index() const
+    {
+        return m_i;
+    }
+
+    /**
      * @brief Get the state of the random number generator at some index.
      * @param index The index in the random sequence.
      * @return uint64_t
@@ -2647,6 +2659,7 @@ public:
     template <class F>
     void draw(const F& get_chunk)
     {
+        m_i = m_size;
         using R = decltype(get_chunk(size_t{}));
 
         R extra = get_chunk(m_size);
@@ -2669,6 +2682,7 @@ public:
     template <class F>
     void prev(const F& get_chunk, size_t margin = 0)
     {
+        m_i = m_size;
         using R = decltype(get_chunk(size_t{}));
 
         ptrdiff_t n = static_cast<ptrdiff_t>(m_size);
@@ -2696,6 +2710,7 @@ public:
     template <class F>
     void next(const F& get_chunk, size_t margin = 0)
     {
+        m_i = m_size;
         using R = decltype(get_chunk(size_t{}));
         PRRNG_ASSERT(margin < m_size);
 
@@ -2756,15 +2771,20 @@ public:
             return this->align(get_chunk, get_cumsum, target);
         }
         else {
-            size_t i = std::lower_bound(m_data, m_data + m_size, target) - m_data - 1;
-            if (i == m_margin) {
+            if (m_recursive || m_i >= m_size) {
+                m_i = std::lower_bound(m_data, m_data + m_size, target) - m_data - 1;
+            }
+            else {
+                m_i = iterator::lower_bound(m_data, m_data + m_size, target, m_i);
+            }
+            if (m_i == m_margin) {
                 return;
             }
-            if (!m_recursive && m_buffer > 0 && i >= m_buffer && i + m_buffer < m_size) {
+            if (!m_recursive && m_buffer > 0 && m_i >= m_buffer && m_i + m_buffer < m_size) {
                 return;
             }
-            if (i < m_margin) {
-                if (!m_strict && i >= m_min_margin) {
+            if (m_i < m_margin) {
+                if (!m_strict && m_i >= m_min_margin) {
                     return;
                 }
                 this->prev(get_chunk);
@@ -2773,10 +2793,11 @@ public:
             }
 
             this->jump(m_start + m_size - m_gen_index);
-            size_t n = i - m_margin;
+            size_t n = m_i - m_margin;
             R extra = get_chunk({n});
             this->drawn(n);
             m_start += n;
+            m_i -= n;
             extra.front() += m_data[m_size - 1];
             std::partial_sum(extra.begin(), extra.end(), extra.begin());
             std::copy(m_data + n, m_data + m_size, m_data);
@@ -3066,6 +3087,14 @@ public:
     void set_start(ptrdiff_t index)
     {
         return m_cumsum.set_start(index);
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::index()
+     */
+    size_t index() const
+    {
+        return m_cumsum.index();
     }
 
     /**
@@ -5095,6 +5124,22 @@ public:
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_cumsum[i].set_start(index.flat(i));
         }
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::index()
+     */
+    template <class R>
+    R index() const
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_gen.shape());
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            ret.flat(i) = static_cast<value_type>(m_cumsum[i].index());
+        }
+
+        return ret;
     }
 
     /**
