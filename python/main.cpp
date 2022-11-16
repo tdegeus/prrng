@@ -53,6 +53,8 @@ void init_pcg32_arrayBase_cumsum(C& cls)
 
     cls.def_property("start", &Parent::template start<Index>, &Parent::template set_start<Index>);
 
+    cls.def_property_readonly("index", &Parent::template index<Index>);
+
     cls.def(
         "state",
         &Parent::template state<State, Index>,
@@ -107,7 +109,7 @@ PYBIND11_MODULE(_prrng, m)
     m.def(
         "lower_bound",
         py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<double>&>(
-            &prrng::lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<long>>),
+            &prrng::lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<size_t>>),
         "Find column for each row.",
         py::arg("matrix"),
         py::arg("value"));
@@ -117,9 +119,9 @@ PYBIND11_MODULE(_prrng, m)
         py::overload_cast<
             const xt::pyarray<double>&,
             const xt::pyarray<double>&,
-            const xt::pyarray<ptrdiff_t>&,
+            const xt::pyarray<size_t>&,
             size_t>(
-            &prrng::lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<ptrdiff_t>>),
+            &prrng::lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<size_t>>),
         "Find column for each row.",
         py::arg("matrix"),
         py::arg("value"),
@@ -138,8 +140,7 @@ PYBIND11_MODULE(_prrng, m)
 
     minplace.def(
         "lower_bound",
-        &prrng::inplace::
-            lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<ptrdiff_t>>,
+        &prrng::inplace::lower_bound<xt::pyarray<double>, xt::pyarray<double>, xt::pyarray<size_t>>,
         "Find column for each row.",
         py::arg("matrix"),
         py::arg("value"),
@@ -635,6 +636,9 @@ PYBIND11_MODULE(_prrng, m)
             &prrng::pcg32_cumsum<xt::pyarray<double>>::start,
             &prrng::pcg32_cumsum<xt::pyarray<double>>::set_start,
             "Index of the first entry of the chunk.")
+
+        .def_property_readonly(
+            "index", &prrng::pcg32_cumsum<xt::pyarray<double>>::index, "Index or target.")
 
         .def(
             "state",

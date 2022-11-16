@@ -87,7 +87,7 @@ class Test_cumsum(unittest.TestCase):
 
         for t in range(x.shape[1]):
 
-            ilocal = prrng.lower_bound(chunk, x[:, t], ilocal)
+            ilocal = prrng.lower_bound(chunk, x[:, t], ilocal).astype(np.int64)
             shift = ilocal  # some choice just for testing
 
             advance = np.where(shift < 0, shift + istart - istate, nchunk + istart - istate)
