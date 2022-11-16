@@ -519,8 +519,12 @@ inline std::vector<std::string> version_compiler()
     ret.push_back("platform=linux");
 #endif
 
-#if defined(_WIN32) || defined(WIN32)
+#ifdef _WIN32
     ret.push_back("platform=windows");
+#else
+#ifdef WIN32
+    ret.push_back("platform=windows");
+#endif
 #endif
 
 #ifdef __clang_version__
