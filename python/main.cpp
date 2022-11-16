@@ -82,6 +82,12 @@ void init_pcg32_arrayBase_cumsum(C& cls)
         py::arg("index"));
 
     cls.def("align", &Parent::template align<Value>, "Align chunk with target.", py::arg("target"));
+
+    cls.def(
+        "contains",
+        &Parent::template contains<Value>,
+        "Check is target is contained in the chunk.",
+        py::arg("target"));
 }
 
 PYBIND11_MODULE(_prrng, m)
@@ -676,6 +682,7 @@ PYBIND11_MODULE(_prrng, m)
         .def("prev", &prrng::pcg32_cumsum<xt::pyarray<double>>::prev, py::arg("margin") = 0)
         .def("next", &prrng::pcg32_cumsum<xt::pyarray<double>>::next, py::arg("margin") = 0)
         .def("align", &prrng::pcg32_cumsum<xt::pyarray<double>>::align, py::arg("target"))
+        .def("contains", &prrng::pcg32_cumsum<xt::pyarray<double>>::contains, py::arg("target"))
 
         .def("__repr__", [](const prrng::pcg32_cumsum<xt::pyarray<double>>&) {
             return "<prrng.pcg32_cumsum>";
