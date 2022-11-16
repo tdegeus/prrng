@@ -53,7 +53,10 @@ void init_pcg32_arrayBase_cumsum(C& cls)
 
     cls.def_property("start", &Parent::template start<Index>, &Parent::template set_start<Index>);
 
-    cls.def_property_readonly("index", &Parent::template index<Index>);
+    cls.def_property_readonly("index", (Index(Parent::*)() const) & Parent::template index<Index>);
+
+    cls.def_property_readonly(
+        "chunk_index", (Index(Parent::*)() const) & Parent::template chunk_index<Index>);
 
     cls.def(
         "state",
@@ -639,6 +642,11 @@ PYBIND11_MODULE(_prrng, m)
 
         .def_property_readonly(
             "index", &prrng::pcg32_cumsum<xt::pyarray<double>>::index, "Index or target.")
+
+        .def_property_readonly(
+            "chunk_index",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::chunk_index,
+            "Index or target in the current chunk.")
 
         .def(
             "state",

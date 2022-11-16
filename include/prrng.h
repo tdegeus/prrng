@@ -2587,11 +2587,21 @@ public:
     }
 
     /**
+     * @brief The position of the target in the global sequence
+     * at the last time prrng::pcg32_cumsum_external::align() was called.
+     * @return Index.
+     */
+    ptrdiff_t index() const
+    {
+        return m_start + static_cast<ptrdiff_t>(m_i);
+    }
+
+    /**
      * @brief The position of the target in the chunk,
      * at the last time prrng::pcg32_cumsum_external::align() was called.
      * @return Index (relative to chunk).
      */
-    size_t index() const
+    size_t chunk_index() const
     {
         return m_i;
     }
@@ -3095,6 +3105,14 @@ public:
     size_t index() const
     {
         return m_cumsum.index();
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::chunk_index()
+     */
+    size_t chunk_index() const
+    {
+        return m_cumsum.chunk_index();
     }
 
     /**
@@ -5140,6 +5158,50 @@ public:
         }
 
         return ret;
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::index()
+     * @param ret Array of indices.
+     */
+    template <class R>
+    void index(R& ret) const
+    {
+        using value_type = typename R::value_type;
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            ret.flat(i) = static_cast<value_type>(m_cumsum[i].index());
+        }
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::chunk_index()
+     */
+    template <class R>
+    R chunk_index() const
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_gen.shape());
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            ret.flat(i) = static_cast<value_type>(m_cumsum[i].chunk_index());
+        }
+
+        return ret;
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum_external::chunk_index()
+     * @param ret Array of indices.
+     */
+    template <class R>
+    void chunk_index(R& ret) const
+    {
+        using value_type = typename R::value_type;
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            ret.flat(i) = static_cast<value_type>(m_cumsum[i].chunk_index());
+        }
     }
 
     /**
