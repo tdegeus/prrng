@@ -37,6 +37,9 @@ template <class C, class Parent, class Data, class State, class Value, class Ind
 void init_pcg32_arrayBase_cumsum(C& cls)
 {
     cls.def(py::self += Data());
+    cls.def(py::self -= Data());
+    cls.def(py::self += double());
+    cls.def(py::self -= double());
 
     cls.def_property_readonly("generators", &Parent::generators);
 
@@ -536,7 +539,10 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("uses_generator") = true,
             "Set draw function and draw the first chunk.")
 
+        .def(py::self += xt::pyarray<double>())
+        .def(py::self -= xt::pyarray<double>())
         .def(py::self += double())
+        .def(py::self -= double())
 
         .def_property_readonly(
             "shape", &prrng::pcg32_cumsum<xt::pyarray<double>>::shape, "Shape of the chunk.")
