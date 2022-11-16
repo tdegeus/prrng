@@ -556,6 +556,234 @@ inline std::vector<std::string> version_compiler()
     return ret;
 }
 
+namespace iterator {
+
+/**
+ * Return index of the first element in the range [first, last) such that `element < value` is
+ * `false` (i.e. greater or equal to), or last if no such element is found.
+ *
+ * Compared to the default function, this function allows for a guess of the index and a proximity
+ * search around. This could be efficient for finding items in large arrays.
+ *
+ * @param first Iterator defining the beginning of the range to examine (e.g. `a.begin()`).
+ * @param last Iterator defining the end of the range to examine (e.g. `a.end()`)
+ * @param value Value to find.
+ * @param guess Guess of the index where to find the value.
+ * @param proximity Size of the proximity search around `guess` (use `0` to disable proximity
+ * search).
+ * @return The index of `value` (i.e. `a[index] < value <= a[index + 1]`).
+ */
+template <class It, class T, class R = size_t>
+inline R
+lower_bound(const It first, const It last, const T& value, R guess = 0, size_t proximity = 10)
+{
+    if (proximity == 0) {
+        if (value <= *(first)) {
+            return 0;
+        }
+        return std::lower_bound(first, last, value) - first - 1;
+    }
+
+    if (*(first + guess) < value && value <= *(first + guess + 1)) {
+        return guess;
+    }
+
+    size_t l = guess > proximity ? guess - proximity : 0;
+    size_t r = std::min(guess + proximity, static_cast<size_t>(last - first - 1));
+
+    if (*(first + l) < value && *(first + r) >= value) {
+        return std::lower_bound(first + l, first + r, value) - first - 1;
+    }
+    else if (value <= *(first)) {
+        return 0;
+    }
+    else {
+        return std::lower_bound(first, last, value) - first - 1;
+    }
+}
+
+} // namespace iterator
+
+namespace inplace {
+
+/**
+ * Similar to `lower_bound` but on the last axis of an nd-array (e.g. per row of a rank 2 matrix).
+ *
+ * @param matrix The matrix defining a range per row.
+ * @param value The value to find (per row).
+ * @param index Initial guess on `index` (updated).
+ * @param proximity Size of the proximity search around `guess` (use `0` to disable proximity
+ * search).
+ */
+template <class T, class V, class R>
+inline void lower_bound(const T& matrix, const V& value, R& index, size_t proximity = 10)
+{
+    PRRNG_ASSERT(value.dimension() == matrix.dimension() - 1);
+    PRRNG_ASSERT(value.dimension() == index.dimension());
+
+    auto nd = value.dimension();
+    auto stride = matrix.shape(nd);
+    auto n = value.size();
+
+#ifdef PRRNG_ENABLE_ASSERT
+    for (decltype(nd) i = 0; i < nd; ++i) {
+        PRRNG_ASSERT(matrix.shape(i) == value.shape(i));
+        PRRNG_ASSERT(matrix.shape(i) == index.shape(i));
+    }
+#endif
+
+    for (decltype(n) i = 0; i < n; ++i) {
+        index.flat(i) = iterator::lower_bound(
+            &matrix.flat(i * stride),
+            &matrix.flat(i * stride) + stride,
+            value.flat(i),
+            index.flat(i),
+            proximity);
+    }
+}
+
+/**
+ * Update the chunk of a cumsum computed and stored in chunks.
+ *
+ * @param cumsum The current chunk of the cumsum (updated).
+ * @param delta The 'diff's of the next chunk in the cumsum.
+ * @param shift The shift per row.
+ */
+template <class V, class I>
+inline void cumsum_chunk(V& cumsum, const V& delta, const I& shift)
+{
+    PRRNG_ASSERT(cumsum.dimension() >= 1);
+    PRRNG_ASSERT(cumsum.dimension() == delta.dimension());
+
+    if (delta.size() == 0) {
+        return;
+    }
+
+    size_t dim = cumsum.dimension();
+    size_t n = cumsum.shape(dim - 1);
+    size_t ndelta = delta.shape(dim - 1);
+
+    for (size_t i = 0; i < shift.size(); ++i) {
+
+        if (shift.flat(i) == 0) {
+            continue;
+        }
+
+        auto* d = &delta.flat(i * ndelta);
+        auto* c = &cumsum.flat(i * n);
+
+        if (shift.flat(i) > 0) {
+            PRRNG_ASSERT(shift.flat(i) <= n);
+            PRRNG_ASSERT(ndelta >= shift.flat(i));
+            size_t nadd = static_cast<size_t>(shift.flat(i));
+            size_t nkeep = n - nadd;
+            auto offset = *(c + n - 1);
+            std::copy(c + n - nkeep, c + n, c);
+            std::copy(d, d + nadd, c + nkeep);
+            *(c + nkeep) += offset;
+            std::partial_sum(c + nkeep, c + n, c + nkeep);
+        }
+        else {
+            PRRNG_ASSERT(-shift.flat(i) < n);
+            PRRNG_ASSERT(ndelta > -shift.flat(i));
+            size_t nadd = static_cast<size_t>(-shift.flat(i));
+            size_t nkeep = n - nadd;
+            auto offset = *(c);
+            std::copy(c, c + nkeep, c + nadd);
+            std::copy(d, d + nadd + 1, c);
+            std::partial_sum(c, c + nadd + 1, c);
+            offset -= *(c + nadd);
+            std::transform(c, c + nadd + 1, c, [&](auto& v) { return v + offset; });
+        }
+    }
+}
+
+} // namespace inplace
+
+/**
+ * Iterating on the last axis of an nd-array (e.g. per row of a rank 2 matrix):
+ * Return index of the first element in the range [first, last) such that `element < value` is
+ * `false` (i.e. greater or equal to), or last if no such element is found.
+ *
+ * This function allows for a guess of the index and a proximity search around.
+ * This could be efficient for finding items in large arrays.
+ *
+ * @param matrix The matrix defining a range per row.
+ * @param value The value to find (per row).
+ * @param index Initial guess on `index`.
+ * @param proximity Size of the proximity search around `guess` (use `0` to disable proximity
+ * search).
+ * @return Same shape as `index`.
+ */
+template <class T, class V, class R>
+inline R lower_bound(const T& matrix, const V& value, const R& index, size_t proximity = 10)
+{
+    R ret = index;
+    inplace::lower_bound(matrix, value, ret, proximity);
+    return ret;
+}
+
+/**
+ * Iterating on the last axis of an nd-array (e.g. per row of a rank 2 matrix):
+ * Return index of the first element in the range [first, last) such that `element < value` is
+ * `false` (i.e. greater or equal to), or last if no such element is found.
+ *
+ * @param matrix The matrix defining a range per row.
+ * @param value The value to find (per row).
+ * @return Same shape as `value`.
+ */
+template <class T, class V, class R>
+inline R lower_bound(const T& matrix, const V& value)
+{
+    R ret = xt::zeros<typename R::value_type>(value.shape());
+    inplace::lower_bound(matrix, value, ret, 0);
+    return ret;
+}
+
+/**
+ * @brief Update the chunk of a cumsum computed and stored in chunks.
+ *
+ * \section example Example
+ *
+ * Consider a full array:
+ *
+ *     da = np.random.random(N)
+ *     a = np.cumsum(a)
+ *
+ * With chunk settings:
+ *
+ *     n = ...  # size of each new chunk
+ *     nbuffer = ... # number of items to buffer
+ *
+ * The the first chunk:
+ *
+ *     chunk = np.copy(a[:n + nbuffer])
+ *     nchunk = n + nbuffer
+ *     istart = np.array(0)
+ *
+ * Then, moving right:
+ *
+ *     prrng.cumsum_chunk_inplace(chunk, da[istart + nchunk : istart + nchunk + n], n)
+ *     istart += n
+ *
+ * Or, moving left:
+ *
+ *     prrng.cumsum_chunk_inplace(chunk, da[istart - n : istart + 1], -n)
+ *     istart -= n
+ *
+ * @param cumsum The current chunk of the cumsum.
+ * @param delta The 'diff's of the next chunk in the cumsum.
+ * @param shift The shift per row.
+ * @return Same shape as `cumsum`.
+ */
+template <class V, class I>
+inline V cumsum_chunk(const V& cumsum, const V& delta, const I& shift)
+{
+    V ret = cumsum;
+    inplace::cumsum_chunk(ret, delta, shift);
+    return ret;
+}
+
 /**
  * Normal distribution.
  *
