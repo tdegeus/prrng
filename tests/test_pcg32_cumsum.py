@@ -50,7 +50,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = n * 15 + 2
         target = 0.5 * (xref[i] + xref[i + 1])
         chunk.align(target)
-        self.assertEqual(chunk.start + chunk.index, i)
+        self.assertEqual(chunk.index, i)
         self.assertAlmostEqual(chunk.data[0], xref[i])
         self.assertAlmostEqual(chunk.data[1], xref[i + 1])
 
@@ -91,7 +91,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = n * 15 + 2
         target = 0.5 * (xref[i] + xref[i + 1])
         chunk.align(target)
-        self.assertEqual(chunk.start + chunk.index, i)
+        self.assertEqual(chunk.index, i)
         self.assertAlmostEqual(chunk.data[0], xref[i])
         self.assertAlmostEqual(chunk.data[1], xref[i + 1])
 
@@ -134,7 +134,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = n * 15 + 2
         target = 0.5 * (xref[i] + xref[i + 1])
         chunk.align(target)
-        self.assertEqual(chunk.start + chunk.index, i)
+        self.assertEqual(chunk.index, i)
         self.assertAlmostEqual(chunk.data[0], xref[i])
         self.assertAlmostEqual(chunk.data[1], xref[i + 1])
 
@@ -212,7 +212,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         for i in [500, 2012, 101]:
             target = 0.5 * (xref[..., i] + xref[..., i + 1])
             chunk.align(target)
-            self.assertTrue(np.all(chunk.start + chunk.index == i))
+            self.assertTrue(np.all(chunk.index == i))
             self.assertTrue(np.allclose(xref[np.arange(N), chunk.start], chunk.data[..., 0]))
             self.assertTrue(np.all(chunk.data[..., margin] <= target))
             self.assertTrue(np.all(chunk.data[..., margin + 1] > target))
@@ -225,7 +225,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = 3000
         target = 0.5 * (xref[..., i] + xref[..., i + 1])
         chunk.align(target)
-        self.assertTrue(np.all(chunk.start + chunk.index == i))
+        self.assertTrue(np.all(chunk.index == i))
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(cp, chunk.data))
@@ -256,7 +256,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         for i in [500, 2012, 101]:
             target = 0.5 * (xref[..., i] + xref[..., i + 1])
             chunk.align(target)
-            self.assertTrue(np.all(chunk.start + chunk.index == i))
+            self.assertTrue(np.all(chunk.index == i))
             self.assertTrue(np.allclose(xref[np.arange(N), chunk.start], chunk.data[..., 0]))
             self.assertTrue(np.all(chunk.data[..., margin] <= target))
             self.assertTrue(np.all(chunk.data[..., margin + 1] > target))
@@ -269,7 +269,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = 3000
         target = 0.5 * (xref[..., i] + xref[..., i + 1])
         chunk.align(target)
-        self.assertTrue(np.all(chunk.start + chunk.index == i))
+        self.assertTrue(np.all(chunk.index == i))
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(cp, chunk.data))
@@ -301,7 +301,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         for i in [500, 2012, 101]:
             target = 0.5 * (xref[..., i] + xref[..., i + 1])
             chunk.align(target)
-            self.assertTrue(np.all(chunk.start + chunk.index == i))
+            self.assertTrue(np.all(chunk.index == i))
             self.assertTrue(np.allclose(xref[np.arange(N), chunk.start], chunk.data[..., 0]))
             self.assertTrue(np.all(chunk.data[..., margin] <= target))
             self.assertTrue(np.all(chunk.data[..., margin + 1] > target))
@@ -314,7 +314,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = 3000
         target = 0.5 * (xref[..., i] + xref[..., i + 1])
         chunk.align(target)
-        self.assertTrue(np.all(chunk.start + chunk.index == i))
+        self.assertTrue(np.all(chunk.index == i))
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(cp, chunk.data))
