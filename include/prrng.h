@@ -37,6 +37,7 @@
 
 #include <array>
 #include <xtensor/xarray.hpp>
+#include <xtensor/xnoalias.hpp>
 #include <xtensor/xtensor.hpp>
 
 #ifndef PRRNG_USE_BOOST
@@ -2636,8 +2637,7 @@ public:
     template <class T>
     pcg32_cumsum& operator+=(const T& value)
     {
-        m_data += value;
-        this->update_pointers();
+        xt::noalias(m_data) += value;
         return *this;
     }
 
@@ -2648,8 +2648,7 @@ public:
     template <class T>
     pcg32_cumsum& operator-=(const T& value)
     {
-        m_data -= value;
-        this->update_pointers();
+        xt::noalias(m_data) -= value;
         return *this;
     }
 
@@ -4587,8 +4586,7 @@ public:
     template <class T>
     pcg32_arrayBase_cumsum& operator+=(const T& values)
     {
-        m_data += values;
-        this->update_pointers();
+        xt::noalias(m_data) += values;
         return *this;
     }
 
@@ -4599,8 +4597,7 @@ public:
     template <class T>
     pcg32_arrayBase_cumsum& operator-=(const T& values)
     {
-        m_data -= values;
-        this->update_pointers();
+        xt::noalias(m_data) -= values;
         return *this;
     }
 
