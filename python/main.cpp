@@ -587,6 +587,18 @@ PYBIND11_MODULE(_prrng, m)
 
         .def("__repr__", [](const prrng::pcg32&) { return "<prrng.pcg32>"; });
 
+    py::class_<prrng::pcg32_index, prrng::pcg32>(m, "pcg32_index")
+
+        .def(
+            py::init<uint64_t, uint64_t, bool>(),
+            "Random number generator. "
+            "See :cpp:class:`prrng::pcg32`.",
+            py::arg("initstate") = PRRNG_PCG32_INITSTATE,
+            py::arg("initseq") = PRRNG_PCG32_INITSEQ,
+            py::arg("delta") = false)
+
+        .def("__repr__", [](const prrng::pcg32_index&) { return "<prrng.pcg32_index>"; });
+
     py::class_<prrng::pcg32_cumsum<xt::pyarray<double>>>(m, "pcg32_cumsum")
 
         .def(
@@ -640,12 +652,6 @@ PYBIND11_MODULE(_prrng, m)
             "Current chunk.")
 
         .def_property(
-            "generator_index",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::generator_index,
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_generator_index,
-            "Current index that the generator is at.")
-
-        .def_property(
             "start",
             &prrng::pcg32_cumsum<xt::pyarray<double>>::start,
             &prrng::pcg32_cumsum<xt::pyarray<double>>::set_start,
@@ -664,13 +670,6 @@ PYBIND11_MODULE(_prrng, m)
             &prrng::pcg32_cumsum<xt::pyarray<double>>::state,
             py::arg("index"),
             "State of the generator at any index.")
-
-        .def(
-            "set_state",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::set_state,
-            py::arg("state"),
-            py::arg("index"),
-            "Update the state of the generator.")
 
         .def(
             "restore",
