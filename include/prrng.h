@@ -574,8 +574,7 @@ namespace iterator {
  * @return The index of `value` (i.e. `a[index] < value <= a[index + 1]`).
  */
 template <class It, class T, class R = size_t>
-inline R
-lower_bound(const It first, const It last, const T& value, R guess = 0, size_t proximity = 10)
+inline R lower_bound(const It first, const It last, const T& value, R guess = 0, R proximity = 10)
 {
     if (proximity == 0) {
         if (value <= *(first)) {
@@ -588,8 +587,8 @@ lower_bound(const It first, const It last, const T& value, R guess = 0, size_t p
         return guess;
     }
 
-    size_t l = guess > proximity ? guess - proximity : 0;
-    size_t r = std::min(guess + proximity, static_cast<size_t>(last - first - 1));
+    R l = guess > proximity ? guess - proximity : 0;
+    R r = std::min(guess + proximity, static_cast<R>(last - first - 1));
 
     if (*(first + l) < value && *(first + r) >= value) {
         return std::lower_bound(first + l, first + r, value) - first - 1;
@@ -796,19 +795,18 @@ template <class G, class D>
 void prev(
     G& generator,
     const D& get_chunk,
-    size_t margin,
+    ptrdiff_t margin,
     double* data,
-    size_t size,
+    ptrdiff_t size,
     ptrdiff_t* start)
 {
     using R = decltype(get_chunk(size_t{}));
 
-    ptrdiff_t n = static_cast<ptrdiff_t>(size);
-    generator.jump_to(*start - n + static_cast<ptrdiff_t>(margin));
+    generator.jump_to(*start - size + margin);
 
     double front = data[0];
-    size_t m = size - margin + 1;
-    R extra = get_chunk({m});
+    ptrdiff_t m = size - margin + 1;
+    R extra = get_chunk(static_cast<size_t>(m));
     generator.drawn(m);
     std::partial_sum(extra.begin(), extra.end(), extra.begin());
     extra -= extra.back() - front;
@@ -816,7 +814,7 @@ void prev(
     std::copy(data, data + margin, data + size - margin);
     std::copy(extra.begin(), extra.end() - 1, data);
 
-    *start -= static_cast<ptrdiff_t>(size - margin);
+    *start -= size - margin;
 }
 
 /**
@@ -829,19 +827,19 @@ template <class G, class D>
 void next(
     G& generator,
     const D& get_chunk,
-    size_t margin,
+    ptrdiff_t margin,
     double* data,
-    size_t size,
+    ptrdiff_t size,
     ptrdiff_t* start)
 {
     using R = decltype(get_chunk(size_t{}));
     PRRNG_ASSERT(margin < size);
 
-    generator.jump_to(*start + static_cast<ptrdiff_t>(size));
+    generator.jump_to(*start + size);
 
     double back = data[size - 1];
-    size_t n = size - margin;
-    R extra = get_chunk({n});
+    ptrdiff_t n = size - margin;
+    R extra = get_chunk(static_cast<size_t>(n));
     generator.drawn(n);
     extra.front() += back;
     std::partial_sum(extra.begin(), extra.end(), extra.begin());
@@ -864,9 +862,9 @@ void align(
     const S& get_sum,
     const P& param,
     double* data,
-    size_t size,
+    ptrdiff_t size,
     ptrdiff_t* start,
-    size_t* i,
+    ptrdiff_t* i,
     double target,
     bool recursive = false)
 {
@@ -875,18 +873,18 @@ void align(
     if (target > data[size - 1]) {
 
         double delta = data[size - 1] - data[0];
-        size_t n = size;
-        generator.jump_to(*start + static_cast<ptrdiff_t>(size));
+        ptrdiff_t n = size;
+        generator.jump_to(*start + size);
         double back = data[size - 1];
 
         double j = (target - data[size - 1]) / delta - (double)(param.margin) / (double)(n);
 
         if (j > 1) {
-            size_t m = static_cast<size_t>((j - 1) * static_cast<double>(n));
-            back += get_sum(m);
+            ptrdiff_t m = static_cast<ptrdiff_t>((j - 1) * static_cast<double>(n));
+            back += get_sum(static_cast<size_t>(m));
             generator.drawn(m);
             *start += m + size;
-            R extra = get_chunk({n});
+            R extra = get_chunk(static_cast<size_t>(n));
             generator.drawn(n);
             extra.front() += back;
             std::partial_sum(extra.begin(), extra.end(), data);
@@ -921,9 +919,9 @@ void align(
             return align(generator, get_chunk, get_sum, param, data, size, start, i, target, true);
         }
 
-        generator.jump_to(*start + static_cast<ptrdiff_t>(size));
-        size_t n = *i - param.margin;
-        R extra = get_chunk({n});
+        generator.jump_to(*start + size);
+        ptrdiff_t n = *i - param.margin;
+        R extra = get_chunk(static_cast<size_t>(n));
         generator.drawn(n);
         *start += n;
         *i -= n;
@@ -2651,9 +2649,9 @@ alignment(size_t buffer = 0, size_t margin = 0, size_t min_margin = 0, bool stri
 }
 
 struct myalignment {
-    size_t buffer = 0;
-    size_t margin = 0;
-    size_t min_margin = 0;
+    ptrdiff_t buffer = 0;
+    ptrdiff_t margin = 0;
+    ptrdiff_t min_margin = 0;
     bool strict = false;
 };
 
@@ -2975,7 +2973,7 @@ public:
 
         double back = m_data[m_size - 1];
         size_t n = m_size - margin;
-        R extra = get_chunk({n});
+        R extra = get_chunk(n);
         this->drawn(n);
         extra.front() += back;
         std::partial_sum(extra.begin(), extra.end(), extra.begin());
@@ -3010,7 +3008,7 @@ public:
                 back += get_cumsum(m);
                 this->drawn(m);
                 m_start += m + m_size;
-                R extra = get_chunk({n});
+                R extra = get_chunk(n);
                 this->drawn(n);
                 extra.front() += back;
                 std::partial_sum(extra.begin(), extra.end(), m_data);
@@ -3051,7 +3049,7 @@ public:
 
             this->jump(m_start + m_size - m_gen_index);
             size_t n = m_i - m_margin;
-            R extra = get_chunk({n});
+            R extra = get_chunk(n);
             this->drawn(n);
             m_start += n;
             m_i -= n;
@@ -3082,7 +3080,7 @@ private:
     distribution m_dist; ///< Distribution name, see prrng::distribution().
     std::array<double, 3> m_param; ///< Distribution parameters.
     ptrdiff_t m_start; ///< Start index of the chunk.
-    size_t m_i; ///< Last know index of `target` in align.
+    ptrdiff_t m_i; ///< Last know index of `target` in align.
 
     /**
      * @brief Set draw function.
@@ -3097,7 +3095,7 @@ private:
                 return m_gen.random<D>({n}) * m_param[0] + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
-                return m_gen.cumsum_random({n}) * m_param[0] + static_cast<double>(n) * m_param[1];
+                return m_gen.cumsum_random(n) * m_param[0] + static_cast<double>(n) * m_param[1];
             };
             return;
         case exponential:
@@ -3105,14 +3103,14 @@ private:
                 return m_gen.exponential<D>({n}, m_param[0]) + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
-                return m_gen.cumsum_exponential({n}, m_param[0]) +
+                return m_gen.cumsum_exponential(n, m_param[0]) +
                        static_cast<double>(n) * m_param[1];
             };
             return;
         case delta:
             m_draw = [this](size_t n) -> D { return m_gen.delta<D>({n}, m_param[0]) + m_param[1]; };
             m_sum = [this](size_t n) -> double {
-                return m_gen.cumsum_delta({n}, m_param[0]) + static_cast<double>(n) * m_param[1];
+                return m_gen.cumsum_delta(n, m_param[0]) + static_cast<double>(n) * m_param[1];
             };
             return;
         case weibull:
@@ -3120,7 +3118,7 @@ private:
                 return m_gen.weibull<D>({n}, m_param[0], m_param[1]) + m_param[2];
             };
             m_sum = [this](size_t n) -> double {
-                return m_gen.cumsum_weibull({n}, m_param[0], m_param[1]) +
+                return m_gen.cumsum_weibull(n, m_param[0], m_param[1]) +
                        static_cast<double>(n) * m_param[2];
             };
             return;
@@ -3129,7 +3127,7 @@ private:
                 return m_gen.gamma<D>({n}, m_param[0], m_param[1]) + m_param[2];
             };
             m_sum = [this](size_t n) -> double {
-                return m_gen.cumsum_gamma({n}, m_param[0], m_param[1]) +
+                return m_gen.cumsum_gamma(n, m_param[0], m_param[1]) +
                        static_cast<double>(n) * m_param[2];
             };
             return;
@@ -3138,7 +3136,7 @@ private:
                 return m_gen.normal<D>({n}, m_param[0], m_param[1]) + m_param[2];
             };
             m_sum = [this](size_t n) -> double {
-                return m_gen.cumsum_normal({n}, m_param[0], m_param[1]) +
+                return m_gen.cumsum_normal(n, m_param[0], m_param[1]) +
                        static_cast<double>(n) * m_param[2];
             };
             return;
@@ -3203,7 +3201,7 @@ public:
         m_data = xt::empty<typename D::value_type>(shape);
         m_gen = pcg32_index(initstate, initseq, distribution == distribution::delta);
         m_start = m_gen.index();
-        m_i = m_data.size();
+        m_i = static_cast<ptrdiff_t>(m_data.size());
         m_dist = distribution;
         std::copy(parameters.begin(), parameters.end(), m_param.begin());
         this->auto_functions();
@@ -3364,13 +3362,13 @@ public:
      */
     ptrdiff_t index() const
     {
-        return m_start + static_cast<ptrdiff_t>(m_i);
+        return m_start + m_i;
     }
 
     /**
      * @copydoc prrng::pcg32_cumsum_external::chunk_index()
      */
-    size_t chunk_index() const
+    ptrdiff_t chunk_index() const
     {
         return m_i;
     }
@@ -3413,6 +3411,7 @@ public:
     void prev(size_t margin = 0)
     {
         PRRNG_ASSERT(m_extendible);
+        m_i = static_cast<ptrdiff_t>(m_data.size());
         detail::prev(m_gen, m_draw, margin, m_data.data(), m_data.size(), &m_start);
     }
 
@@ -3423,6 +3422,7 @@ public:
     void next(size_t margin = 0)
     {
         PRRNG_ASSERT(m_extendible);
+        m_i = static_cast<ptrdiff_t>(m_data.size());
         detail::next(m_gen, m_draw, margin, m_data.data(), m_data.size(), &m_start);
     }
 
