@@ -76,7 +76,8 @@ void init_GeneratorBase_array(C& cls)
     cls.def(
         "decide_masked",
         py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<bool>&>(
-            &Parent::template decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
+            &Parent::
+                template decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
         "ndarray of decision. "
         "See :cpp:func:`prrng::GeneratorBase_array::decide_masked`.",
         py::arg("p"),
@@ -85,7 +86,8 @@ void init_GeneratorBase_array(C& cls)
     cls.def(
         "decide_masked",
         py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<bool>&, xt::pyarray<bool>&>(
-            &Parent::template decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
+            &Parent::
+                template decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
         "ndarray of decision. "
         "See :cpp:func:`prrng::GeneratorBase_array::decide_masked`.",
         py::arg("p"),
@@ -955,17 +957,17 @@ PYBIND11_MODULE(_prrng, m)
         init_pcg32_arrayBase<Class, Parent>(cls);
 
         cls.def(
-                py::init<const xt::pyarray<uint64_t>&>(),
-                "Random number generator. "
-                "See :cpp:class:`prrng::pcg32_array`.",
-                py::arg("initstate"));
+            py::init<const xt::pyarray<uint64_t>&>(),
+            "Random number generator. "
+            "See :cpp:class:`prrng::pcg32_array`.",
+            py::arg("initstate"));
 
         cls.def(
-                py::init<const xt::pyarray<uint64_t>&, const xt::pyarray<uint64_t>&>(),
-                "Random number generator. "
-                "See :cpp:class:`prrng::pcg32_array`.",
-                py::arg("initstate"),
-                py::arg("initseq"));
+            py::init<const xt::pyarray<uint64_t>&, const xt::pyarray<uint64_t>&>(),
+            "Random number generator. "
+            "See :cpp:class:`prrng::pcg32_array`.",
+            py::arg("initstate"),
+            py::arg("initseq"));
 
         cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_array>"; });
     }
@@ -992,7 +994,8 @@ PYBIND11_MODULE(_prrng, m)
 
     // py::class_<
     //     prrng::pcg32_index_tensor<1>,
-    //     prrng::pcg32_arrayBase<prrng::pcg32_index, std::array<size_t, 1>>>(m, "pcg32_index_tensor1")
+    //     prrng::pcg32_arrayBase<prrng::pcg32_index, std::array<size_t, 1>>>(m,
+    //     "pcg32_index_tensor1")
 
     //     .def(
     //         py::init<const xt::pytensor<uint64_t, 1>&, const xt::pytensor<uint64_t, 1>&>(),

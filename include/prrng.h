@@ -5212,7 +5212,8 @@ protected:
             m_sum.reserve(m_gen.size());
         }
 
-        m_n = static_cast<size_t>(std::accumulate(shape.cbegin(), shape.cend(), 1, std::multiplies<shape_type>{}));
+        m_n = static_cast<size_t>(
+            std::accumulate(shape.cbegin(), shape.cend(), 1, std::multiplies<shape_type>{}));
 
         m_start = xt::zeros<typename Index::value_type>(m_gen.shape());
         m_i = m_n * xt::ones<typename Index::value_type>(m_gen.shape());
