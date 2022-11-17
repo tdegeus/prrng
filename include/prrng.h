@@ -3068,12 +3068,12 @@ public:
  *
  * @tparam Storage of the data.
  */
-template <class D>
+template <class Data>
 class pcg32_cumsum {
 private:
-    D m_data; ///< The chunk.
+    Data m_data; ///< The chunk.
     pcg32_index m_gen; ///< The generator.
-    std::function<D(size_t)> m_draw; ///< Function to draw the random numbers.
+    std::function<Data(size_t)> m_draw; ///< Function to draw the random numbers.
     std::function<double(size_t)> m_sum; ///< Function to get the cumsum of random numbers.
     bool m_extendible; ///< Signal if the drawing functions are specified.
     myalignment m_align; ///< Alignment settings, see prrng::myalignment().
@@ -3091,16 +3091,16 @@ private:
 
         switch (m_dist) {
         case random:
-            m_draw = [this](size_t n) -> D {
-                return m_gen.random<D>({n}) * m_param[0] + m_param[1];
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.random<Data>({n}) * m_param[0] + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_random(n) * m_param[0] + static_cast<double>(n) * m_param[1];
             };
             return;
         case exponential:
-            m_draw = [this](size_t n) -> D {
-                return m_gen.exponential<D>({n}, m_param[0]) + m_param[1];
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.exponential<Data>({n}, m_param[0]) + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_exponential(n, m_param[0]) +
@@ -3108,14 +3108,16 @@ private:
             };
             return;
         case delta:
-            m_draw = [this](size_t n) -> D { return m_gen.delta<D>({n}, m_param[0]) + m_param[1]; };
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.delta<Data>({n}, m_param[0]) + m_param[1];
+            };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_delta(n, m_param[0]) + static_cast<double>(n) * m_param[1];
             };
             return;
         case weibull:
-            m_draw = [this](size_t n) -> D {
-                return m_gen.weibull<D>({n}, m_param[0], m_param[1]) + m_param[2];
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.weibull<Data>({n}, m_param[0], m_param[1]) + m_param[2];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_weibull(n, m_param[0], m_param[1]) +
@@ -3123,8 +3125,8 @@ private:
             };
             return;
         case gamma:
-            m_draw = [this](size_t n) -> D {
-                return m_gen.gamma<D>({n}, m_param[0], m_param[1]) + m_param[2];
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.gamma<Data>({n}, m_param[0], m_param[1]) + m_param[2];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_gamma(n, m_param[0], m_param[1]) +
@@ -3132,8 +3134,8 @@ private:
             };
             return;
         case normal:
-            m_draw = [this](size_t n) -> D {
-                return m_gen.normal<D>({n}, m_param[0], m_param[1]) + m_param[2];
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.normal<Data>({n}, m_param[0], m_param[1]) + m_param[2];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_normal(n, m_param[0], m_param[1]) +
@@ -3198,7 +3200,7 @@ public:
         const std::vector<double>& parameters = std::vector<double>{},
         const std::vector<size_t>& align = alignment())
     {
-        m_data = xt::empty<typename D::value_type>(shape);
+        m_data = xt::empty<typename Data::value_type>(shape);
         m_gen = pcg32_index(initstate, initseq, distribution == distribution::delta);
         m_start = m_gen.index();
         m_i = static_cast<ptrdiff_t>(m_data.size());
@@ -3231,7 +3233,7 @@ public:
      * @param uses_generator Set `true` is the random generator is used by the functions.
      */
     void set_functions(
-        std::function<D(size_t)> get_chunk,
+        std::function<Data(size_t)> get_chunk,
         std::function<double(size_t)> get_cumsum,
         bool uses_generator = true)
     {
@@ -3324,7 +3326,7 @@ public:
      * @brief Chunk.
      * @return Pointer to the chunk.
      */
-    const D& data() const
+    const Data& data() const
     {
         return m_data;
     }
@@ -3336,7 +3338,7 @@ public:
      *
      * @param data The chunk.
      */
-    void set_data(const D& data)
+    void set_data(const Data& data)
     {
         m_data = data;
     }
