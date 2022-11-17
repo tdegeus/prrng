@@ -4808,97 +4808,19 @@ protected:
             m_gen[i].set_delta(distribution == distribution::delta);
         }
 
-        if (distribution != distribution::custom) {
-            m_draw.reserve(m_gen.size());
-            m_sum.reserve(m_gen.size());
-        }
-
         m_n = static_cast<size_t>(
             std::accumulate(shape.cbegin(), shape.cend(), 1, std::multiplies<shape_type>{}));
 
         m_start = xt::zeros<typename Index::value_type>(m_gen.shape());
         m_i = m_n * xt::ones<typename Index::value_type>(m_gen.shape());
 
-        using R = xt::xtensor<double, 1>;
         auto par = detail::default_parameters_cumsum(distribution, parameters);
         std::copy(par.begin(), par.end(), m_param.begin());
+        m_dist = distribution;
 
-        for (size_t i = 0; i < m_gen.size(); ++i) {
-            switch (distribution) {
-            case random:
-                for (size_t i = 0; i < m_gen.size(); ++i) {
-                    m_draw.push_back([this, i](size_t n) -> R {
-                        return m_gen[i].template random<R>({n}) * m_param[0] + m_param[1];
-                    });
-                    m_sum.push_back([this, i](size_t n) -> double {
-                        return m_gen[i].cumsum_random(n) * m_param[0] +
-                               static_cast<double>(n) * m_param[1];
-                    });
-                }
-                break;
-            case exponential:
-                for (size_t i = 0; i < m_gen.size(); ++i) {
-                    m_draw.push_back([this, i](size_t n) -> R {
-                        return m_gen[i].template exponential<R>({n}, m_param[0]) + m_param[1];
-                    });
-                    m_sum.push_back([this, i](size_t n) -> double {
-                        return m_gen[i].cumsum_exponential(n, m_param[0]) +
-                               static_cast<double>(n) * m_param[1];
-                    });
-                }
-                break;
-            case delta:
-                for (size_t i = 0; i < m_gen.size(); ++i) {
-                    m_draw.push_back([this, i](size_t n) -> R {
-                        return m_gen[i].template delta<R>({n}, m_param[0]) + m_param[1];
-                    });
-                    m_sum.push_back([this, i](size_t n) -> double {
-                        return m_gen[i].cumsum_delta(n, m_param[0]) +
-                               static_cast<double>(n) * m_param[1];
-                    });
-                }
-                break;
-            case weibull:
-                for (size_t i = 0; i < m_gen.size(); ++i) {
-                    m_draw.push_back([this, i](size_t n) -> R {
-                        return m_gen[i].template weibull<R>({n}, m_param[0], m_param[1]) +
-                               m_param[2];
-                    });
-                    m_sum.push_back([this, i](size_t n) -> double {
-                        return m_gen[i].cumsum_weibull(n, m_param[0], m_param[1]) +
-                               static_cast<double>(n) * m_param[2];
-                    });
-                }
-                break;
-            case gamma:
-                for (size_t i = 0; i < m_gen.size(); ++i) {
-                    m_draw.push_back([this, i](size_t n) -> R {
-                        return m_gen[i].template gamma<R>({n}, m_param[0], m_param[1]) + m_param[2];
-                    });
-                    m_sum.push_back([this, i](size_t n) -> double {
-                        return m_gen[i].cumsum_gamma(n, m_param[0], m_param[1]) +
-                               static_cast<double>(n) * m_param[2];
-                    });
-                }
-                break;
-            case normal:
-                for (size_t i = 0; i < m_gen.size(); ++i) {
-                    m_draw.push_back([this, i](size_t n) -> R {
-                        return m_gen[i].template normal<R>({n}, m_param[0], m_param[1]) +
-                               m_param[2];
-                    });
-                    m_sum.push_back([this, i](size_t n) -> double {
-                        return m_gen[i].cumsum_normal(n, m_param[0], m_param[1]) +
-                               static_cast<double>(n) * m_param[2];
-                    });
-                }
-                break;
-            case custom:
-                break;
-            }
-        }
+        this->auto_functions();
 
-        if (m_draw.size() > 0) {
+        if (m_extendible) {
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 using E = decltype(m_draw[i](size_t{}));
                 E extra = m_draw[i](m_n);
@@ -4913,7 +4835,87 @@ protected:
      */
     void auto_functions()
     {
+        using R = xt::xtensor<double, 1>;
+        m_extendible = true;
 
+        if (m_dist != distribution::custom) {
+            m_draw.resize(m_gen.size());
+            m_sum.resize(m_gen.size());
+        }
+
+        switch (m_dist) {
+        case random:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template random<R>({n}) * m_param[0] + m_param[1];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_random(n) * m_param[0] +
+                            static_cast<double>(n) * m_param[1];
+                };
+            }
+            return;
+        case exponential:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template exponential<R>({n}, m_param[0]) + m_param[1];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_exponential(n, m_param[0]) +
+                            static_cast<double>(n) * m_param[1];
+                };
+            }
+            return;
+        case delta:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template delta<R>({n}, m_param[0]) + m_param[1];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_delta(n, m_param[0]) +
+                            static_cast<double>(n) * m_param[1];
+                };
+            }
+            return;
+        case weibull:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template weibull<R>({n}, m_param[0], m_param[1]) +
+                            m_param[2];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_weibull(n, m_param[0], m_param[1]) +
+                            static_cast<double>(n) * m_param[2];
+                };
+            }
+            return;
+        case gamma:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template gamma<R>({n}, m_param[0], m_param[1]) + m_param[2];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_gamma(n, m_param[0], m_param[1]) +
+                            static_cast<double>(n) * m_param[2];
+                };
+            }
+            return;
+        case normal:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template normal<R>({n}, m_param[0], m_param[1]) +
+                            m_param[2];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_normal(n, m_param[0], m_param[1]) +
+                            static_cast<double>(n) * m_param[2];
+                };
+            }
+            return;
+        case custom:
+            m_extendible = false;
+            return;
+        }
     }
 
     /**
@@ -4982,7 +4984,7 @@ public:
      */
     bool is_extendible() const
     {
-        return m_draw.size() > 0;
+        return m_extendible;
     }
 
     /**
@@ -4992,7 +4994,7 @@ public:
     template <class T>
     void align(const T& target)
     {
-        PRRNG_ASSERT(m_draw.size() > 0);
+        PRRNG_ASSERT(m_extendible);
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
