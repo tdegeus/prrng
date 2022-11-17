@@ -3434,7 +3434,13 @@ public:
      */
     void align(double target)
     {
-        PRRNG_ASSERT(m_extendible);
+        if (!m_extendible)
+        {
+            PRRNG_ASSERT(target >= m_data.front() && target <= m_data.back());
+            m_i = iterator::lower_bound(m_data.begin(), m_data.end(), target, m_i);
+            return;
+        }
+
         detail::align(
             m_gen, m_draw, m_sum, m_align, m_data.data(), m_data.size(), &m_start, &m_i, target);
     }
