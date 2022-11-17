@@ -3434,8 +3434,7 @@ public:
      */
     void align(double target)
     {
-        if (!m_extendible)
-        {
+        if (!m_extendible) {
             PRRNG_ASSERT(target >= m_data.front() && target <= m_data.back());
             m_i = iterator::lower_bound(m_data.begin(), m_data.end(), target, m_i);
             return;
@@ -4874,7 +4873,7 @@ private:
     }
 
 protected:
-    std::vector<pcg32> m_gen; ///< Underlying storage: one generator per array item
+    std::vector<Generator> m_gen; ///< Underlying storage: one generator per array item
     using GeneratorBase_array<Shape>::m_size;
     using GeneratorBase_array<Shape>::m_shape;
     using GeneratorBase_array<Shape>::m_strides;
@@ -4983,6 +4982,61 @@ protected:
     using GeneratorBase_array<std::array<size_t, N>>::m_strides;
 };
 
+class pcg32_index_array : public pcg32_arrayBase<pcg32_index, std::vector<size_t>> {
+public:
+    pcg32_index_array() = default;
+
+    /**
+     * Constructor.
+     *
+     * @param initstate State initiator for every item.
+     * @param initseq Sequence initiator for every item.
+     * The shape of these argument determines the shape of the generator array.
+     */
+    template <class T, class U>
+    pcg32_index_array(const T& initstate, const U& initseq)
+    {
+        m_shape.resize(initstate.dimension());
+        m_strides.resize(initstate.dimension());
+        this->init(initstate, initseq);
+    }
+
+protected:
+    using pcg32_arrayBase<pcg32_index, std::vector<size_t>>::m_gen;
+    using GeneratorBase_array<std::vector<size_t>>::m_size;
+    using GeneratorBase_array<std::vector<size_t>>::m_shape;
+    using GeneratorBase_array<std::vector<size_t>>::m_strides;
+};
+
+/**
+ * Fixed rank version of pcg32_index_array
+ */
+template <size_t N>
+class pcg32_index_tensor : public pcg32_arrayBase<pcg32_index, std::array<size_t, N>> {
+public:
+    pcg32_index_tensor() = default;
+
+    /**
+     * Constructor.
+     *
+     * @param initstate State initiator for every item.
+     * @param initseq Sequence initiator for every item.
+     * The shape of these argument determines the shape of the generator array.
+     */
+    template <class T, class U>
+    pcg32_index_tensor(const T& initstate, const U& initseq)
+    {
+        static_assert(detail::check_fixed_rank<N, T>::value, "Ranks to not match");
+        this->init(initstate, initseq);
+    }
+
+protected:
+    using pcg32_arrayBase<pcg32_index, std::array<size_t, N>>::m_gen;
+    using GeneratorBase_array<std::array<size_t, N>>::m_size;
+    using GeneratorBase_array<std::array<size_t, N>>::m_shape;
+    using GeneratorBase_array<std::array<size_t, N>>::m_strides;
+};
+
 namespace detail {
 
 template <class T, typename = void>
@@ -5063,11 +5117,11 @@ inline auto auto_pcg32(const T& initstate, const S& initseq)
  * @tparam D Storage of the data, e.g. xt::xarray<double>.
  * @tparam G Storage of the generator array, e.g. prrng::pcg32_array
  */
-template <class D, class G>
+template <class Data, class Generator>
 class pcg32_arrayBase_cumsum {
 protected:
-    G m_gen; ///< Array of generators
-    D m_data; ///< Data container
+    Generator m_gen; ///< Array of generators
+    Data m_data; ///< Data container
     std::vector<pcg32_cumsum_external> m_cumsum; ///< 'Array' of cumsums
     std::vector<std::function<xt::xtensor<double, 1>(size_t)>> m_draw; ///< Draw functions
     std::vector<std::function<double(size_t)>> m_sum; ///< Result of cumsum fuctions
@@ -5110,9 +5164,9 @@ protected:
         data_shape.resize(initstate.dimension() + shape.size());
         std::copy(initstate.shape().begin(), initstate.shape().end(), data_shape.begin());
         std::copy(shape.begin(), shape.end(), data_shape.begin() + initstate.dimension());
-        m_data = xt::empty<typename D::value_type>(data_shape);
+        m_data = xt::empty<typename Data::value_type>(data_shape);
 
-        m_gen = G(initstate, initseq);
+        m_gen = Generator(initstate, initseq);
         m_cumsum.reserve(m_gen.size());
         if (distribution != distribution::custom) {
             m_draw.reserve(m_gen.size());
@@ -5307,7 +5361,7 @@ public:
      * @brief Generator array.
      * @return Pointer to generator array.
      */
-    const G& generators() const
+    const Generator& generators() const
     {
         return m_gen;
     }
@@ -5318,7 +5372,7 @@ public:
      * @return Reference to one value.
      */
     template <class... Args>
-    typename D::value_type& operator()(Args... args)
+    typename Data::value_type& operator()(Args... args)
     {
         return m_data(args...);
     }
@@ -5329,7 +5383,7 @@ public:
      * @return Reference to one value.
      */
     template <class... Args>
-    const typename D::value_type& operator()(Args... args) const
+    const typename Data::value_type& operator()(Args... args) const
     {
         return m_data(args...);
     }
@@ -5338,7 +5392,7 @@ public:
      * @brief Chunk.
      * @return Pointer to chunk.
      */
-    const D& data() const
+    const Data& data() const
     {
         return m_data;
     }
@@ -5350,9 +5404,10 @@ public:
      *
      * @param data New chunk.
      */
-    void set_data(const D& data)
+    void set_data(const Data& data)
     {
-        static_assert(std::is_same<typename D::value_type, double>::value, "Data must be double");
+        static_assert(
+            std::is_same<typename Data::value_type, double>::value, "Data must be double");
         PRRNG_ASSERT(xt::has_shape(data, m_data.shape()));
         std::copy(data.cbegin(), data.cend(), m_data.begin());
     }
