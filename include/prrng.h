@@ -4851,7 +4851,7 @@ protected:
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_random(n) * m_param[0] +
-                            static_cast<double>(n) * m_param[1];
+                           static_cast<double>(n) * m_param[1];
                 };
             }
             return;
@@ -4862,7 +4862,7 @@ protected:
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_exponential(n, m_param[0]) +
-                            static_cast<double>(n) * m_param[1];
+                           static_cast<double>(n) * m_param[1];
                 };
             }
             return;
@@ -4873,19 +4873,18 @@ protected:
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_delta(n, m_param[0]) +
-                            static_cast<double>(n) * m_param[1];
+                           static_cast<double>(n) * m_param[1];
                 };
             }
             return;
         case weibull:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template weibull<R>({n}, m_param[0], m_param[1]) +
-                            m_param[2];
+                    return m_gen[i].template weibull<R>({n}, m_param[0], m_param[1]) + m_param[2];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_weibull(n, m_param[0], m_param[1]) +
-                            static_cast<double>(n) * m_param[2];
+                           static_cast<double>(n) * m_param[2];
                 };
             }
             return;
@@ -4896,19 +4895,18 @@ protected:
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_gamma(n, m_param[0], m_param[1]) +
-                            static_cast<double>(n) * m_param[2];
+                           static_cast<double>(n) * m_param[2];
                 };
             }
             return;
         case normal:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template normal<R>({n}, m_param[0], m_param[1]) +
-                            m_param[2];
+                    return m_gen[i].template normal<R>({n}, m_param[0], m_param[1]) + m_param[2];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_normal(n, m_param[0], m_param[1]) +
-                            static_cast<double>(n) * m_param[2];
+                           static_cast<double>(n) * m_param[2];
                 };
             }
             return;
