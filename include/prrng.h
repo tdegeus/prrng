@@ -784,6 +784,158 @@ inline V cumsum_chunk(const V& cumsum, const V& delta, const I& shift)
     return ret;
 }
 
+namespace detail {
+
+/**
+ * Shift chunk left.
+ *
+ * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
+ * @param margin Overlap to keep with the current chunk.
+ */
+template <class G, class D>
+void prev(
+    const G& generator,
+    const D& get_chunk,
+    size_t margin,
+    double* data,
+    size_t size,
+    ptrdiff_t* start)
+{
+    using R = decltype(get_chunk(size_t{}));
+
+    ptrdiff_t n = static_cast<ptrdiff_t>(size);
+    generator.jump_to(start - n + margin);
+
+    double front = data[0];
+    size_t m = size - margin + 1;
+    R extra = get_chunk({m});
+    generator.drawn(m);
+    std::partial_sum(extra.begin(), extra.end(), extra.begin());
+    extra -= extra.back() - front;
+
+    std::copy(data, data + margin, data + size - margin);
+    std::copy(extra.begin(), extra.end() - 1, data);
+
+    start -= static_cast<ptrdiff_t>(size - margin);
+}
+
+/**
+ * Shift chunk right.
+ *
+ * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
+ * @param margin Overlap to keep with the current chunk.
+ */
+template <class G, class D>
+void next(
+    const G& generator,
+    const D& get_chunk,
+    size_t margin,
+    double* data,
+    size_t size,
+    ptrdiff_t* start)
+{
+    using R = decltype(get_chunk(size_t{}));
+    PRRNG_ASSERT(margin < size);
+
+    generator.jump_to(*start + static_cast<ptrdiff_t>(size));
+
+    double back = data[size - 1];
+    size_t n = size - margin;
+    R extra = get_chunk({n});
+    generator.drawn(n);
+    extra.front() += back;
+    std::partial_sum(extra.begin(), extra.end(), extra.begin());
+    std::copy(data + size - margin, data + size, data);
+    std::copy(extra.begin(), extra.end(), data + margin);
+    *start += n;
+}
+
+/**
+ * Align the chunk to encompass a target value.
+ *
+ * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
+ * @param get_sum Function to get the cumsum of random numbers, called: `get_sum(n)`.
+ * @param target Target value.
+ */
+template <class G, class D, class S, class P>
+void align(
+    const G& generator,
+    const D& get_chunk,
+    const S& get_sum,
+    const P& param,
+    double* data,
+    size_t size,
+    ptrdiff_t* start,
+    size_t* i,
+    double target,
+    bool recursive = false)
+{
+    using R = decltype(get_chunk(size_t{}));
+
+    if (target > data[size - 1]) {
+
+        double delta = data[size - 1] - data[0];
+        size_t n = size;
+        generator.jump_to(*start + static_cast<ptrdiff_t>(size));
+        double back = data[size - 1];
+
+        double j = (target - data[size - 1]) / delta - (double)(param.margin) / (double)(n);
+
+        if (j > 1) {
+            size_t m = static_cast<size_t>((j - 1) * static_cast<double>(n));
+            back += get_sum(m);
+            generator.drawn(m);
+            *start += m + size;
+            R extra = get_chunk({n});
+            generator.drawn(n);
+            extra.front() += back;
+            std::partial_sum(extra.begin(), extra.end(), data);
+            return align(generator, get_chunk, get_sum, param, target, data, size, start, i, true);
+        }
+
+        next(generator, get_chunk, 1 + param.margin, data, size, start);
+        return align(generator, get_chunk, get_sum, param, target, data, size, start, i, true);
+    }
+    else if (target < data[0]) {
+        prev(generator, get_chunk, 0, data, size, start);
+        return align(generator, get_chunk, get_sum, param, target, data, size, start, i, true);
+    }
+    else {
+        if (recursive || *i >= size) {
+            *i = std::lower_bound(data, data + size, target) - data - 1;
+        }
+        else {
+            *i = iterator::lower_bound(data, data + size, target, *i);
+        }
+        if (*i == param.margin) {
+            return;
+        }
+        if (!recursive && param.buffer > 0 && *i >= param.buffer && *i + param.buffer < size) {
+            return;
+        }
+        if (*i < param.margin) {
+            if (!param.strict && *i >= param.min_margin) {
+                return;
+            }
+            prev(generator, get_chunk, 0, data, size, start);
+            return align(generator, get_chunk, get_sum, param, target, data, size, start, i, true);
+        }
+
+        generator.jump_to(*start + static_cast<ptrdiff_t>(size));
+        size_t n = *i - param.margin;
+        R extra = get_chunk({n});
+        generator.drawn(n);
+        *start += n;
+        *i -= n;
+        extra.front() += data[size - 1];
+        std::partial_sum(extra.begin(), extra.end(), extra.begin());
+        std::copy(data + n, data + size, data);
+        std::copy(extra.begin(), extra.end(), data + size - n);
+    }
+}
+
+} // namespace detail
+
 /**
  * Normal distribution.
  *
@@ -2363,7 +2515,7 @@ protected:
         }
     }
 
-private:
+protected:
     void seed(uint64_t initstate, uint64_t initseq)
     {
         m_initstate = initstate;
@@ -2381,6 +2533,83 @@ private:
     uint64_t m_initseq; ///< Sequence initiator
     uint64_t m_state; ///< RNG state. All values are possible.
     uint64_t m_inc; ///< Controls which RNG sequence (stream) is selected. Must *always* be odd.
+};
+
+class pcg32_index : public pcg32 {
+private:
+    ptrdiff_t m_index; ///< Index of the generator
+    bool m_delta; ///< Signal if uniquely a delta distribution will be drawn
+
+public:
+    /**
+     * @param initstate State initiator.
+     * @param initseq Sequence initiator.
+     * @param delta `true` if uniquely a delta distribution will be drawn.
+     */
+    template <typename T = uint64_t, typename S = uint64_t>
+    pcg32_index(
+        T initstate = PRRNG_PCG32_INITSTATE,
+        S initseq = PRRNG_PCG32_INITSEQ,
+        bool delta = false)
+    {
+        static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
+        static_assert(sizeof(uint64_t) >= sizeof(S), "Down-casting not allowed.");
+        this->seed(static_cast<uint64_t>(initstate), static_cast<uint64_t>(initseq));
+        m_index = 0;
+        m_delta = delta;
+    }
+
+    /**
+     * @brief Move to a certain index.
+     * @param index Index of the generator.
+     */
+    void jump_to(ptrdiff_t index)
+    {
+        if (m_delta) {
+            return;
+        }
+        this->advance(index - m_index);
+        m_index = index;
+    }
+
+    /**
+     * @brief Update the generator index with the number of items you have drawn.
+     * @param n Number of drawn numbers.
+     */
+    void drawn(ptrdiff_t n)
+    {
+        if (m_delta) {
+            return;
+        }
+        m_index += n;
+    }
+
+    /**
+     * @brief Signal if the generator is uniquely used to draw a delta distribution.
+     * @param delta `true` if uniquely a delta distribution will be drawn.
+     */
+    void set_delta(bool delta)
+    {
+        m_delta = delta;
+    }
+
+    /**
+     * @brief Get the generator index.
+     * @return Index of the generator.
+     */
+    ptrdiff_t get_index() const
+    {
+        return m_index;
+    }
+
+    /**
+     * @brief Overwrite the generator index.
+     * @param index Index of the generator.
+     */
+    void set_index(ptrdiff_t index)
+    {
+        m_index = index;
+    }
 };
 
 /**
