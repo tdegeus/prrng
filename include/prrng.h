@@ -4434,7 +4434,7 @@ protected:
 /**
  * Base class, see pcg32_array for description.
  */
-template <class M>
+template <class G, class M>
 class pcg32_arrayBase : public GeneratorBase_array<M> {
 protected:
     /**
@@ -4452,7 +4452,7 @@ protected:
         m_gen.reserve(m_size);
 
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.flat(i)));
+            m_gen.push_back(G(initstate.flat(i)));
         }
     }
 
@@ -4474,7 +4474,7 @@ protected:
         m_gen.reserve(m_size);
 
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(pcg32(initstate.flat(i), initseq.flat(i)));
+            m_gen.push_back(G(initstate.flat(i), initseq.flat(i)));
         }
     }
 
@@ -4490,7 +4490,7 @@ public:
      * @return Reference to underlying generator.
      */
     template <class... Args>
-    pcg32& operator()(Args... args)
+    G& operator()(Args... args)
     {
         return m_gen[this->get_item(0, 0, args...)];
     }
@@ -4502,7 +4502,7 @@ public:
      * @return Reference to underlying generator.
      */
     template <class... Args>
-    const pcg32& operator()(Args... args) const
+    const G& operator()(Args... args) const
     {
         return m_gen[this->get_item(0, 0, args...)];
     }
@@ -4513,7 +4513,7 @@ public:
      * @param i Flat index.
      * @return Reference to underlying generator.
      */
-    pcg32& operator[](size_t i)
+    G& operator[](size_t i)
     {
         PRRNG_DEBUG(i < m_size);
         return m_gen[i];
@@ -4525,7 +4525,7 @@ public:
      * @param i Flat index.
      * @return Reference to underlying generator.
      */
-    const pcg32& operator[](size_t i) const
+    const G& operator[](size_t i) const
     {
         PRRNG_DEBUG(i < m_size);
         return m_gen[i];
@@ -4537,7 +4537,7 @@ public:
      * @param i Flat index.
      * @return Reference to underlying generator.
      */
-    pcg32& flat(size_t i)
+    G& flat(size_t i)
     {
         PRRNG_DEBUG(i < m_size);
         return m_gen[i];
@@ -4549,7 +4549,7 @@ public:
      * @param i Flat index.
      * @return Reference to underlying generator.
      */
-    const pcg32& flat(size_t i) const
+    const G& flat(size_t i) const
     {
         PRRNG_DEBUG(i < m_size);
         return m_gen[i];
@@ -4895,7 +4895,7 @@ protected:
  * In addition, convenience functions state(), initstate(), initseq(), restore() are provided
  * here to store/restore the state of the entire array of generators.
  */
-class pcg32_array : public pcg32_arrayBase<std::vector<size_t>> {
+class pcg32_array : public pcg32_arrayBase<pcg32, std::vector<size_t>> {
 public:
     pcg32_array() = default;
 
@@ -4929,7 +4929,7 @@ public:
     }
 
 protected:
-    using pcg32_arrayBase<std::vector<size_t>>::m_gen;
+    using pcg32_arrayBase<pcg32, std::vector<size_t>>::m_gen;
     using GeneratorBase_array<std::vector<size_t>>::m_size;
     using GeneratorBase_array<std::vector<size_t>>::m_shape;
     using GeneratorBase_array<std::vector<size_t>>::m_strides;
@@ -4939,7 +4939,7 @@ protected:
  * Fixed rank version of pcg32_array
  */
 template <size_t N>
-class pcg32_tensor : public pcg32_arrayBase<std::array<size_t, N>> {
+class pcg32_tensor : public pcg32_arrayBase<pcg32, std::array<size_t, N>> {
 public:
     pcg32_tensor() = default;
 
@@ -4971,7 +4971,7 @@ public:
     }
 
 protected:
-    using pcg32_arrayBase<std::array<size_t, N>>::m_gen;
+    using pcg32_arrayBase<pcg32, std::array<size_t, N>>::m_gen;
     using GeneratorBase_array<std::array<size_t, N>>::m_size;
     using GeneratorBase_array<std::array<size_t, N>>::m_shape;
     using GeneratorBase_array<std::array<size_t, N>>::m_strides;

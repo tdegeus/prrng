@@ -901,7 +901,7 @@ PYBIND11_MODULE(_prrng, m)
         });
 
     py::class_<
-        prrng::pcg32_arrayBase<std::vector<size_t>>,
+        prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>,
         prrng::GeneratorBase_array<std::vector<size_t>>>(m, "pcg32_arrayBase")
 
         .def(
@@ -913,7 +913,7 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             "__getitem__",
-            [](prrng::pcg32_arrayBase<std::vector<size_t>>& s, size_t i) {
+            [](prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>& s, size_t i) {
                 if (i >= s.size())
                     throw py::index_error();
                 return &s[i];
@@ -922,7 +922,8 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             "__getitem__",
-            [](prrng::pcg32_arrayBase<std::vector<size_t>>& s, std::vector<size_t> index) {
+            [](prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>& s,
+               std::vector<size_t> index) {
                 if (!s.inbounds(index))
                     throw py::index_error();
                 return &s[s.flat_index(index)];
@@ -931,58 +932,65 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             "state",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::state<xt::pyarray<uint64_t>>,
+            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::state<
+                xt::pyarray<uint64_t>>,
             "Get current state. "
             "See :cpp:func:`prrng::pcg32_arrayBase::state`.")
 
         .def(
             "initstate",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::initstate<xt::pyarray<uint64_t>>,
+            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::initstate<
+                xt::pyarray<uint64_t>>,
             "``initstate`` used in constructor. "
             "See :cpp:func:`prrng::pcg32_arrayBase::initstate`.")
 
         .def(
             "initseq",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::initseq<xt::pyarray<uint64_t>>,
+            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::initseq<
+                xt::pyarray<uint64_t>>,
             "``initseq`` used in constructor. "
             "See :cpp:func:`prrng::pcg32_arrayBase::initseq`.")
 
         .def(
             "distance",
             py::overload_cast<const xt::pyarray<uint64_t>&>(
-                &prrng::pcg32_arrayBase<std::vector<size_t>>::distance<xt::pyarray<uint64_t>>),
+                &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::distance<
+                    xt::pyarray<uint64_t>>),
             "Distance to a state. "
             "See :cpp:func:`prrng::pcg32_arrayBase::distance`.",
             py::arg("arg"))
 
         .def(
             "distance",
-            py::overload_cast<const prrng::pcg32_arrayBase<std::vector<size_t>>&>(
-                &prrng::pcg32_arrayBase<std::vector<size_t>>::distance<
-                    prrng::pcg32_arrayBase<std::vector<size_t>>>),
+            py::overload_cast<const prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>&>(
+                &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::distance<
+                    prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>>),
             "Distance to a state. "
             "See :cpp:func:`prrng::pcg32_arrayBase::distance`.",
             py::arg("arg"))
 
         .def(
             "advance",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::advance<xt::pyarray<uint64_t>>,
+            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::advance<
+                xt::pyarray<uint64_t>>,
             "Advance generators. "
             "See :cpp:func:`prrng::pcg32_arrayBase::advance`.",
             py::arg("distance"))
 
         .def(
             "restore",
-            &prrng::pcg32_arrayBase<std::vector<size_t>>::restore<xt::pyarray<uint64_t>>,
+            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::restore<
+                xt::pyarray<uint64_t>>,
             "Restore state. "
             "See :cpp:func:`prrng::pcg32_arrayBase::restore`.",
             py::arg("state"))
 
-        .def("__repr__", [](const prrng::pcg32_arrayBase<std::vector<size_t>>&) {
+        .def("__repr__", [](const prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>&) {
             return "<prrng.pcg32_arrayBase>";
         });
 
-    py::class_<prrng::pcg32_array, prrng::pcg32_arrayBase<std::vector<size_t>>>(m, "pcg32_array")
+    py::class_<prrng::pcg32_array, prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>>(
+        m, "pcg32_array")
 
         .def(
             py::init<const xt::pyarray<uint64_t>&>(),
