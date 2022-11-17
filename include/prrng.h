@@ -2642,7 +2642,11 @@ struct alignment {
      *
      * @return List with parameters.
      */
-    alignment(ptrdiff_t buffer = 0, ptrdiff_t margin = 0, ptrdiff_t min_margin = 0, bool strict = false)
+    alignment(
+        ptrdiff_t buffer = 0,
+        ptrdiff_t margin = 0,
+        ptrdiff_t min_margin = 0,
+        bool strict = false)
     {
         this->buffer = buffer;
         this->margin = margin;

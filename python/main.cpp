@@ -442,9 +442,7 @@ PYBIND11_MODULE(_prrng, m)
         .def_readwrite("min_margin", &prrng::alignment::min_margin)
         .def_readwrite("strict", &prrng::alignment::strict)
 
-        .def("__repr__", [](const prrng::alignment&) {
-            return "<prrng.alignment>";
-        });
+        .def("__repr__", [](const prrng::alignment&) { return "<prrng.alignment>"; });
 
     // m.def(
     //     "alignment",
