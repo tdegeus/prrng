@@ -444,16 +444,6 @@ PYBIND11_MODULE(_prrng, m)
 
         .def("__repr__", [](const prrng::alignment&) { return "<prrng.alignment>"; });
 
-    // m.def(
-    //     "alignment",
-    //     &prrng::alignment,
-    //     "alignment options. "
-    //     "See :cpp:func:`prrng::alignment`.",
-    //     py::arg("buffer") = 0,
-    //     py::arg("margin") = 0,
-    //     py::arg("min_margin") = 0,
-    //     py::arg("strict") = false);
-
     py::enum_<prrng::distribution>(m, "distribution")
         .value("random", prrng::distribution::random)
         .value("weibull", prrng::distribution::weibull)

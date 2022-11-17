@@ -788,8 +788,12 @@ namespace detail {
 /**
  * Shift chunk left.
  *
+ * @param generator Generator, see prrng::pcg32_index() (modified).
  * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
  * @param margin Overlap to keep with the current chunk.
+ * @param data Pointer to the chunk (modified).
+ * @param size Size of the chunk.
+ * @param start Start index of the chunk (modified).
  */
 template <class G, class D>
 void prev(
@@ -820,8 +824,12 @@ void prev(
 /**
  * Shift chunk right.
  *
+ * @param generator Generator, see prrng::pcg32_index() (modified).
  * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
  * @param margin Overlap to keep with the current chunk.
+ * @param data Pointer to the chunk (modified).
+ * @param size Size of the chunk.
+ * @param start Start index of the chunk (modified).
  */
 template <class G, class D>
 void next(
@@ -851,9 +859,16 @@ void next(
 /**
  * Align the chunk to encompass a target value.
  *
+ * @param generator Generator, see prrng::pcg32_index() (modified).
  * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
  * @param get_sum Function to get the cumsum of random numbers, called: `get_sum(n)`.
+ * @param param Alignment parameters, see prrng::alignment().
+ * @param data Pointer to the chunk (modified).
+ * @param size Size of the chunk.
+ * @param start Start index of the chunk (modified).
+ * @param i Last index of `target` relative to the start of the chunk (modified).
  * @param target Target value.
+ * @param recursive Used internally to distinguish between external and internal calls.
  */
 template <class G, class D, class S, class P>
 void align(
@@ -4891,6 +4906,14 @@ protected:
                 std::partial_sum(extra.begin(), extra.end(), &m_data.flat(i * m_n));
             }
         }
+    }
+
+    /**
+     * @brief Set draw function.
+     */
+    void auto_functions()
+    {
+
     }
 
     /**
