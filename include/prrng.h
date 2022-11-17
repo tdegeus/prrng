@@ -2529,6 +2529,13 @@ protected:
     }
 
 protected:
+
+    /**
+     * @brief Seed the generator.
+     *
+     * @param initstate Initial state.
+     * @param initseq Initial sequence.
+     */
     void seed(uint64_t initstate, uint64_t initseq)
     {
         m_initstate = initstate;
@@ -2668,8 +2675,6 @@ struct alignment {
      *      If `true`, `margin` is respected strictly: `argmin(target > chunk) == margin`.
      *      If `false` `min_margin <= argmin(target > chunk) <= margin`, whereby
      *      `argmin(target > chunk) < margin` if moving backwards is required to respect `margin`.
-     *
-     * @return List with parameters.
      */
     alignment(
         ptrdiff_t buffer = 0,
@@ -5181,7 +5186,7 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::contains(double)
+     * @copydoc prrng::pcg32_cumsum::contains(double) const
      */
     template <class T>
     bool contains(const T& target) const
