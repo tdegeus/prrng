@@ -4434,8 +4434,8 @@ protected:
 /**
  * Base class, see pcg32_array for description.
  */
-template <class G, class M>
-class pcg32_arrayBase : public GeneratorBase_array<M> {
+template <class Generator, class Shape>
+class pcg32_arrayBase : public GeneratorBase_array<Shape> {
 protected:
     /**
      * @brief Constructor alias.
@@ -4452,7 +4452,7 @@ protected:
         m_gen.reserve(m_size);
 
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(G(initstate.flat(i)));
+            m_gen.push_back(Generator(initstate.flat(i)));
         }
     }
 
@@ -4474,7 +4474,7 @@ protected:
         m_gen.reserve(m_size);
 
         for (size_t i = 0; i < m_size; ++i) {
-            m_gen.push_back(G(initstate.flat(i), initseq.flat(i)));
+            m_gen.push_back(Generator(initstate.flat(i), initseq.flat(i)));
         }
     }
 
@@ -4490,7 +4490,7 @@ public:
      * @return Reference to underlying generator.
      */
     template <class... Args>
-    G& operator()(Args... args)
+    Generator& operator()(Args... args)
     {
         return m_gen[this->get_item(0, 0, args...)];
     }
@@ -4502,7 +4502,7 @@ public:
      * @return Reference to underlying generator.
      */
     template <class... Args>
-    const G& operator()(Args... args) const
+    const Generator& operator()(Args... args) const
     {
         return m_gen[this->get_item(0, 0, args...)];
     }
@@ -4513,7 +4513,7 @@ public:
      * @param i Flat index.
      * @return Reference to underlying generator.
      */
-    G& operator[](size_t i)
+    Generator& operator[](size_t i)
     {
         PRRNG_DEBUG(i < m_size);
         return m_gen[i];
@@ -4525,7 +4525,7 @@ public:
      * @param i Flat index.
      * @return Reference to underlying generator.
      */
-    const G& operator[](size_t i) const
+    const Generator& operator[](size_t i) const
     {
         PRRNG_DEBUG(i < m_size);
         return m_gen[i];
@@ -4537,7 +4537,7 @@ public:
      * @param i Flat index.
      * @return Reference to underlying generator.
      */
-    G& flat(size_t i)
+    Generator& flat(size_t i)
     {
         PRRNG_DEBUG(i < m_size);
         return m_gen[i];
@@ -4549,7 +4549,7 @@ public:
      * @param i Flat index.
      * @return Reference to underlying generator.
      */
-    const G& flat(size_t i) const
+    const Generator& flat(size_t i) const
     {
         PRRNG_DEBUG(i < m_size);
         return m_gen[i];
@@ -4561,9 +4561,9 @@ public:
      *
      * @return The state of each generator.
      */
-    auto state() -> typename detail::return_type<uint64_t, M>::type
+    auto state() -> typename detail::return_type<uint64_t, Shape>::type
     {
-        using R = typename detail::return_type<uint64_t, M>::type;
+        using R = typename detail::return_type<uint64_t, Shape>::type;
         return this->state<R>();
     }
 
@@ -4592,9 +4592,9 @@ public:
      *
      * @return The state initiator of each generator.
      */
-    auto initstate() -> typename detail::return_type<uint64_t, M>::type
+    auto initstate() -> typename detail::return_type<uint64_t, Shape>::type
     {
-        using R = typename detail::return_type<uint64_t, M>::type;
+        using R = typename detail::return_type<uint64_t, Shape>::type;
         return this->initstate<R>();
     }
 
@@ -4622,9 +4622,9 @@ public:
      *
      * @return The sequence initiator of each generator.
      */
-    auto initseq() -> typename detail::return_type<uint64_t, M>::type
+    auto initseq() -> typename detail::return_type<uint64_t, Shape>::type
     {
-        using R = typename detail::return_type<uint64_t, M>::type;
+        using R = typename detail::return_type<uint64_t, Shape>::type;
         return this->initseq<R>();
     }
 
@@ -4655,9 +4655,9 @@ public:
      * @param arg The state to which to compare.
      */
     template <class T>
-    auto distance(const T& arg) -> typename detail::return_type<int64_t, M>::type
+    auto distance(const T& arg) -> typename detail::return_type<int64_t, Shape>::type
     {
-        using R = typename detail::return_type<int64_t, M>::type;
+        using R = typename detail::return_type<int64_t, Shape>::type;
         return this->distance<R, T>(arg);
     }
 
@@ -4869,9 +4869,9 @@ private:
 
 protected:
     std::vector<pcg32> m_gen; ///< Underlying storage: one generator per array item
-    using GeneratorBase_array<M>::m_size;
-    using GeneratorBase_array<M>::m_shape;
-    using GeneratorBase_array<M>::m_strides;
+    using GeneratorBase_array<Shape>::m_size;
+    using GeneratorBase_array<Shape>::m_shape;
+    using GeneratorBase_array<Shape>::m_strides;
 };
 
 /**
