@@ -2622,6 +2622,24 @@ public:
 };
 
 /**
+ * @brief Structure to assemble the alignment parameters, see prrng::alignment().
+ */
+struct Alignment {
+    Alignment(ptrdiff_t buffer = 0, ptrdiff_t margin = 0, ptrdiff_t min_margin = 0, bool strict = false)
+    {
+        this->buffer = buffer;
+        this->margin = margin;
+        this->min_margin = min_margin;
+        this->strict = strict;
+    }
+
+    ptrdiff_t buffer = 0; ///< Buffer zone in which to check for alignment.
+    ptrdiff_t margin = 0; ///< Position of the target.
+    ptrdiff_t min_margin = 0; ///< Minimum position of the target if `strict = false`.
+    bool strict = false; ///< Enforce `margin` strictly.
+};
+
+/**
  * @brief Wrapper to allocate alignment parameters.
  * Warning: the length, order, and content of the returned list might change in future versions,
  * this wrapper function provides you with API stability.
@@ -2642,18 +2660,17 @@ public:
  *
  * @return List with parameters.
  */
-std::vector<size_t>
+Alignment
 alignment(size_t buffer = 0, size_t margin = 0, size_t min_margin = 0, bool strict = false)
 {
-    return std::vector<size_t>{buffer, margin, min_margin, static_cast<size_t>(strict)};
-}
+    Alignment ret;
+    ret.buffer = static_cast<ptrdiff_t>(buffer);
+    ret.margin = static_cast<ptrdiff_t>(margin);
+    ret.min_margin = static_cast<ptrdiff_t>(min_margin);
+    ret.strict = strict;
+    return ret;
 
-struct myalignment {
-    ptrdiff_t buffer = 0;
-    ptrdiff_t margin = 0;
-    ptrdiff_t min_margin = 0;
-    bool strict = false;
-};
+}
 
 /**
  * @brief Generator of a random cumulative sum of which a chunk is kept in memory.
@@ -2669,7 +2686,7 @@ private:
     std::function<Data(size_t)> m_draw; ///< Function to draw the random numbers.
     std::function<double(size_t)> m_sum; ///< Function to get the cumsum of random numbers.
     bool m_extendible; ///< Signal if the drawing functions are specified.
-    myalignment m_align; ///< Alignment settings, see prrng::myalignment().
+    Alignment m_align; ///< Alignment settings, see prrng::Alignment().
     distribution m_dist; ///< Distribution name, see prrng::distribution().
     std::array<double, 3> m_param; ///< Distribution parameters.
     ptrdiff_t m_start; ///< Start index of the chunk.
@@ -2791,7 +2808,7 @@ public:
         S initseq = PRRNG_PCG32_INITSEQ,
         enum distribution distribution = distribution::custom,
         const std::vector<double>& parameters = std::vector<double>{},
-        const std::vector<size_t>& align = alignment())
+        const Alignment& align = alignment())
     {
         m_data = xt::empty<typename Data::value_type>(shape);
         m_gen = pcg32_index(initstate, initseq, distribution == distribution::delta);
@@ -2801,13 +2818,7 @@ public:
         std::copy(parameters.begin(), parameters.end(), m_param.begin());
         this->auto_functions();
 
-        auto default_align = alignment();
-        PRRNG_ASSERT(align.size() <= default_align.size());
-        std::copy(align.begin(), align.end(), default_align.begin());
-        m_align.buffer = default_align[0];
-        m_align.margin = default_align[1];
-        m_align.min_margin = default_align[2];
-        m_align.strict = static_cast<bool>(default_align[3]);
+        m_align = align;
 
         if (!m_extendible) {
             return;
@@ -4740,7 +4751,7 @@ protected:
     std::vector<std::function<xt::xtensor<double, 1>(size_t)>> m_draw; ///< Draw functions
     std::vector<std::function<double(size_t)>> m_sum; ///< Result of cumsum fuctions
     bool m_extendible; ///< Signal if the drawing functions are specified.
-    myalignment m_align; ///< Alignment settings, see prrng::myalignment().
+    Alignment m_align; ///< Alignment settings, see prrng::Alignment().
     distribution m_dist; ///< Distribution name, see prrng::distribution().
     std::array<double, 3> m_param; ///< Distribution parameters.
     Index m_start; ///< Start index of the chunk.
@@ -4776,7 +4787,7 @@ protected:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const std::vector<size_t>& align = alignment())
+        const Alignment& align = alignment())
     {
         PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
         using shape_type = typename S::value_type;
@@ -4787,13 +4798,7 @@ protected:
         std::copy(shape.begin(), shape.end(), data_shape.begin() + initstate.dimension());
         m_data = xt::empty<typename Data::value_type>(data_shape);
 
-        auto default_align = alignment();
-        PRRNG_ASSERT(align.size() <= default_align.size());
-        std::copy(align.begin(), align.end(), default_align.begin());
-        m_align.buffer = default_align[0];
-        m_align.margin = default_align[1];
-        m_align.min_margin = default_align[2];
-        m_align.strict = static_cast<bool>(default_align[3]);
+        m_align = align;
 
         m_gen = Generator(initstate, initseq);
         for (size_t i = 0; i < m_gen.size(); ++i) {
@@ -5176,7 +5181,7 @@ public:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const std::vector<size_t>& align)
+        const Alignment& align = alignment())
     {
         this->init(shape, initstate, initseq, distribution, parameters, align);
     }
@@ -5206,7 +5211,7 @@ public:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const std::vector<size_t>& align)
+        const Alignment& align = alignment())
     {
         this->init(shape, initstate, initseq, distribution, parameters, align);
     }

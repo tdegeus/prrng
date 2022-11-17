@@ -426,6 +426,26 @@ PYBIND11_MODULE(_prrng, m)
         py::arg("delta"),
         py::arg("shift"));
 
+    py::class_<prrng::Alignment>(m, "Alignment")
+
+        .def(
+            py::init<ptrdiff_t, ptrdiff_t, ptrdiff_t, bool>(),
+            "Default alignment settings. "
+            "See :cpp:class:`prrng::Alignment`.",
+            py::arg("buffer") = 0,
+            py::arg("margin") = 0,
+            py::arg("min_margin") = 0,
+            py::arg("strict") = false)
+
+        .def_readwrite("buffer", &prrng::Alignment::buffer)
+        .def_readwrite("margin", &prrng::Alignment::margin)
+        .def_readwrite("min_margin", &prrng::Alignment::min_margin)
+        .def_readwrite("strict", &prrng::Alignment::strict)
+
+        .def("__repr__", [](const prrng::Alignment&) {
+            return "<prrng.Alignment>";
+        });
+
     m.def(
         "alignment",
         &prrng::alignment,
@@ -868,7 +888,7 @@ PYBIND11_MODULE(_prrng, m)
                 uint64_t,
                 enum prrng::distribution,
                 const std::vector<double>&,
-                const std::vector<size_t>&>(),
+                const prrng::Alignment&>(),
             "Generator of cumulative sum of random numbers. "
             "See :cpp:class:`prrng::pcg32_cumsum`.",
             py::arg("shape"),
@@ -1025,7 +1045,7 @@ PYBIND11_MODULE(_prrng, m)
                 const State&,
                 prrng::distribution,
                 const std::vector<double>&,
-                const std::vector<size_t>&>(),
+                const prrng::Alignment&>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32_array`.",
             py::arg("shape"),
@@ -1057,7 +1077,7 @@ PYBIND11_MODULE(_prrng, m)
                 const State&,
                 prrng::distribution,
                 const std::vector<double>&,
-                const std::vector<size_t>&>(),
+                const prrng::Alignment&>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32_array`.",
             py::arg("shape"),
