@@ -341,7 +341,11 @@ void init_pcg32_arrayBase_cumsum(C& cls)
         py::arg("value"),
         py::arg("index"));
 
-    cls.def("align", &Parent::template align<Value>, "Align chunk with target.", py::arg("target"));
+    cls.def(
+        "align",
+        py::overload_cast<const Value&>(&Parent::template align<Value>),
+        "Align chunk with target.",
+        py::arg("target"));
 
     cls.def(
         "contains",

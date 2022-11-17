@@ -2547,6 +2547,12 @@ protected:
     uint64_t m_inc; ///< Controls which RNG sequence (stream) is selected. Must *always* be odd.
 };
 
+/**
+ * @brief Overload of prrng::pcg32() that keeps track of the current index of the generator
+ * in the sequence.
+ * Warning: the user is responsible for updating the index.
+ * The purpose of this class is therefore mostly internal, to support prrng::pcg32_cumsum().
+ */
 class pcg32_index : public pcg32 {
 private:
     ptrdiff_t m_index; ///< Index of the generator
@@ -2571,6 +2577,14 @@ public:
         m_delta = delta;
     }
 
+    /**
+     * @brief State at a specific index of the sequence.
+     * Internally the generator is moved to the index, the state is stored,
+     * and the generator is restored to its original state.
+     *
+     * @param index Index at which to get the state.
+     * @return uint64_t
+     */
     uint64_t state_at(ptrdiff_t index)
     {
         if (m_delta) {
@@ -2781,8 +2795,6 @@ private:
 
 public:
     /**
-     * @brief Constructor.
-     *
      * @param shape Shape of the chunk.
      * @param initstate State initiator.
      * @param initseq Sequence initiator.
@@ -2817,11 +2829,10 @@ public:
         m_gen = pcg32_index(initstate, initseq, distribution == distribution::delta);
         m_start = m_gen.index();
         m_i = static_cast<ptrdiff_t>(m_data.size());
+        m_align = align;
         m_distro = distribution;
         std::copy(parameters.begin(), parameters.end(), m_param.begin());
         this->auto_functions();
-
-        m_align = align;
 
         if (!m_extendible) {
             return;
@@ -2940,7 +2951,6 @@ public:
 
     /**
      * @brief Overwrite the chunk.
-     * This can be used to make modification externally.
      * Please check if set_state() or set_start() should be called too.
      *
      * @param data The chunk.
@@ -2951,7 +2961,8 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::start()
+     * @brief Global index of the first element in the chunk.
+     * @return Global index.
      */
     ptrdiff_t start() const
     {
@@ -2959,7 +2970,8 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::set_start()
+     * @brief Set global index of the first element in the chunk.
+     * @param index Global index.
      */
     void set_start(ptrdiff_t index)
     {
@@ -2967,7 +2979,8 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::index()
+     * @brief Global index of `target` (the last time prrng::pcg32_cumsum::align() was called).
+     * @return Global index.
      */
     ptrdiff_t index() const
     {
@@ -2975,7 +2988,10 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::chunk_index()
+     * @brief Index of `target` relative to the beginning of the chunk
+     * (the last time prrng::pcg32_cumsum::align() was called).
+     *
+     * @return Local index.
      */
     ptrdiff_t chunk_index() const
     {
@@ -2983,7 +2999,7 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::state()
+     * @copydoc prrng::pcg32_index::state()
      */
     uint64_t state_at(ptrdiff_t index)
     {
@@ -2991,7 +3007,11 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::restore()
+     * @brief Restore a specific state in the cumulative sum.
+     *
+     * @param state The state at the beginning of the new chunk.
+     * @param value The value of the first entry of the new chunk.
+     * @param index The index of the first entry of the new chunk.
      */
     void restore(uint64_t state, double value, ptrdiff_t index)
     {
@@ -3006,7 +3026,9 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::contains()
+     * @brief Check if the chunk contains a target.
+     * @param target The target.
+     * @return `true` if the chunk contains the target.
      */
     bool contains(double target) const
     {
@@ -4611,6 +4633,9 @@ protected:
     using GeneratorBase_array<std::array<size_t, N>>::m_strides;
 };
 
+/**
+ * @brief Array of prrng::pcg32_index().
+ */
 class pcg32_index_array : public pcg32_arrayBase<pcg32_index, std::vector<size_t>> {
 public:
     pcg32_index_array() = default;
@@ -4796,6 +4821,7 @@ protected:
         using shape_type = typename S::value_type;
 
         m_align = align;
+        m_distro = distribution;
         m_gen = Generator(initstate, initseq);
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
@@ -4815,7 +4841,6 @@ protected:
 
         auto par = detail::default_parameters_cumsum(distribution, parameters);
         std::copy(par.begin(), par.end(), m_param.begin());
-        m_distro = distribution;
 
         this->auto_functions();
 
@@ -4988,8 +5013,7 @@ public:
     }
 
     /**
-     * @brief Align chunks with a target values.
-     * @param target Target values.
+     * @copydoc prrng::pcg32_cumsum::align(double)
      */
     template <class T>
     void align(const T& target)
@@ -5010,6 +5034,28 @@ public:
                 target.flat(i));
         }
     }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::align(double)
+     * @param i Flat index of the item to align.
+     */
+    void align(size_t i, double target)
+    {
+        PRRNG_ASSERT(m_extendible);
+
+        detail::align(
+            m_gen[i],
+            m_draw[i],
+            m_sum[i],
+            m_align,
+            &m_data.flat(i * m_n),
+            m_n,
+            &m_start.flat(i),
+            &m_i.flat(i),
+            target);
+    }
+
+    // todo: overload with array index
 
     /**
      * @brief Generator array.
@@ -5043,8 +5089,7 @@ public:
     }
 
     /**
-     * @brief Chunk.
-     * @return Pointer to chunk.
+     * @copydoc prrng::pcg32_cumsum::data()
      */
     const Data& data() const
     {
@@ -5052,11 +5097,7 @@ public:
     }
 
     /**
-     * @brief Overwrite chunk.
-     * Please consider if prrng::pcg32_arrayBase_cumsum::set_state() and
-     * prrng::pcg32_arrayBase_cumsum::set_start() should be called as well.
-     *
-     * @param data New chunk.
+     * @copydoc prrng::pcg32_cumsum::set_data(const Data&)
      */
     void set_data(const Data& data)
     {
@@ -5067,9 +5108,7 @@ public:
     }
 
     /**
-     * @brief Start index of the chunk.
-     *
-     * @return Array of indices.
+     * @copydoc prrng::pcg32_cumsum::start()
      */
     const Index& start() const
     {
@@ -5077,9 +5116,7 @@ public:
     }
 
     /**
-     * @brief Overwrite start index of the chunk.
-     *
-     * @param index Array of indices.
+     * @copydoc prrng::pcg32_cumsum::set_start(ptrdiff_t)
      */
     void set_start(const Index& index)
     {
@@ -5088,7 +5125,7 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::index()
+     * @copydoc prrng::pcg32_cumsum::index()
      */
     Index index() const
     {
@@ -5096,7 +5133,7 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum_external::chunk_index()
+     * @copydoc prrng::pcg32_cumsum::chunk_index()
      */
     const Index& chunk_index() const
     {
@@ -5104,9 +5141,7 @@ public:
     }
 
     /**
-     * @brief State of the generators.
-     *
-     * @return Array of states.
+     * @copydoc prrng::pcg32_cumsum::state_at(ptrdiff_t)
      */
     template <class R, class T>
     R state_at(const T& index)
@@ -5124,12 +5159,7 @@ public:
     }
 
     /**
-     * @brief Restore state.
-     * A `draw...` function should be called next.
-     *
-     * @param state Array of states.
-     * @param value Array of values to begin the chunk with.
-     * @param index Index that the states correspond to.
+     * @copydoc prrng::pcg32_cumsum::restore(uint64_t, double, ptrdiff_t)
      */
     template <class S, class V, class T>
     void restore(const S& state, const V& value, const T& index)
@@ -5151,9 +5181,7 @@ public:
     }
 
     /**
-     * @brief Check if all target values are in the current chunk.
-     * @param target Target values.
-     * @return True if all target values are in the current chunk.
+     * @copydoc prrng::pcg32_cumsum::contains(double)
      */
     template <class T>
     bool contains(const T& target) const
@@ -5185,7 +5213,7 @@ public:
 
     /**
      * @copydoc prrng::pcg32_arrayBase_cumsum::init(const S&, const T&, const U&,
-     *      enum distribution, const std::vector<double>&, const std::vector<size_t>&)
+     *      enum distribution, const std::vector<double>&, const alignment&)
      */
     template <class S, class T, class U>
     pcg32_array_cumsum(
@@ -5215,7 +5243,7 @@ public:
 
     /**
      * @copydoc prrng::pcg32_arrayBase_cumsum::init(const S&, const T&, const U&,
-     *      enum distribution, const std::vector<double>&, const std::vector<size_t>&)
+     *      enum distribution, const std::vector<double>&, const alignment&)
      */
     template <class S, class T, class U>
     pcg32_tensor_cumsum(
