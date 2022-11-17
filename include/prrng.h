@@ -569,8 +569,7 @@ namespace iterator {
  * @param last Iterator defining the end of the range to examine (e.g. `a.end()`)
  * @param value Value to find.
  * @param guess Guess of the index where to find the value.
- * @param proximity Size of the proximity search around `guess` (use `0` to disable proximity
- * search).
+ * @param proximity Size of the proximity search around `guess` (use `0` to disable).
  * @return The index of `value` (i.e. `a[index] < value <= a[index + 1]`).
  */
 template <class It, class T, class R = size_t>
