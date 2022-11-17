@@ -1003,21 +1003,24 @@ PYBIND11_MODULE(_prrng, m)
         cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_index_array>"; });
     }
 
-    // py::class_<
-    //     prrng::pcg32_index_tensor<1>,
-    //     prrng::pcg32_arrayBase<prrng::pcg32_index, std::array<size_t, 1>>>(m,
-    //     "pcg32_index_tensor1")
+    {
+        using Parent = prrng::pcg32_index_tensor<1>;
+        using Class = py::class_<Parent>;
 
-    //     .def(
-    //         py::init<const xt::pytensor<uint64_t, 1>&, const xt::pytensor<uint64_t, 1>&>(),
-    //         "Random number generator. "
-    //         "See :cpp:class:`prrng::pcg32_index_tensor`.",
-    //         py::arg("initstate"),
-    //         py::arg("initseq"))
+        Class cls(m, "pcg32_index_tensor1");
 
-    //     .def("__repr__", [](const prrng::pcg32_index_tensor<1>&) {
-    //         return "<prrng.pcg32_index_tensor1>";
-    //     });
+        init_GeneratorBase_array<Class, Parent>(cls);
+        init_pcg32_arrayBase<Class, Parent>(cls);
+
+        cls.def(
+            py::init<const xt::pytensor<uint64_t, 1>&, const xt::pytensor<uint64_t, 1>&>(),
+            "Random number generator. "
+            "See :cpp:class:`prrng::pcg32_index_tensor`.",
+            py::arg("initstate"),
+            py::arg("initseq"));
+
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_index_tensor1>"; });
+    }
 
     {
         using Data = xt::pyarray<double>;

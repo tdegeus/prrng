@@ -2529,7 +2529,6 @@ protected:
     }
 
 protected:
-
     /**
      * @brief Seed the generator.
      *
@@ -2819,7 +2818,7 @@ public:
      *      Warning: if you want to use a custom distribution, you have to call
      *      prrng::pcg32_cumsum::set_functions().
      *
-     * @param align alignment parameters, see prrng::alignment().
+     * @param align Alignment parameters, see prrng::alignment().
      */
     template <class R, typename T = uint64_t, typename S = uint64_t>
     pcg32_cumsum(
