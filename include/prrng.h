@@ -2624,8 +2624,25 @@ public:
 /**
  * @brief Structure to assemble the alignment parameters, see prrng::alignment().
  */
-struct Alignment {
-    Alignment(ptrdiff_t buffer = 0, ptrdiff_t margin = 0, ptrdiff_t min_margin = 0, bool strict = false)
+struct alignment {
+    /**
+     * @param buffer
+     *      If positive, only change the chunk if target is in `chunk[:buffer]` or `chunk[-buffer:]`
+     *
+     * @param margin
+     *      Index of the chunk to place the target.
+     *
+     * @param min_margin
+     *      Minimal index to accept if `strict = false`.
+     *
+     * @param strict
+     *      If `true`, `margin` is respected strictly: `argmin(target > chunk) == margin`.
+     *      If `false` `min_margin <= argmin(target > chunk) <= margin`, whereby
+     *      `argmin(target > chunk) < margin` if moving backwards is required to respect `margin`.
+     *
+     * @return List with parameters.
+     */
+    alignment(ptrdiff_t buffer = 0, ptrdiff_t margin = 0, ptrdiff_t min_margin = 0, bool strict = false)
     {
         this->buffer = buffer;
         this->margin = margin;
@@ -2638,39 +2655,6 @@ struct Alignment {
     ptrdiff_t min_margin = 0; ///< Minimum position of the target if `strict = false`.
     bool strict = false; ///< Enforce `margin` strictly.
 };
-
-/**
- * @brief Wrapper to allocate alignment parameters.
- * Warning: the length, order, and content of the returned list might change in future versions,
- * this wrapper function provides you with API stability.
- *
- * @param buffer
- *      If positive, only change the chunk if target is in `chunk[:buffer]` or `chunk[-buffer:]`
- *
- * @param margin
- *      Index of the chunk to place the target.
- *
- * @param min_margin
- *      Minimal index to accept if `strict = false`.
- *
- * @param strict
- *      If `true`, `margin` is respected strictly: `argmin(target > chunk) == margin`.
- *      If `false` `min_margin <= argmin(target > chunk) <= margin`, whereby
- *      `argmin(target > chunk) < margin` if moving backwards is required to respect `margin`.
- *
- * @return List with parameters.
- */
-Alignment
-alignment(size_t buffer = 0, size_t margin = 0, size_t min_margin = 0, bool strict = false)
-{
-    Alignment ret;
-    ret.buffer = static_cast<ptrdiff_t>(buffer);
-    ret.margin = static_cast<ptrdiff_t>(margin);
-    ret.min_margin = static_cast<ptrdiff_t>(min_margin);
-    ret.strict = strict;
-    return ret;
-
-}
 
 /**
  * @brief Generator of a random cumulative sum of which a chunk is kept in memory.
@@ -2686,7 +2670,7 @@ private:
     std::function<Data(size_t)> m_draw; ///< Function to draw the random numbers.
     std::function<double(size_t)> m_sum; ///< Function to get the cumsum of random numbers.
     bool m_extendible; ///< Signal if the drawing functions are specified.
-    Alignment m_align; ///< Alignment settings, see prrng::Alignment().
+    alignment m_align; ///< alignment settings, see prrng::alignment().
     distribution m_dist; ///< Distribution name, see prrng::distribution().
     std::array<double, 3> m_param; ///< Distribution parameters.
     ptrdiff_t m_start; ///< Start index of the chunk.
@@ -2799,7 +2783,7 @@ public:
      *      Warning: if you want to use a custom distribution, you have to call
      *      prrng::pcg32_cumsum::set_functions().
      *
-     * @param align Alignment parameters, see prrng::alignment().
+     * @param align alignment parameters, see prrng::alignment().
      */
     template <class R, typename T = uint64_t, typename S = uint64_t>
     pcg32_cumsum(
@@ -2808,7 +2792,7 @@ public:
         S initseq = PRRNG_PCG32_INITSEQ,
         enum distribution distribution = distribution::custom,
         const std::vector<double>& parameters = std::vector<double>{},
-        const Alignment& align = alignment())
+        const alignment& align = alignment())
     {
         m_data = xt::empty<typename Data::value_type>(shape);
         m_gen = pcg32_index(initstate, initseq, distribution == distribution::delta);
@@ -4751,7 +4735,7 @@ protected:
     std::vector<std::function<xt::xtensor<double, 1>(size_t)>> m_draw; ///< Draw functions
     std::vector<std::function<double(size_t)>> m_sum; ///< Result of cumsum fuctions
     bool m_extendible; ///< Signal if the drawing functions are specified.
-    Alignment m_align; ///< Alignment settings, see prrng::Alignment().
+    alignment m_align; ///< alignment settings, see prrng::alignment().
     distribution m_dist; ///< Distribution name, see prrng::distribution().
     std::array<double, 3> m_param; ///< Distribution parameters.
     Index m_start; ///< Start index of the chunk.
@@ -4778,7 +4762,7 @@ protected:
      *      -   prrng::distribution::delta: {scale = 1, offset = 0}
      *      -   prrng::distribution::custom: {}
      *
-     * @param align Alignment parameters, see prrng::alignment().
+     * @param align alignment parameters, see prrng::alignment().
      */
     template <class S, class T, class U>
     void init(
@@ -4787,7 +4771,7 @@ protected:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const Alignment& align = alignment())
+        const alignment& align = alignment())
     {
         PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
         using shape_type = typename S::value_type;
@@ -5181,7 +5165,7 @@ public:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const Alignment& align = alignment())
+        const alignment& align = alignment())
     {
         this->init(shape, initstate, initseq, distribution, parameters, align);
     }
@@ -5211,7 +5195,7 @@ public:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const Alignment& align = alignment())
+        const alignment& align = alignment())
     {
         this->init(shape, initstate, initseq, distribution, parameters, align);
     }

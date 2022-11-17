@@ -426,35 +426,35 @@ PYBIND11_MODULE(_prrng, m)
         py::arg("delta"),
         py::arg("shift"));
 
-    py::class_<prrng::Alignment>(m, "Alignment")
+    py::class_<prrng::alignment>(m, "alignment")
 
         .def(
             py::init<ptrdiff_t, ptrdiff_t, ptrdiff_t, bool>(),
             "Default alignment settings. "
-            "See :cpp:class:`prrng::Alignment`.",
+            "See :cpp:class:`prrng::alignment`.",
             py::arg("buffer") = 0,
             py::arg("margin") = 0,
             py::arg("min_margin") = 0,
             py::arg("strict") = false)
 
-        .def_readwrite("buffer", &prrng::Alignment::buffer)
-        .def_readwrite("margin", &prrng::Alignment::margin)
-        .def_readwrite("min_margin", &prrng::Alignment::min_margin)
-        .def_readwrite("strict", &prrng::Alignment::strict)
+        .def_readwrite("buffer", &prrng::alignment::buffer)
+        .def_readwrite("margin", &prrng::alignment::margin)
+        .def_readwrite("min_margin", &prrng::alignment::min_margin)
+        .def_readwrite("strict", &prrng::alignment::strict)
 
-        .def("__repr__", [](const prrng::Alignment&) {
-            return "<prrng.Alignment>";
+        .def("__repr__", [](const prrng::alignment&) {
+            return "<prrng.alignment>";
         });
 
-    m.def(
-        "alignment",
-        &prrng::alignment,
-        "Alignment options. "
-        "See :cpp:func:`prrng::alignment`.",
-        py::arg("buffer") = 0,
-        py::arg("margin") = 0,
-        py::arg("min_margin") = 0,
-        py::arg("strict") = false);
+    // m.def(
+    //     "alignment",
+    //     &prrng::alignment,
+    //     "alignment options. "
+    //     "See :cpp:func:`prrng::alignment`.",
+    //     py::arg("buffer") = 0,
+    //     py::arg("margin") = 0,
+    //     py::arg("min_margin") = 0,
+    //     py::arg("strict") = false);
 
     py::enum_<prrng::distribution>(m, "distribution")
         .value("random", prrng::distribution::random)
@@ -888,7 +888,7 @@ PYBIND11_MODULE(_prrng, m)
                 uint64_t,
                 enum prrng::distribution,
                 const std::vector<double>&,
-                const prrng::Alignment&>(),
+                const prrng::alignment&>(),
             "Generator of cumulative sum of random numbers. "
             "See :cpp:class:`prrng::pcg32_cumsum`.",
             py::arg("shape"),
@@ -1045,7 +1045,7 @@ PYBIND11_MODULE(_prrng, m)
                 const State&,
                 prrng::distribution,
                 const std::vector<double>&,
-                const prrng::Alignment&>(),
+                const prrng::alignment&>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32_array`.",
             py::arg("shape"),
@@ -1077,7 +1077,7 @@ PYBIND11_MODULE(_prrng, m)
                 const State&,
                 prrng::distribution,
                 const std::vector<double>&,
-                const prrng::Alignment&>(),
+                const prrng::alignment&>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32_array`.",
             py::arg("shape"),
