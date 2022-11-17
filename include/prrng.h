@@ -2690,7 +2690,7 @@ private:
     std::function<double(size_t)> m_sum; ///< Function to get the cumsum of random numbers.
     bool m_extendible; ///< Signal if the drawing functions are specified.
     alignment m_align; ///< alignment settings, see prrng::alignment().
-    distribution m_dist; ///< Distribution name, see prrng::distribution().
+    distribution m_distro; ///< Distribution name, see prrng::distribution().
     std::array<double, 3> m_param; ///< Distribution parameters.
     ptrdiff_t m_start; ///< Start index of the chunk.
     ptrdiff_t m_i; ///< Last know index of `target` in align.
@@ -2702,7 +2702,7 @@ private:
     {
         m_extendible = true;
 
-        switch (m_dist) {
+        switch (m_distro) {
         case random:
             m_draw = [this](size_t n) -> Data {
                 return m_gen.random<Data>({n}) * m_param[0] + m_param[1];
@@ -2772,7 +2772,7 @@ private:
         m_data = other.m_data;
         m_gen = other.m_gen;
         m_align = other.m_align;
-        m_dist = other.m_dist;
+        m_distro = other.m_distro;
         m_param = other.m_param;
         m_start = other.m_start;
         m_i = other.m_i;
@@ -2817,7 +2817,7 @@ public:
         m_gen = pcg32_index(initstate, initseq, distribution == distribution::delta);
         m_start = m_gen.index();
         m_i = static_cast<ptrdiff_t>(m_data.size());
-        m_dist = distribution;
+        m_distro = distribution;
         std::copy(parameters.begin(), parameters.end(), m_param.begin());
         this->auto_functions();
 
@@ -4755,7 +4755,7 @@ protected:
     std::vector<std::function<double(size_t)>> m_sum; ///< Result of cumsum fuctions
     bool m_extendible; ///< Signal if the drawing functions are specified.
     alignment m_align; ///< alignment settings, see prrng::alignment().
-    distribution m_dist; ///< Distribution name, see prrng::distribution().
+    distribution m_distro; ///< Distribution name, see prrng::distribution().
     std::array<double, 3> m_param; ///< Distribution parameters.
     Index m_start; ///< Start index of the chunk.
     Index m_i; ///< Last know index of `target` in align.
@@ -4795,19 +4795,18 @@ protected:
         PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
         using shape_type = typename S::value_type;
 
+        m_align = align;
+        m_gen = Generator(initstate, initseq);
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_gen[i].set_delta(distribution == distribution::delta);
+        }
+
         std::vector<size_t> data_shape;
         data_shape.resize(initstate.dimension() + shape.size());
         std::copy(initstate.shape().begin(), initstate.shape().end(), data_shape.begin());
         std::copy(shape.begin(), shape.end(), data_shape.begin() + initstate.dimension());
         m_data = xt::empty<typename Data::value_type>(data_shape);
-
-        m_align = align;
-
-        m_gen = Generator(initstate, initseq);
-        for (size_t i = 0; i < m_gen.size(); ++i) {
-            m_gen[i].set_delta(distribution == distribution::delta);
-        }
-
         m_n = static_cast<size_t>(
             std::accumulate(shape.cbegin(), shape.cend(), 1, std::multiplies<shape_type>{}));
 
@@ -4816,13 +4815,14 @@ protected:
 
         auto par = detail::default_parameters_cumsum(distribution, parameters);
         std::copy(par.begin(), par.end(), m_param.begin());
-        m_dist = distribution;
+        m_distro = distribution;
 
         this->auto_functions();
 
+        using E = decltype(m_draw[size_t{}](size_t{}));
+
         if (m_extendible) {
             for (size_t i = 0; i < m_gen.size(); ++i) {
-                using E = decltype(m_draw[i](size_t{}));
                 E extra = m_draw[i](m_n);
                 m_gen[i].drawn(m_n);
                 std::partial_sum(extra.begin(), extra.end(), &m_data.flat(i * m_n));
@@ -4835,15 +4835,15 @@ protected:
      */
     void auto_functions()
     {
-        using R = xt::xtensor<double, 1>;
+        using R = decltype(m_draw[size_t{}](size_t{}));
         m_extendible = true;
 
-        if (m_dist != distribution::custom) {
+        if (m_distro != distribution::custom) {
             m_draw.resize(m_gen.size());
             m_sum.resize(m_gen.size());
         }
 
-        switch (m_dist) {
+        switch (m_distro) {
         case random:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
@@ -4927,7 +4927,7 @@ protected:
         m_gen = other.m_gen;
         m_data = other.m_data;
         m_align = other.m_align;
-        m_dist = other.m_dist;
+        m_distro = other.m_distro;
         m_param = other.m_param;
         m_start = other.m_start;
         m_i = other.m_i;
