@@ -615,7 +615,8 @@ namespace inplace {
  * search).
  */
 template <class T, class V, class R>
-inline void lower_bound(const T& matrix, const V& value, R& index, size_t proximity = 10)
+inline void
+lower_bound(const T& matrix, const V& value, R& index, typename R::value_type proximity = 10)
 {
     PRRNG_ASSERT(value.dimension() == matrix.dimension() - 1);
     PRRNG_ASSERT(value.dimension() == index.dimension());
@@ -3068,7 +3069,7 @@ public:
     void align(double target)
     {
         if (!m_extendible) {
-            PRRNG_ASSERT(target >= m_data.front() && target <= m_data.back());
+            PRRNG_ASSERT(this->contains(target));
             m_i = iterator::lower_bound(m_data.begin(), m_data.end(), target, m_i);
             return;
         }
@@ -5022,8 +5023,13 @@ public:
     template <class T>
     void align(const T& target)
     {
-        PRRNG_ASSERT(m_extendible);
         PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
+
+        if (!m_extendible) {
+            PRRNG_ASSERT(this->contains(target));
+            inplace::lower_bound(m_data, target, m_i);
+            return;
+        }
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             detail::align(
@@ -5045,7 +5051,12 @@ public:
      */
     void align(size_t i, double target)
     {
-        PRRNG_ASSERT(m_extendible);
+        if (!m_extendible) {
+            PRRNG_ASSERT(this->contains(target));
+            m_i.flat(i) = iterator::lower_bound(
+                &m_data.flat(i * m_n), &m_data.flat(i * m_n) + m_n, target, m_i.flat(i));
+            return;
+        }
 
         detail::align(
             m_gen[i],
