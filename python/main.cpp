@@ -34,6 +34,259 @@ private:
     py::object original_name_;
 };
 
+template <class C, class Parent>
+void init_GeneratorBase_array(C& cls)
+{
+    cls.def(
+        "shape",
+        [](const Parent& s) { return s.shape(); },
+        "Shape of the array of generators. "
+        "See :cpp:func:`prrng::GeneratorBase_array::shape`.");
+
+    cls.def(
+        "shape",
+        py::overload_cast<size_t>(&Parent::template shape<size_t>, py::const_),
+        "Shape of the array of generators, along a certain axis. "
+        "See :cpp:func:`prrng::GeneratorBase_array::shape`.",
+        py::arg("axis"));
+
+    cls.def(
+        "size",
+        &Parent::size,
+        "Size of the array of generators. "
+        "See :cpp:func:`prrng::GeneratorBase_array::size`.");
+
+    cls.def(
+        "decide",
+        py::overload_cast<const xt::pyarray<double>&>(
+            &Parent::template decide<xt::pyarray<double>, xt::pyarray<bool>>),
+        "ndarray of decision. "
+        "See :cpp:func:`prrng::GeneratorBase_array::decide`.",
+        py::arg("p"));
+
+    cls.def(
+        "decide",
+        py::overload_cast<const xt::pyarray<double>&, xt::pyarray<bool>&>(
+            &Parent::template decide<xt::pyarray<double>, xt::pyarray<bool>>),
+        "ndarray of decision. "
+        "See :cpp:func:`prrng::GeneratorBase_array::decide`.",
+        py::arg("p"),
+        py::arg("ret"));
+
+    cls.def(
+        "decide_masked",
+        py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<bool>&>(
+            &Parent::template decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
+        "ndarray of decision. "
+        "See :cpp:func:`prrng::GeneratorBase_array::decide_masked`.",
+        py::arg("p"),
+        py::arg("mask"));
+
+    cls.def(
+        "decide_masked",
+        py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<bool>&, xt::pyarray<bool>&>(
+            &Parent::template decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
+        "ndarray of decision. "
+        "See :cpp:func:`prrng::GeneratorBase_array::decide_masked`.",
+        py::arg("p"),
+        py::arg("mask"),
+        py::arg("ret"));
+
+    cls.def(
+        "random",
+        py::overload_cast<const std::vector<size_t>&>(
+            &Parent::template random<xt::pyarray<double>, std::vector<size_t>>),
+        "ndarray of random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::random`.",
+        py::arg("ishape"));
+
+    cls.def(
+        "randint",
+        py::overload_cast<const std::vector<size_t>&, uint32_t>(
+            &Parent::template randint<xt::pyarray<uint32_t>, std::vector<size_t>, uint32_t>),
+        "ndarray of random integers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::randint`.",
+        py::arg("ishape"),
+        py::arg("high"));
+
+    cls.def(
+        "randint",
+        py::overload_cast<const std::vector<size_t>&, int32_t, int32_t>(
+            &Parent::template randint<xt::pyarray<int32_t>, std::vector<size_t>, int32_t, int32_t>),
+        "ndarray of random integers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::randint`.",
+        py::arg("ishape"),
+        py::arg("low"),
+        py::arg("high"));
+
+    cls.def(
+        "normal",
+        py::overload_cast<const std::vector<size_t>&, double, double>(
+            &Parent::template normal<xt::pyarray<double>, std::vector<size_t>>),
+        "ndarray of random numbers, distributed according to a normal distribution. "
+        "See :cpp:func:`prrng::GeneratorBase_array::normal`.",
+        py::arg("ishape"),
+        py::arg("mu") = 0,
+        py::arg("sigma") = 1);
+
+    cls.def(
+        "exponential",
+        py::overload_cast<const std::vector<size_t>&, double>(
+            &Parent::template exponential<xt::pyarray<double>, std::vector<size_t>>),
+        "ndarray of random numbers, distributed according to a exponential distribution. "
+        "See :cpp:func:`prrng::GeneratorBase_array::exponential`.",
+        py::arg("ishape"),
+        py::arg("scale") = 1);
+
+    cls.def(
+        "weibull",
+        py::overload_cast<const std::vector<size_t>&, double, double>(
+            &Parent::template weibull<xt::pyarray<double>, std::vector<size_t>>),
+        "ndarray of random numbers, distributed according to a weibull distribution. "
+        "See :cpp:func:`prrng::GeneratorBase_array::weibull`.",
+        py::arg("ishape"),
+        py::arg("k") = 1,
+        py::arg("scale") = 1);
+
+    cls.def(
+        "gamma",
+        py::overload_cast<const std::vector<size_t>&, double, double>(
+            &Parent::template gamma<xt::pyarray<double>, std::vector<size_t>>),
+        "ndarray of random numbers, distributed according to a gamma distribution. "
+        "See :cpp:func:`prrng::GeneratorBase_array::gamma`.",
+        py::arg("ishape"),
+        py::arg("k") = 1,
+        py::arg("scale") = 1);
+
+    cls.def(
+        "delta",
+        py::overload_cast<const std::vector<size_t>&, double>(
+            &Parent::template delta<xt::pyarray<double>, std::vector<size_t>>),
+        "ndarray equal to mean. This is not a random distribution!. "
+        "See :cpp:func:`prrng::GeneratorBase_array::delta`.",
+        py::arg("ishape"),
+        py::arg("mean") = 1.0);
+
+    cls.def(
+        "cumsum_random",
+        &Parent::template cumsum_random<xt::pyarray<double>, xt::pyarray<size_t>>,
+        "Cumsum of ``n`` random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::cumsum_random`.",
+        py::arg("n"));
+
+    cls.def(
+        "cumsum_normal",
+        &Parent::template cumsum_normal<xt::pyarray<double>, xt::pyarray<size_t>>,
+        "Cumsum of ``n`` random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::cumsum_normal`.",
+        py::arg("n"),
+        py::arg("mu") = 0,
+        py::arg("sigma") = 1);
+
+    cls.def(
+        "cumsum_exponential",
+        &Parent::template cumsum_exponential<xt::pyarray<double>, xt::pyarray<size_t>>,
+        "Cumsum of ``n`` random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::cumsum_exponential`.",
+        py::arg("n"),
+        py::arg("scale") = 1);
+
+    cls.def(
+        "cumsum_delta",
+        &Parent::template cumsum_delta<xt::pyarray<double>, xt::pyarray<size_t>>,
+        "Cumsum of ``n`` random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::cumsum_delta`.",
+        py::arg("n"),
+        py::arg("scale") = 1);
+
+    cls.def(
+        "cumsum_weibull",
+        &Parent::template cumsum_weibull<xt::pyarray<double>, xt::pyarray<size_t>>,
+        "Cumsum of ``n`` random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::cumsum_weibull`.",
+        py::arg("n"),
+        py::arg("k") = 1,
+        py::arg("scale") = 1);
+
+    cls.def(
+        "cumsum_gamma",
+        &Parent::template cumsum_gamma<xt::pyarray<double>, xt::pyarray<size_t>>,
+        "Cumsum of ``n`` random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::cumsum_gamma`.",
+        py::arg("n"),
+        py::arg("k") = 1,
+        py::arg("scale") = 1);
+}
+
+template <class C, class Parent>
+void init_pcg32_arrayBase(C& cls)
+{
+    cls.def(
+        "__getitem__",
+        [](Parent& s, size_t i) {
+            if (i >= s.size())
+                throw py::index_error();
+            return &s[i];
+        },
+        py::return_value_policy::reference_internal);
+
+    cls.def(
+        "__getitem__",
+        [](Parent& s, std::vector<size_t> index) {
+            if (!s.inbounds(index))
+                throw py::index_error();
+            return &s[s.flat_index(index)];
+        },
+        py::return_value_policy::reference_internal);
+
+    cls.def(
+        "state",
+        &Parent::template state<xt::pyarray<uint64_t>>,
+        "Get current state. "
+        "See :cpp:func:`prrng::pcg32_arrayBase::state`.");
+
+    cls.def(
+        "initstate",
+        &Parent::template initstate<xt::pyarray<uint64_t>>,
+        "``initstate`` used in constructor. "
+        "See :cpp:func:`prrng::pcg32_arrayBase::initstate`.");
+
+    cls.def(
+        "initseq",
+        &Parent::template initseq<xt::pyarray<uint64_t>>,
+        "``initseq`` used in constructor. "
+        "See :cpp:func:`prrng::pcg32_arrayBase::initseq`.");
+
+    cls.def(
+        "distance",
+        py::overload_cast<const xt::pyarray<uint64_t>&>(
+            &Parent::template distance<xt::pyarray<uint64_t>>),
+        "Distance to a state. "
+        "See :cpp:func:`prrng::pcg32_arrayBase::distance`.",
+        py::arg("arg"));
+
+    cls.def(
+        "distance",
+        py::overload_cast<const Parent&>(&Parent::template distance<Parent>),
+        "Distance to a state. "
+        "See :cpp:func:`prrng::pcg32_arrayBase::distance`.",
+        py::arg("arg"));
+
+    cls.def(
+        "advance",
+        &Parent::template advance<xt::pyarray<uint64_t>>,
+        "Advance generators. "
+        "See :cpp:func:`prrng::pcg32_arrayBase::advance`.",
+        py::arg("distance"));
+
+    cls.def(
+        "restore",
+        &Parent::template restore<xt::pyarray<uint64_t>>,
+        "Restore state. "
+        "See :cpp:func:`prrng::pcg32_arrayBase::restore`.",
+        py::arg("state"));
+}
+
 template <class C, class Parent, class Data, class State, class Value, class Index>
 void init_pcg32_arrayBase_cumsum(C& cls)
 {
@@ -48,30 +301,35 @@ void init_pcg32_arrayBase_cumsum(C& cls)
 
     cls.def_property("data", &Parent::data, &Parent::set_data);
 
-    cls.def_property(
-        "generator_index",
-        &Parent::template generator_index<Index>,
-        &Parent::template set_generator_index<Index>);
+    // cls.def_property(
+    //     "generator_index",
+    //     &Parent::template generator_index<Index>,
+    //     &Parent::template set_generator_index<Index>);
 
-    cls.def_property("start", &Parent::template start<Index>, &Parent::template set_start<Index>);
+    cls.def_property("start", &Parent::start, &Parent::set_start);
 
-    cls.def_property_readonly("index", (Index(Parent::*)() const) & Parent::template index<Index>);
-
-    cls.def_property_readonly(
-        "chunk_index", (Index(Parent::*)() const) & Parent::template chunk_index<Index>);
+    cls.def_property_readonly("index", &Parent::index);
+    cls.def_property_readonly("chunk_index", &Parent::chunk_index);
 
     cls.def(
-        "state",
-        &Parent::template state<State, Index>,
-        "Get state at some index.",
+        "state_at",
+        &Parent::template state_at<State, Index>,
+        "Get current state at an index. "
+        "See :cpp:func:`prrng::pcg32_arrayBase::state_at`.",
         py::arg("index"));
 
-    cls.def(
-        "set_state",
-        &Parent::template set_state<State, Index>,
-        "Set state at some index.",
-        py::arg("state"),
-        py::arg("index"));
+    // cls.def(
+    //     "state",
+    //     &Parent::template state<State, Index>,
+    //     "Get state at some index.",
+    //     py::arg("index"));
+
+    // cls.def(
+    //     "set_state",
+    //     &Parent::template set_state<State, Index>,
+    //     "Set state at some index.",
+    //     py::arg("state"),
+    //     py::arg("index"));
 
     cls.def(
         "restore",
@@ -666,8 +924,8 @@ PYBIND11_MODULE(_prrng, m)
             "Index or target in the current chunk.")
 
         .def(
-            "state",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::state,
+            "state_at",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::state_at,
             py::arg("index"),
             "State of the generator at any index.")
 
@@ -687,362 +945,72 @@ PYBIND11_MODULE(_prrng, m)
             return "<prrng.pcg32_cumsum>";
         });
 
-    py::class_<prrng::GeneratorBase_array<std::vector<size_t>>>(m, "GeneratorBase_array")
+    {
+        using Parent = prrng::pcg32_array;
+        using Class = py::class_<Parent>;
 
-        .def(
-            py::init<>(),
-            "Random number generator base class. "
-            "See :cpp:class:`prrng::GeneratorBase_array`.")
+        Class cls(m, "pcg32_array");
 
-        .def(
-            "shape",
-            [](const prrng::GeneratorBase_array<std::vector<size_t>>& s) { return s.shape(); },
-            "Shape of the array of generators. "
-            "See :cpp:func:`prrng::GeneratorBase_array::shape`.")
+        init_GeneratorBase_array<Class, Parent>(cls);
+        init_pcg32_arrayBase<Class, Parent>(cls);
 
-        .def(
-            "shape",
-            py::overload_cast<size_t>(
-                &prrng::GeneratorBase_array<std::vector<size_t>>::shape<size_t>, py::const_),
-            "Shape of the array of generators, along a certain axis. "
-            "See :cpp:func:`prrng::GeneratorBase_array::shape`.",
-            py::arg("axis"))
+        cls.def(
+                py::init<const xt::pyarray<uint64_t>&>(),
+                "Random number generator. "
+                "See :cpp:class:`prrng::pcg32_array`.",
+                py::arg("initstate"));
 
-        .def(
-            "size",
-            &prrng::GeneratorBase_array<std::vector<size_t>>::size,
-            "Size of the array of generators. "
-            "See :cpp:func:`prrng::GeneratorBase_array::size`.")
+        cls.def(
+                py::init<const xt::pyarray<uint64_t>&, const xt::pyarray<uint64_t>&>(),
+                "Random number generator. "
+                "See :cpp:class:`prrng::pcg32_array`.",
+                py::arg("initstate"),
+                py::arg("initseq"));
 
-        .def(
-            "decide",
-            py::overload_cast<const xt::pyarray<double>&>(
-                &prrng::GeneratorBase_array<
-                    std::vector<size_t>>::decide<xt::pyarray<double>, xt::pyarray<bool>>),
-            "ndarray of decision. "
-            "See :cpp:func:`prrng::GeneratorBase_array::decide`.",
-            py::arg("p"))
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_array>"; });
+    }
 
-        .def(
-            "decide",
-            py::overload_cast<const xt::pyarray<double>&, xt::pyarray<bool>&>(
-                &prrng::GeneratorBase_array<
-                    std::vector<size_t>>::decide<xt::pyarray<double>, xt::pyarray<bool>>),
-            "ndarray of decision. "
-            "See :cpp:func:`prrng::GeneratorBase_array::decide`.",
-            py::arg("p"),
-            py::arg("ret"))
+    {
+        using Parent = prrng::pcg32_index_array;
+        using Class = py::class_<Parent>;
+        using Index = xt::pyarray<ptrdiff_t>;
 
-        .def(
-            "decide_masked",
-            py::overload_cast<const xt::pyarray<double>&, const xt::pyarray<bool>&>(
-                &prrng::GeneratorBase_array<std::vector<size_t>>::
-                    decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
-            "ndarray of decision. "
-            "See :cpp:func:`prrng::GeneratorBase_array::decide_masked`.",
-            py::arg("p"),
-            py::arg("mask"))
+        Class cls(m, "pcg32_index_array");
 
-        .def(
-            "decide_masked",
-            py::overload_cast<
-                const xt::pyarray<double>&,
-                const xt::pyarray<bool>&,
-                xt::pyarray<bool>&>(
-                &prrng::GeneratorBase_array<std::vector<size_t>>::
-                    decide_masked<xt::pyarray<double>, xt::pyarray<bool>, xt::pyarray<bool>>),
-            "ndarray of decision. "
-            "See :cpp:func:`prrng::GeneratorBase_array::decide_masked`.",
-            py::arg("p"),
-            py::arg("mask"),
-            py::arg("ret"))
+        init_GeneratorBase_array<Class, Parent>(cls);
+        init_pcg32_arrayBase<Class, Parent>(cls);
 
-        .def(
-            "random",
-            py::overload_cast<const std::vector<size_t>&>(
-                &prrng::GeneratorBase_array<
-                    std::vector<size_t>>::random<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random numbers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::random`.",
-            py::arg("ishape"))
-
-        .def(
-            "randint",
-            py::overload_cast<const std::vector<size_t>&, uint32_t>(
-                &prrng::GeneratorBase_array<std::vector<size_t>>::
-                    randint<xt::pyarray<uint32_t>, std::vector<size_t>, uint32_t>),
-            "ndarray of random integers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::randint`.",
-            py::arg("ishape"),
-            py::arg("high"))
-
-        .def(
-            "randint",
-            py::overload_cast<const std::vector<size_t>&, int32_t, int32_t>(
-                &prrng::GeneratorBase_array<std::vector<size_t>>::
-                    randint<xt::pyarray<int32_t>, std::vector<size_t>, int32_t, int32_t>),
-            "ndarray of random integers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::randint`.",
-            py::arg("ishape"),
-            py::arg("low"),
-            py::arg("high"))
-
-        .def(
-            "normal",
-            py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::GeneratorBase_array<
-                    std::vector<size_t>>::normal<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random numbers, distributed according to a normal distribution. "
-            "See :cpp:func:`prrng::GeneratorBase_array::normal`.",
-            py::arg("ishape"),
-            py::arg("mu") = 0,
-            py::arg("sigma") = 1)
-
-        .def(
-            "exponential",
-            py::overload_cast<const std::vector<size_t>&, double>(
-                &prrng::GeneratorBase_array<
-                    std::vector<size_t>>::exponential<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random numbers, distributed according to a exponential distribution. "
-            "See :cpp:func:`prrng::GeneratorBase_array::exponential`.",
-            py::arg("ishape"),
-            py::arg("scale") = 1)
-
-        .def(
-            "weibull",
-            py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::GeneratorBase_array<
-                    std::vector<size_t>>::weibull<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random numbers, distributed according to a weibull distribution. "
-            "See :cpp:func:`prrng::GeneratorBase_array::weibull`.",
-            py::arg("ishape"),
-            py::arg("k") = 1,
-            py::arg("scale") = 1)
-
-        .def(
-            "gamma",
-            py::overload_cast<const std::vector<size_t>&, double, double>(
-                &prrng::GeneratorBase_array<
-                    std::vector<size_t>>::gamma<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray of random numbers, distributed according to a gamma distribution. "
-            "See :cpp:func:`prrng::GeneratorBase_array::gamma`.",
-            py::arg("ishape"),
-            py::arg("k") = 1,
-            py::arg("scale") = 1)
-
-        .def(
-            "delta",
-            py::overload_cast<const std::vector<size_t>&, double>(
-                &prrng::GeneratorBase_array<
-                    std::vector<size_t>>::delta<xt::pyarray<double>, std::vector<size_t>>),
-            "ndarray equal to mean. This is not a random distribution!. "
-            "See :cpp:func:`prrng::GeneratorBase_array::delta`.",
-            py::arg("ishape"),
-            py::arg("mean") = 1.0)
-
-        .def(
-            "cumsum_random",
-            &prrng::GeneratorBase_array<
-                std::vector<size_t>>::cumsum_random<xt::pyarray<double>, xt::pyarray<size_t>>,
-            "Cumsum of ``n`` random numbers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::cumsum_random`.",
-            py::arg("n"))
-
-        .def(
-            "cumsum_normal",
-            &prrng::GeneratorBase_array<
-                std::vector<size_t>>::cumsum_normal<xt::pyarray<double>, xt::pyarray<size_t>>,
-            "Cumsum of ``n`` random numbers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::cumsum_normal`.",
-            py::arg("n"),
-            py::arg("mu") = 0,
-            py::arg("sigma") = 1)
-
-        .def(
-            "cumsum_exponential",
-            &prrng::GeneratorBase_array<
-                std::vector<size_t>>::cumsum_exponential<xt::pyarray<double>, xt::pyarray<size_t>>,
-            "Cumsum of ``n`` random numbers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::cumsum_exponential`.",
-            py::arg("n"),
-            py::arg("scale") = 1)
-
-        .def(
-            "cumsum_delta",
-            &prrng::GeneratorBase_array<
-                std::vector<size_t>>::cumsum_delta<xt::pyarray<double>, xt::pyarray<size_t>>,
-            "Cumsum of ``n`` random numbers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::cumsum_delta`.",
-            py::arg("n"),
-            py::arg("scale") = 1)
-
-        .def(
-            "cumsum_weibull",
-            &prrng::GeneratorBase_array<
-                std::vector<size_t>>::cumsum_weibull<xt::pyarray<double>, xt::pyarray<size_t>>,
-            "Cumsum of ``n`` random numbers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::cumsum_weibull`.",
-            py::arg("n"),
-            py::arg("k") = 1,
-            py::arg("scale") = 1)
-
-        .def(
-            "cumsum_gamma",
-            &prrng::GeneratorBase_array<
-                std::vector<size_t>>::cumsum_gamma<xt::pyarray<double>, xt::pyarray<size_t>>,
-            "Cumsum of ``n`` random numbers. "
-            "See :cpp:func:`prrng::GeneratorBase_array::cumsum_gamma`.",
-            py::arg("n"),
-            py::arg("k") = 1,
-            py::arg("scale") = 1)
-
-        .def("__repr__", [](const prrng::GeneratorBase_array<std::vector<size_t>>&) {
-            return "<prrng.GeneratorBase_array>";
-        });
-
-    py::class_<
-        prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>,
-        prrng::GeneratorBase_array<std::vector<size_t>>>(m, "pcg32_arrayBase")
-
-        .def(
-            py::init<>(),
-            "Random number generator base class. "
-            "See :cpp:class:`prrng::pcg32_arrayBase`.")
-
-        // https://github.com/pybind/pybind11/blob/master/tests/test_sequences_and_iterators.cpp
-
-        .def(
-            "__getitem__",
-            [](prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>& s, size_t i) {
-                if (i >= s.size())
-                    throw py::index_error();
-                return &s[i];
-            },
-            py::return_value_policy::reference_internal)
-
-        .def(
-            "__getitem__",
-            [](prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>& s,
-               std::vector<size_t> index) {
-                if (!s.inbounds(index))
-                    throw py::index_error();
-                return &s[s.flat_index(index)];
-            },
-            py::return_value_policy::reference_internal)
-
-        .def(
-            "state",
-            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::state<
-                xt::pyarray<uint64_t>>,
-            "Get current state. "
-            "See :cpp:func:`prrng::pcg32_arrayBase::state`.")
-
-        .def(
-            "initstate",
-            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::initstate<
-                xt::pyarray<uint64_t>>,
-            "``initstate`` used in constructor. "
-            "See :cpp:func:`prrng::pcg32_arrayBase::initstate`.")
-
-        .def(
-            "initseq",
-            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::initseq<
-                xt::pyarray<uint64_t>>,
-            "``initseq`` used in constructor. "
-            "See :cpp:func:`prrng::pcg32_arrayBase::initseq`.")
-
-        .def(
-            "distance",
-            py::overload_cast<const xt::pyarray<uint64_t>&>(
-                &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::distance<
-                    xt::pyarray<uint64_t>>),
-            "Distance to a state. "
-            "See :cpp:func:`prrng::pcg32_arrayBase::distance`.",
-            py::arg("arg"))
-
-        .def(
-            "distance",
-            py::overload_cast<const prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>&>(
-                &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::distance<
-                    prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>>),
-            "Distance to a state. "
-            "See :cpp:func:`prrng::pcg32_arrayBase::distance`.",
-            py::arg("arg"))
-
-        .def(
-            "advance",
-            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::advance<
-                xt::pyarray<uint64_t>>,
-            "Advance generators. "
-            "See :cpp:func:`prrng::pcg32_arrayBase::advance`.",
-            py::arg("distance"))
-
-        .def(
-            "restore",
-            &prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>::restore<
-                xt::pyarray<uint64_t>>,
-            "Restore state. "
-            "See :cpp:func:`prrng::pcg32_arrayBase::restore`.",
-            py::arg("state"))
-
-        .def("__repr__", [](const prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>&) {
-            return "<prrng.pcg32_arrayBase>";
-        });
-
-    py::class_<prrng::pcg32_array, prrng::pcg32_arrayBase<prrng::pcg32, std::vector<size_t>>>(
-        m, "pcg32_array")
-
-        .def(
-            py::init<const xt::pyarray<uint64_t>&>(),
-            "Random number generator. "
-            "See :cpp:class:`prrng::pcg32_array`.",
-            py::arg("initstate"))
-
-        .def(
-            py::init<const xt::pyarray<uint64_t>&, const xt::pyarray<uint64_t>&>(),
-            "Random number generator. "
-            "See :cpp:class:`prrng::pcg32_array`.",
-            py::arg("initstate"),
-            py::arg("initseq"))
-
-        .def("__repr__", [](const prrng::pcg32_array&) { return "<prrng.pcg32_array>"; });
-
-    py::class_<
-        prrng::pcg32_index_array,
-        prrng::pcg32_arrayBase<prrng::pcg32_index, std::vector<size_t>>>(m, "pcg32_index_array")
-
-        .def(
+        cls.def(
             py::init<const xt::pyarray<uint64_t>&, const xt::pyarray<uint64_t>&>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32_index_array`.",
             py::arg("initstate"),
-            py::arg("initseq"))
+            py::arg("initseq"));
 
-        .def("__repr__", [](const prrng::pcg32_index_array&) {
-            return "<prrng.pcg32_index_array>";
-        });
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_index_array>"; });
+    }
 
-    py::class_<
-        prrng::pcg32_index_tensor<1>,
-        prrng::pcg32_arrayBase<prrng::pcg32_index, std::array<size_t, 1>>>(m, "pcg32_index_tensor1")
+    // py::class_<
+    //     prrng::pcg32_index_tensor<1>,
+    //     prrng::pcg32_arrayBase<prrng::pcg32_index, std::array<size_t, 1>>>(m, "pcg32_index_tensor1")
 
-        .def(
-            py::init<const xt::pytensor<uint64_t, 1>&, const xt::pytensor<uint64_t, 1>&>(),
-            "Random number generator. "
-            "See :cpp:class:`prrng::pcg32_index_tensor`.",
-            py::arg("initstate"),
-            py::arg("initseq"))
+    //     .def(
+    //         py::init<const xt::pytensor<uint64_t, 1>&, const xt::pytensor<uint64_t, 1>&>(),
+    //         "Random number generator. "
+    //         "See :cpp:class:`prrng::pcg32_index_tensor`.",
+    //         py::arg("initstate"),
+    //         py::arg("initseq"))
 
-        .def("__repr__", [](const prrng::pcg32_index_tensor<1>&) {
-            return "<prrng.pcg32_index_tensor1>";
-        });
+    //     .def("__repr__", [](const prrng::pcg32_index_tensor<1>&) {
+    //         return "<prrng.pcg32_index_tensor1>";
+    //     });
 
     {
         using Data = xt::pyarray<double>;
-        using Parent = prrng::pcg32_array_cumsum<Data>;
+        using Index = xt::pyarray<ptrdiff_t>;
+        using Parent = prrng::pcg32_array_cumsum<Data, Index>;
         using State = xt::pyarray<uint64_t>;
         using Value = xt::pyarray<double>;
-        using Index = xt::pyarray<ptrdiff_t>;
         using Class = py::class_<Parent>;
 
         Class cls(m, "pcg32_array_cumsum");
@@ -1071,10 +1039,10 @@ PYBIND11_MODULE(_prrng, m)
 
     {
         using Data = xt::pytensor<double, 2>;
-        using Parent = prrng::pcg32_tensor_cumsum<Data, 1>;
+        using Index = xt::pytensor<ptrdiff_t, 1>;
+        using Parent = prrng::pcg32_tensor_cumsum<Data, Index, 1>;
         using State = xt::pytensor<uint64_t, 1>;
         using Value = xt::pytensor<double, 1>;
-        using Index = xt::pytensor<ptrdiff_t, 1>;
         using Class = py::class_<Parent>;
 
         Class cls(m, "pcg32_tensor_cumsum_1_1");

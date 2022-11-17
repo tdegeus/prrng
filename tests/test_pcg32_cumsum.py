@@ -28,16 +28,16 @@ class Test_pcg32_cumum(unittest.TestCase):
         chunk += x0
         self.assertEqual(chunk.start, 0)
         self.assertTrue(np.allclose(chunk.data, xref[0:n]))
-        self.assertEqual(state, chunk.state(chunk.start))
+        self.assertEqual(state, chunk.state_at(chunk.start))
 
         for i in range(1, 10):
             chunk.next()
             self.assertEqual(chunk.start, i * n)
             self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
-            self.assertEqual(state, chunk.state(chunk.start))
+            self.assertEqual(state, chunk.state_at(chunk.start))
 
         index = chunk.start
-        state = chunk.state(index)
+        state = chunk.state_at(index)
         value = chunk.data[0]
         ref = np.copy(chunk.data)
 
@@ -45,7 +45,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             chunk.prev()
             self.assertEqual(chunk.start, i * n)
             self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
-            self.assertEqual(state, chunk.state(chunk.start))
+            self.assertEqual(state, chunk.state_at(chunk.start))
 
         i = n * 15 + 2
         target = 0.5 * (xref[i] + xref[i + 1])
@@ -56,7 +56,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(ref, chunk.data))
-        self.assertEqual(state, chunk.state(chunk.start))
+        self.assertEqual(state, chunk.state_at(chunk.start))
 
     def test_random(self):
         """
@@ -79,7 +79,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
 
         index = chunk.start
-        state = chunk.state(index)
+        state = chunk.state_at(index)
         value = chunk.data[0]
         ref = np.copy(chunk.data)
 
@@ -122,7 +122,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
 
         index = chunk.start
-        state = chunk.state(index)
+        state = chunk.state_at(index)
         value = chunk.data[0]
         ref = np.copy(chunk.data)
 
@@ -171,7 +171,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
 
         index = chunk.start
-        state = chunk.state(index)
+        state = chunk.state_at(index)
         value = chunk.data[0]
         ref = np.copy(chunk.data)
 
@@ -219,7 +219,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         index = chunk.start
         value = np.copy(chunk.data[..., 0])
-        state = chunk.state(index)
+        state = chunk.state_at(index)
         cp = np.copy(chunk.data)
 
         i = 3000
@@ -263,7 +263,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         index = chunk.start
         value = np.copy(chunk.data[..., 0])
-        state = chunk.state(index)
+        state = chunk.state_at(index)
         cp = np.copy(chunk.data)
 
         i = 3000
@@ -308,7 +308,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         index = chunk.start
         value = np.copy(chunk.data[..., 0])
-        state = chunk.state(index)
+        state = chunk.state_at(index)
         cp = np.copy(chunk.data)
 
         i = 3000
@@ -353,7 +353,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         index = chunk.start
         value = np.copy(chunk.data[..., 0])
-        state = chunk.state(index)
+        state = chunk.state_at(index)
 
         i = index + n // 2
         chunk.restore(state, value, index)
@@ -400,7 +400,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         index = chunk.start
         value = np.copy(chunk.data[..., 0])
-        state = chunk.state(index)
+        state = chunk.state_at(index)
 
         i = index + n // 2
         chunk.restore(state, value, index)
