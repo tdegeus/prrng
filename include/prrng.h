@@ -2962,7 +2962,8 @@ public:
      */
     void set_data(const Data& data)
     {
-        m_data = data;
+        PRRNG_ASSERT(xt::has_shape(data, m_data.shape()));
+        xt::noalias(m_data) = data;
     }
 
     /**

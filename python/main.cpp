@@ -298,18 +298,9 @@ void init_pcg32_arrayBase_cumsum(C& cls)
     cls.def(py::self -= double());
 
     cls.def_property_readonly("generators", &Parent::generators);
-
     cls.def_property_readonly("is_extendible", &Parent::is_extendible);
-
     cls.def_property("data", &Parent::data, &Parent::set_data);
-
-    // cls.def_property(
-    //     "generator_index",
-    //     &Parent::template generator_index<Index>,
-    //     &Parent::template set_generator_index<Index>);
-
     cls.def_property("start", &Parent::start, &Parent::set_start);
-
     cls.def_property_readonly("index", &Parent::index);
     cls.def_property_readonly("chunk_index", &Parent::chunk_index);
 
@@ -319,19 +310,6 @@ void init_pcg32_arrayBase_cumsum(C& cls)
         "Get current state at an index. "
         "See :cpp:func:`prrng::pcg32_arrayBase::state_at`.",
         py::arg("index"));
-
-    // cls.def(
-    //     "state",
-    //     &Parent::template state<State, Index>,
-    //     "Get state at some index.",
-    //     py::arg("index"));
-
-    // cls.def(
-    //     "set_state",
-    //     &Parent::template set_state<State, Index>,
-    //     "Set state at some index.",
-    //     py::arg("state"),
-    //     py::arg("index"));
 
     cls.def(
         "restore",
