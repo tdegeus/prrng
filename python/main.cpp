@@ -983,7 +983,6 @@ PYBIND11_MODULE(_prrng, m)
     {
         using Parent = prrng::pcg32_index_array;
         using Class = py::class_<Parent>;
-        using Index = xt::pyarray<ptrdiff_t>;
 
         Class cls(m, "pcg32_index_array");
 

@@ -4926,13 +4926,15 @@ protected:
      */
     void copy_from(const pcg32_arrayBase_cumsum& other)
     {
-        // m_gen = other.m_gen;
-        // m_data = other.m_data;
-        // m_cumsum = other.m_cumsum;
-        // m_draw = other.m_draw;
-        // m_sum = other.m_sum;
-        // this->update_pointers();
-        // todo
+        m_gen = other.m_gen;
+        m_data = other.m_data;
+        m_align = other.m_align;
+        m_dist = other.m_dist;
+        m_param = other.m_param;
+        m_start = other.m_start;
+        m_i = other.m_i;
+        m_n = other.m_n;
+        this->auto_functions();
     }
 
 public:
