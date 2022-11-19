@@ -886,12 +886,10 @@ void align(
     using R = decltype(get_chunk(size_t{}));
 
     if (target > data[size - 1]) {
-
         double delta = data[size - 1] - data[0];
         ptrdiff_t n = size;
         generator.jump_to(*start + size);
         double back = data[size - 1];
-
         double j = (target - data[size - 1]) / delta - (double)(param.margin) / (double)(n);
 
         if (j > 1) {
@@ -909,42 +907,43 @@ void align(
         next(generator, get_chunk, 1 + param.margin, data, size, start);
         return align(generator, get_chunk, get_sum, param, data, size, start, i, target, true);
     }
-    else if (target < data[0]) {
+
+    if (target < data[0]) {
         prev(generator, get_chunk, 0, data, size, start);
         return align(generator, get_chunk, get_sum, param, data, size, start, i, target, true);
     }
-    else {
-        if (recursive || *i >= size) {
-            *i = std::lower_bound(data, data + size, target) - data - 1;
-        }
-        else {
-            *i = iterator::lower_bound(data, data + size, target, *i);
-        }
-        if (*i == param.margin) {
-            return;
-        }
-        if (!recursive && param.buffer > 0 && *i >= param.buffer && *i + param.buffer < size) {
-            return;
-        }
-        if (*i < param.margin) {
-            if (!param.strict && *i >= param.min_margin) {
-                return;
-            }
-            prev(generator, get_chunk, 0, data, size, start);
-            return align(generator, get_chunk, get_sum, param, data, size, start, i, target, true);
-        }
 
-        generator.jump_to(*start + size);
-        ptrdiff_t n = *i - param.margin;
-        R extra = get_chunk(static_cast<size_t>(n));
-        generator.drawn(n);
-        *start += n;
-        *i -= n;
-        extra.front() += data[size - 1];
-        std::partial_sum(extra.begin(), extra.end(), extra.begin());
-        std::copy(data + n, data + size, data);
-        std::copy(extra.begin(), extra.end(), data + size - n);
+    if (recursive || *i >= size) {
+        *i = std::lower_bound(data, data + size, target) - data - 1;
     }
+    else {
+        *i = iterator::lower_bound(data, data + size, target, *i);
+    }
+
+    if (*i == param.margin) {
+        return;
+    }
+    if (!recursive && param.buffer > 0 && *i >= param.buffer && *i + param.buffer < size) {
+        return;
+    }
+    if (*i < param.margin) {
+        if (!param.strict && *i >= param.min_margin) {
+            return;
+        }
+        prev(generator, get_chunk, 0, data, size, start);
+        return align(generator, get_chunk, get_sum, param, data, size, start, i, target, true);
+    }
+
+    generator.jump_to(*start + size);
+    ptrdiff_t n = *i - param.margin;
+    R extra = get_chunk(static_cast<size_t>(n));
+    generator.drawn(n);
+    *start += n;
+    *i -= n;
+    extra.front() += data[size - 1];
+    std::partial_sum(extra.begin(), extra.end(), extra.begin());
+    std::copy(data + n, data + size, data);
+    std::copy(extra.begin(), extra.end(), data + size - n);
 }
 
 } // namespace detail
