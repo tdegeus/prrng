@@ -3021,6 +3021,7 @@ public:
     {
         m_gen.set_index(index);
         m_gen.restore(state);
+        m_start = index;
 
         using E = decltype(m_draw(size_t{}));
         E extra = m_draw(m_data.size());
@@ -5115,10 +5116,8 @@ public:
      */
     void set_data(const Data& data)
     {
-        static_assert(
-            std::is_same<typename Data::value_type, double>::value, "Data must be double");
         PRRNG_ASSERT(xt::has_shape(data, m_data.shape()));
-        std::copy(data.cbegin(), data.cend(), m_data.begin());
+        xt::noalias(m_data) = data;
     }
 
     /**
@@ -5135,7 +5134,7 @@ public:
     void set_start(const Index& index)
     {
         PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
-        m_start = index;
+        xt::noalias(m_start) = index;
     }
 
     /**
@@ -5181,6 +5180,7 @@ public:
         PRRNG_ASSERT(xt::same_shape(state.shape(), m_gen.shape()));
         PRRNG_ASSERT(xt::same_shape(value.shape(), m_gen.shape()));
         PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
+        xt::noalias(m_start) = index;
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             m_gen[i].set_index(index.flat(i));

@@ -50,13 +50,17 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = n * 15 + 2
         target = 0.5 * (xref[i] + xref[i + 1])
         chunk.align(target)
-        self.assertEqual(chunk.index, i)
+        self.assertEqual(i, chunk.index)
         self.assertAlmostEqual(chunk.data[0], xref[i])
         self.assertAlmostEqual(chunk.data[1], xref[i + 1])
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(ref, chunk.data))
         self.assertEqual(state, chunk.state_at(chunk.start))
+        self.assertEqual(index, chunk.start)
+
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
 
     def test_random(self):
         """
@@ -91,12 +95,16 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = n * 15 + 2
         target = 0.5 * (xref[i] + xref[i + 1])
         chunk.align(target)
-        self.assertEqual(chunk.index, i)
+        self.assertEqual(i, chunk.index)
         self.assertAlmostEqual(chunk.data[0], xref[i])
         self.assertAlmostEqual(chunk.data[1], xref[i + 1])
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(ref, chunk.data))
+        self.assertEqual(index, chunk.start)
+
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
 
     def test_weibull(self):
         """
@@ -134,12 +142,16 @@ class Test_pcg32_cumum(unittest.TestCase):
         i = n * 15 + 2
         target = 0.5 * (xref[i] + xref[i + 1])
         chunk.align(target)
-        self.assertEqual(chunk.index, i)
+        self.assertEqual(i, chunk.index)
         self.assertAlmostEqual(chunk.data[0], xref[i])
         self.assertAlmostEqual(chunk.data[1], xref[i + 1])
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(ref, chunk.data))
+        self.assertEqual(index, chunk.start)
+
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
 
     def test_external_weibull(self):
         """
@@ -182,6 +194,7 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(ref, chunk.data))
+        self.assertTrue(np.allclose(index, chunk.start))
 
     def test_array_delta(self):
         """
@@ -217,7 +230,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertTrue(np.all(chunk.data[..., margin] <= target))
             self.assertTrue(np.all(chunk.data[..., margin + 1] > target))
 
-        index = chunk.start
+        index = np.copy(chunk.start)
         value = np.copy(chunk.data[..., 0])
         state = chunk.state_at(index)
         cp = np.copy(chunk.data)
@@ -229,6 +242,10 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(cp, chunk.data))
+        self.assertTrue(np.all(chunk.start == index))
+
+        chunk.align(target)
+        self.assertTrue(np.all(chunk.index == i))
 
     def test_array_random(self):
         """
@@ -261,7 +278,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertTrue(np.all(chunk.data[..., margin] <= target))
             self.assertTrue(np.all(chunk.data[..., margin + 1] > target))
 
-        index = chunk.start
+        index = np.copy(chunk.start)
         value = np.copy(chunk.data[..., 0])
         state = chunk.state_at(index)
         cp = np.copy(chunk.data)
@@ -273,6 +290,10 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(cp, chunk.data))
+        self.assertTrue(np.all(chunk.start == index))
+
+        chunk.align(target)
+        self.assertTrue(np.all(chunk.index == i))
 
     def test_array_weibull(self):
         """
@@ -306,7 +327,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertTrue(np.all(chunk.data[..., margin] <= target))
             self.assertTrue(np.all(chunk.data[..., margin + 1] > target))
 
-        index = chunk.start
+        index = np.copy(chunk.start)
         value = np.copy(chunk.data[..., 0])
         state = chunk.state_at(index)
         cp = np.copy(chunk.data)
@@ -318,6 +339,10 @@ class Test_pcg32_cumum(unittest.TestCase):
 
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(cp, chunk.data))
+        self.assertTrue(np.all(chunk.start == index))
+
+        chunk.align(target)
+        self.assertTrue(np.all(chunk.index == i))
 
     def test_loose_margins(self):
         """
@@ -351,7 +376,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertEqual(chunk.start, i0 - i * n + i * margin)
             self.assertTrue(np.allclose(chunk.data, xref[chunk.start : chunk.start + n]))
 
-        index = chunk.start
+        index = np.copy(chunk.start)
         value = np.copy(chunk.data[..., 0])
         state = chunk.state_at(index)
 
@@ -398,7 +423,7 @@ class Test_pcg32_cumum(unittest.TestCase):
             self.assertEqual(chunk.start, i0 - i * n + i * margin)
             self.assertTrue(np.allclose(chunk.data, xref[chunk.start : chunk.start + n]))
 
-        index = chunk.start
+        index = np.copy(chunk.start)
         value = np.copy(chunk.data[..., 0])
         state = chunk.state_at(index)
 
