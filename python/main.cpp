@@ -58,16 +58,15 @@ void init_GeneratorBase_array(C& cls)
 
     cls.def(
         "decide",
-        py::overload_cast<const xt::pyarray<double>&>(
-            &Parent::template decide<xt::pyarray<double>, xt::pyarray<bool>>),
+        static_cast<xt::pyarray<bool> (Parent::*)(const xt::pyarray<double>&)>(&Parent::decide),
         "ndarray of decision. "
         "See :cpp:func:`prrng::GeneratorBase_array::decide`.",
         py::arg("p"));
 
     cls.def(
         "decide",
-        py::overload_cast<const xt::pyarray<double>&, xt::pyarray<bool>&>(
-            &Parent::template decide<xt::pyarray<double>, xt::pyarray<bool>>),
+        static_cast<void (Parent::*)(const xt::pyarray<double>&, xt::pyarray<bool>&)>(
+            &Parent::decide),
         "ndarray of decision. "
         "See :cpp:func:`prrng::GeneratorBase_array::decide`.",
         py::arg("p"),

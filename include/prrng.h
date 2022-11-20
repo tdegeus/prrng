@@ -3770,7 +3770,7 @@ public:
      * @copydoc prrng::GeneratorBase_array::decide(const P& p)
      */
     template <class P, class R>
-    auto decide(const P& p)
+    R decide(const P& p)
     {
         PRRNG_ASSERT(xt::has_shape(p, m_shape));
         R ret = R::from_shape(m_shape);
