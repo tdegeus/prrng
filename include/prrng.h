@@ -2686,10 +2686,27 @@ struct alignment {
         this->strict = strict;
     }
 
-    ptrdiff_t buffer = 0; ///< Buffer zone in which to check for alignment.
-    ptrdiff_t margin = 0; ///< Position of the target.
-    ptrdiff_t min_margin = 0; ///< Minimum position of the target if `strict = false`.
-    bool strict = false; ///< Enforce `margin` strictly.
+    /**
+     * If positive, only change the chunk if target is in `chunk[:buffer]` or `chunk[-buffer:]`.
+     */
+    ptrdiff_t buffer = 0;
+
+    /**
+     * Index of the chunk to place the target.
+     */
+    ptrdiff_t margin = 0;
+
+    /**
+     * Minimal index to accept if `strict = false`.
+     */
+    ptrdiff_t min_margin = 0;
+
+    /**
+     * If `true`, `margin` is respected strictly: `argmin(target > chunk) == margin`.
+     * If `false`, `min_margin <= argmin(target > chunk) <= margin`, whereby
+     * `argmin(target > chunk) < margin` if moving backwards is required to respect `margin`.
+     */
+    bool strict = false;
 };
 
 /**
