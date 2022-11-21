@@ -2656,7 +2656,9 @@ public:
 };
 
 /**
- * @brief Structure to assemble the alignment parameters, see prrng::alignment().
+ * @brief Structure to assemble the alignment parameters.
+ * These parameters are used when the chunk is aligned with a position,
+ * see prrng::pcg32_cumsum::align(), prrng::pcg32_arrayBase_cumsum::align().
  */
 struct alignment {
     /**
@@ -4828,7 +4830,7 @@ protected:
      *      -   prrng::distribution::delta: {scale = 1, offset = 0}
      *      -   prrng::distribution::custom: {}
      *
-     * @param align alignment parameters, see prrng::alignment().
+     * @param align Alignment parameters, see prrng::alignment().
      */
     template <class S, class T, class U>
     void init(
