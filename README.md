@@ -15,7 +15,7 @@ This library is a wrapper around [imneme/pcg-c-basic](https://github.com/imneme/
 
 ### Basic example
 
-The idea is to provide a random number generator the can return nd-distributions of random numbers. Example:
+The idea is to provide a random number generator that can return nd-distributions of random numbers. Example:
 
 ```cpp
 #include <ctime>
@@ -51,19 +51,39 @@ int main()
 }
 ```
 
-In addition one can advance and reverse in the random sequence, and compute the number of random numbers between two states.
+or in Python
 
-**Important:** A very important and hallmark features of pcg32 is that, internally, types of fixed bit size are used. Notably the state is (re)stored as `uint64_t`. This makes that restoring can be
+```python
+import prrng
+import time
+
+seed = int(time.time())
+generator = prrng.pcg32(seed)
+a = generator.random([10, 40])
+```
+
+Note that a seed gives the exact same random sequence from C++ as from Python.
+
+#### Features
+
+*   Language and platform independence.
+*   Several distributions implemented.
+*   Advance by `n` in the random sequence in a less costly way that drawing the numbers.
+*   Compute the distance between two states.
+
+**Important (C++):** A very important and hallmark features of pcg32 is that, internally, types of fixed bit size are used. Notably the state is (re)stored as `uint64_t`. This makes that restoring can be
 uniquely done on any system and any compiler, on any platform (as long as you save the `uint64_t` properly, naturally).
 As a convenience the output can be recast by specifying a template parameter, while static assertions shield you from losing data. For example, `auto state = generator.state<size_t>();` would be allowed, but `auto state = generator.state<int>();` would not.
 
+Note that the Python API ensure the right types at all times.
+
 ### cumsum
 
-The advance of being able to restore and advance the random number generator is exploited in a wrapper in which chunks of the cumulated sum of the sequence of random numbers can be accessed in chunks.
+The advantage of being able to restore and advance the random number generator is exploited in a wrapper in which the cumulative sum of the sequence of random numbers can be accessed in chunks.
 
 #### Basic usage
 
-For example:
+For example (Python):
 ```python
 k = 2
 scale = 5
@@ -79,41 +99,30 @@ offset = 0.1
 nchunk = 100
 
 # initialise the generator, allocate the chunk
-generator = prrng.pcg32_cumsum([nchunk])
-
-# initialise the sequence (based on current state of generator)
-generator.draw_chunk_weibull(k, scale, offset)
+chunk = prrng.pcg32_cumsum(
+    shape = [nchunk],
+    distribution = prrng.weibull,
+    parameters = [k, scale, offset],
+)
 
 # access the sequence at some location
-# if the target is far away, this can be costly, especially if the target is 'left' of the chunk
+# if the target is far away, this can be costly
+# (especially if the target is 'left' of the chunk)
 target = 12345.6
-generator.align_chunk_weibull(target, k, scale, offset)
+chunk.align(target)
 ```
 
 #### Customisation
 
 You can modify the sequence by modifying the chunk. For example, to apply an offset:
 ```python
-generator = prrng.pcg32_cumsum([nchunk])
-generator.draw_chunk_weibull(k, scale, offset)
-generator.chunk += offset
-```
+chunk = prrng.pcg32_cumsum(
+    shape = [nchunk],
+    distribution = prrng.weibull,
+    parameters = [k, scale, offset],
+)
 
-### Python API
-
-A Python API is provided allowing one to obtain the same random sequence from C++ and Python when the same seed is used.
-In fact, a generator can be stored and restored in any of the two languages.
-Example:
-
-```python
-import prrng
-
-generator = prrng.pcg32()
-state = generator.state()
-a = generator.random([10, 40])
-generator.restore(state)
-b = generator.random([10, 40])
-assert np.allclose(a, b)
+chunk -= dx0
 ```
 
 ### Array of tensors
@@ -209,7 +218,7 @@ To enable them you have to compile on your system, as is discussed next.
 >   conda install -c conda-forge scikit-build
 >   ```
 >
->   If you then compile and install with the same environment
+>   If you then compile and install with the same environment,
 >   you should be good to go.
 >   Otherwise, a bit of manual labour might be needed to
 >   treat the dependencies.
@@ -228,7 +237,7 @@ python setup.py install --build-type Release -vv
 python setup.py install --build-type Release -DUSE_SIMDD=1 -vv
 ```
 
-### Compiling user-code
+### Compiling user code
 
 #### Using CMake
 
