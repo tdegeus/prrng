@@ -11,7 +11,7 @@ long_description = (this_directory / "README.md").read_text()
 setup(
     name=project_name,
     description="Portable Reconstructible Random Number Generator",
-    long_description="Portable Reconstructible Random Number Generator",
+    long_description=long_description,
     version=get_version(),
     license="MIT",
     author="Tom de Geus",
