@@ -87,23 +87,150 @@ TEST_CASE("prrng::pgc32", "prrng.h")
     SECTION("random - scalar")
     {
         prrng::pcg32 generator;
-        auto a = generator.random<double>(std::array<size_t, 0>{});
+        auto a = generator.random();
 
         generator.advance(-1);
-        auto b = generator.random({1});
+        auto b = generator.random<double>(std::array<size_t, 0>{});
 
-        REQUIRE(a == b(0));
+        generator.advance(-1);
+        auto c = generator.random({1});
+
+        REQUIRE(a == b);
+        REQUIRE(a == c(0));
     }
 
     SECTION("randint - scalar")
     {
         prrng::pcg32 generator;
-        auto a = generator.randint<int>(std::array<size_t, 0>{}, 10);
+        int high = 10;
+        auto a = generator.randint(high);
 
         generator.advance(-1);
-        auto b = generator.randint({1}, (int)10);
+        auto b = generator.randint<int>(std::array<size_t, 0>{}, high);
 
-        REQUIRE(a == b(0));
+        generator.advance(-1);
+        auto c = generator.randint({1}, high);
+
+        REQUIRE(a == b);
+        REQUIRE(b == c(0));
+    }
+
+    SECTION("normal - scalar")
+    {
+        prrng::pcg32 generator;
+        double mu = 1.2;
+        double sigma = 0.1;
+        auto a = generator.normal(mu, sigma);
+
+        generator.advance(-1);
+        auto c = generator.normal({1}, mu, sigma);
+
+        REQUIRE(a == c(0));
+    }
+
+    SECTION("exponential - scalar")
+    {
+        prrng::pcg32 generator;
+        double scale = 1.2;
+        auto a = generator.exponential(scale);
+
+        generator.advance(-1);
+        auto c = generator.exponential({1}, scale);
+
+        REQUIRE(a == c(0));
+    }
+
+    SECTION("weibull - scalar")
+    {
+        prrng::pcg32 generator;
+        double k = 1.1;
+        double scale = 0.1;
+        auto a = generator.weibull(k, scale);
+
+        generator.advance(-1);
+        auto c = generator.weibull({1}, k, scale);
+
+        REQUIRE(a == c(0));
+    }
+
+    SECTION("gamma - scalar")
+    {
+        prrng::pcg32 generator;
+        double k = 1.1;
+        double scale = 0.1;
+        auto a = generator.gamma(k, scale);
+
+        generator.advance(-1);
+        auto c = generator.gamma({1}, k, scale);
+
+        REQUIRE(a == c(0));
+    }
+
+    SECTION("random - cumsum")
+    {
+        prrng::pcg32 generator(0);
+        size_t n = 1000;
+        auto a = generator.random({n});
+
+        generator.advance(-n);
+        auto b = generator.cumsum_random(n);
+
+        REQUIRE(xt::allclose(xt::cumsum(a)(n - 1), b));
+    }
+
+    SECTION("normal - cumsum")
+    {
+        prrng::pcg32 generator(0);
+        size_t n = 1000;
+        double mu = 1.2;
+        double sigma = 0.1;
+        auto a = generator.normal({n}, mu, sigma);
+
+        generator.advance(-n);
+        auto b = generator.cumsum_normal(n, mu, sigma);
+
+        REQUIRE(xt::allclose(xt::cumsum(a)(n - 1), b));
+    }
+
+    SECTION("exponential - cumsum")
+    {
+        prrng::pcg32 generator(0);
+        size_t n = 1000;
+        double scale = 0.1;
+        auto a = generator.exponential({n}, scale);
+
+        generator.advance(-n);
+        auto b = generator.cumsum_exponential(n, scale);
+
+        REQUIRE(xt::allclose(xt::cumsum(a)(n - 1), b));
+    }
+
+    SECTION("weibull - cumsum")
+    {
+        prrng::pcg32 generator(0);
+        size_t n = 1000;
+        double k = 1.1;
+        double scale = 0.1;
+        auto a = generator.weibull({n}, k, scale);
+
+        generator.advance(-n);
+        auto b = generator.cumsum_weibull(n, k, scale);
+
+        REQUIRE(xt::allclose(xt::cumsum(a)(n - 1), b));
+    }
+
+    SECTION("gamma - cumsum")
+    {
+        prrng::pcg32 generator(0);
+        size_t n = 1000;
+        double k = 1.1;
+        double scale = 0.1;
+        auto a = generator.gamma({n}, k, scale);
+
+        generator.advance(-n);
+        auto b = generator.cumsum_gamma(n, k, scale);
+
+        REQUIRE(xt::allclose(xt::cumsum(a)(n - 1), b));
     }
 
     SECTION("random - return type")

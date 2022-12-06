@@ -1500,6 +1500,16 @@ public:
     }
 
     /**
+     * Generate a random number \f$ 0 \leq r \leq 1 \f$.
+     *
+     * @return Random number.
+     */
+    double random()
+    {
+        return this->draw_double();
+    }
+
+    /**
      * Generate an nd-array of random numbers \f$ 0 \leq r \leq 1 \f$.
      *
      * @param shape The shape of the nd-array.
@@ -1540,6 +1550,23 @@ public:
     R random(const I (&shape)[L])
     {
         return this->random_impl<R>(shape);
+    }
+
+    /**
+     * Generate a random integer \f$ 0 \leq r < bound \f$.
+     *
+     * @param high The upper bound of the random integers.
+     * @return Random number.
+     */
+    template <typename T>
+    T randint(T high)
+    {
+        PRRNG_ASSERT(high >= 0);
+        PRRNG_ASSERT(static_cast<uint32_t>(high) < std::numeric_limits<uint32_t>::max());
+
+        uint32_t ret;
+        this->draw_list_uint32(&ret, static_cast<uint32_t>(high), 1);
+        return static_cast<T>(ret);
     }
 
     /**
@@ -1587,7 +1614,7 @@ public:
     }
 
     /**
-     * Generate an nd-array of random integers \f$ 0 \leq r \leq bound \f$.
+     * Generate an nd-array of random integers \f$ low \leq r < high \f$.
      *
      * @param shape The shape of the nd-array.
      * @param low The lower bound of the random integers.
@@ -1630,6 +1657,23 @@ public:
     R randint(const I (&shape)[L], T low, U high)
     {
         return this->randint_impl<R>(shape, low, high);
+    }
+
+    /**
+     * Return a random number distributed according to a normal distribution.
+     *
+     * @param mu The average.
+     * @param sigma The standard deviation.
+     * @return Random number.
+     */
+    double normal(double mu = 0, double sigma = 1)
+    {
+#if PRRNG_USE_BOOST
+        return mu + sigma * std::sqrt(2.0) *
+                        boost::math::erf_inv<double>(2.0 * this->draw_double() - 1.0);
+#else
+        return std::numeric_limits<double>::quiet_NaN();
+#endif
     }
 
     /**
@@ -1680,6 +1724,17 @@ public:
     }
 
     /**
+     * Return a random number distributed according to an exponential distribution.
+     *
+     * @param scale The scale.
+     * @return Random number.
+     */
+    double exponential(double scale = 1)
+    {
+        return -std::log(1.0 - this->draw_double()) * scale;
+    }
+
+    /**
      * Generate an nd-array of random numbers distributed according to an exponential distribution.
      *
      * @param shape The shape of the nd-array.
@@ -1723,6 +1778,18 @@ public:
     R exponential(const I (&shape)[L], double scale = 1)
     {
         return this->exponential_impl<R>(shape, scale);
+    }
+
+    /**
+     * Return a random number distributed according to a Weibull distribution.
+     *
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     * @return Random number.
+     */
+    double weibull(double k = 1, double scale = 1)
+    {
+        return scale * std::pow(-std::log(1.0 - this->draw_double()), 1.0 / k);
     }
 
     /**
@@ -1773,6 +1840,22 @@ public:
     }
 
     /**
+     * Return a random number distributed according to a Gamma distribution.
+     *
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     * @return Random number.
+     */
+    double gamma(double k = 1, double scale = 1)
+    {
+#if PRRNG_USE_BOOST
+        return scale * boost::math::gamma_p_inv<double, double>(k, this->draw_double());
+#else
+        return std::numeric_limits<double>::quiet_NaN();
+#endif
+    }
+
+    /**
      * Generate an nd-array of random numbers distributed according to a Gamma distribution.
      * Only available when compiled with PRRNG_USE_BOOST.
      *
@@ -1818,6 +1901,17 @@ public:
     R gamma(const I (&shape)[L], double k = 1, double scale = 1)
     {
         return this->gamma_impl<R>(shape, k, scale);
+    }
+
+    /**
+     * Return a number distributed according to a delta distribution.
+     *
+     * @param scale The value of the 'peak' of the delta distribution.
+     * @return Random number.
+     */
+    double delta(double scale = 1)
+    {
+        return scale;
     }
 
     /**
