@@ -1028,20 +1028,6 @@ public:
 #endif
     }
 
-    /**
-     * @brief Apply the quantile in place.
-     * @param p Probability [0, 1], modified in place.
-     */
-    template <class T>
-    void apply_quantile(T* p)
-    {
-#if PRRNG_USE_BOOST
-        *p = m_mu + m_sigma_sqrt2 * boost::math::erf_inv<T>(2.0 * (*p) - 1.0);
-#else
-        *p = std::numeric_limits<T>::quiet_NaN();
-#endif
-    }
-
 private:
     double m_mu;
     double m_sigma;
@@ -1103,16 +1089,6 @@ public:
     T quantile(const T& p)
     {
         return -xt::log(1.0 - p) * m_scale;
-    }
-
-    /**
-     * @brief Apply the quantile in place.
-     * @param p Probability [0, 1], modified in place.
-     */
-    template <class T>
-    void apply_quantile(T* p)
-    {
-        *p = -std::log(1.0 - (*p)) * m_scale;
     }
 
 private:
@@ -1195,16 +1171,6 @@ public:
     T quantile(const T& p)
     {
         return m_scale * xt::pow(-xt::log1p(-p), 1.0 / m_shape);
-    }
-
-    /**
-     * @brief Apply the quantile in place.
-     * @param p Probability [0, 1], modified in place.
-     */
-    template <class T>
-    void apply_quantile(T* p)
-    {
-        *p = m_scale * std::pow(-std::log(1 - (*p)), 1.0 / m_shape);
     }
 
 private:
@@ -1305,20 +1271,6 @@ public:
 #endif
     }
 
-    /**
-     * @brief Apply the quantile in place.
-     * @param p Probability [0, 1], modified in place.
-     */
-    template <class T>
-    void apply_quantile(T* p)
-    {
-#if PRRNG_USE_BOOST
-        *p = m_scale * boost::math::gamma_p_inv<T, T>(m_shape, *p);
-#else
-        *p = std::numeric_limits<T>::quiet_NaN();
-#endif
-    }
-
 private:
     double m_shape;
     double m_scale;
@@ -1358,14 +1310,15 @@ public:
      */
     double cumsum_normal(size_t n, double mu = 0, double sigma = 1)
     {
+#if PRRNG_USE_BOOST
         double ret = 0.0;
-        auto tranform = normal_distribution(mu, sigma);
         for (size_t i = 0; i < n; ++i) {
-            auto r = draw_double();
-            tranform.apply_quantile(&r);
-            ret += r;
+            ret += boost::math::erf_inv<double>(2.0 * this->draw_double() - 1.0);
         }
-        return ret;
+        return static_cast<double>(n) * mu + sigma * std::sqrt(2.0) * ret;
+#else
+        return std::numeric_limits<double>::quiet_NaN();
+#endif
     }
 
     /**
@@ -1378,13 +1331,10 @@ public:
     double cumsum_exponential(size_t n, double scale = 1)
     {
         double ret = 0.0;
-        auto tranform = exponential_distribution(scale);
         for (size_t i = 0; i < n; ++i) {
-            auto r = draw_double();
-            tranform.apply_quantile(&r);
-            ret += r;
+            ret -= std::log(1.0 - this->draw_double());
         }
-        return ret;
+        return scale * ret;
     }
 
     /**
@@ -1410,13 +1360,11 @@ public:
     double cumsum_weibull(size_t n, double k = 1, double scale = 1)
     {
         double ret = 0.0;
-        auto tranform = weibull_distribution(k, scale);
+        double k_inv = 1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            auto r = draw_double();
-            tranform.apply_quantile(&r);
-            ret += r;
+            ret += std::pow(-std::log(1.0 - this->draw_double()), k_inv);
         }
-        return ret;
+        return scale * ret;
     }
 
     /**
@@ -1429,14 +1377,15 @@ public:
      */
     double cumsum_gamma(size_t n, double k = 1, double scale = 1)
     {
+#if PRRNG_USE_BOOST
         double ret = 0.0;
-        auto tranform = gamma_distribution(k, scale);
         for (size_t i = 0; i < n; ++i) {
-            auto r = draw_double();
-            tranform.apply_quantile(&r);
-            ret += r;
+            ret += boost::math::gamma_p_inv<double, double>(k, this->draw_double());
         }
-        return ret;
+        return scale * ret;
+#else
+        return std::numeric_limits<double>::quiet_NaN();
+#endif
     }
 
     /**
