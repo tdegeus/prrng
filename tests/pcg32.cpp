@@ -86,7 +86,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("random - scalar")
     {
-        prrng::pcg32 generator;
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         auto a = generator.random();
 
         generator.advance(-1);
@@ -101,7 +102,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("randint - scalar")
     {
-        prrng::pcg32 generator;
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         int high = 10;
         auto a = generator.randint(high);
 
@@ -117,7 +119,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("normal - scalar")
     {
-        prrng::pcg32 generator;
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         double mu = 1.2;
         double sigma = 0.1;
         auto a = generator.normal(mu, sigma);
@@ -130,7 +133,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("exponential - scalar")
     {
-        prrng::pcg32 generator;
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         double scale = 1.2;
         auto a = generator.exponential(scale);
 
@@ -142,7 +146,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("weibull - scalar")
     {
-        prrng::pcg32 generator;
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         double k = 1.1;
         double scale = 0.1;
         auto a = generator.weibull(k, scale);
@@ -155,7 +160,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("gamma - scalar")
     {
-        prrng::pcg32 generator;
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         double k = 1.1;
         double scale = 0.1;
         auto a = generator.gamma(k, scale);
@@ -168,7 +174,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("random - cumsum")
     {
-        prrng::pcg32 generator(0);
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         size_t n = 1000;
         auto a = generator.random({n});
 
@@ -180,7 +187,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("normal - cumsum")
     {
-        prrng::pcg32 generator(0);
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         size_t n = 1000;
         double mu = 1.2;
         double sigma = 0.1;
@@ -194,7 +202,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("exponential - cumsum")
     {
-        prrng::pcg32 generator(0);
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         size_t n = 1000;
         double scale = 0.1;
         auto a = generator.exponential({n}, scale);
@@ -207,7 +216,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("weibull - cumsum")
     {
-        prrng::pcg32 generator(0);
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         size_t n = 1000;
         double k = 1.1;
         double scale = 0.1;
@@ -221,7 +231,8 @@ TEST_CASE("prrng::pgc32", "prrng.h")
 
     SECTION("gamma - cumsum")
     {
-        prrng::pcg32 generator(0);
+        auto seed = std::time(0);
+        prrng::pcg32 generator(seed);
         size_t n = 1000;
         double k = 1.1;
         double scale = 0.1;
