@@ -2527,14 +2527,14 @@ protected:
         }
     }
 
-protected:
+public:
     /**
      * @brief Seed the generator.
      *
      * @param initstate Initial state.
      * @param initseq Initial sequence.
      */
-    void seed(uint64_t initstate, uint64_t initseq)
+    void seed(uint64_t initstate = PRRNG_PCG32_INITSTATE, uint64_t initseq = PRRNG_PCG32_INITSEQ)
     {
         m_initstate = initstate;
         m_initseq = initseq;
@@ -2546,6 +2546,7 @@ protected:
         (*this)();
     }
 
+protected:
     uint64_t m_initstate; ///< State initiator
     uint64_t m_initseq; ///< Sequence initiator
     uint64_t m_state; ///< RNG state. All values are possible.
