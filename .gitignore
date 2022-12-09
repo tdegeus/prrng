@@ -46,3 +46,4 @@ docs/_doxygen
 *.exe
 *.out
 *.app
+.vscode/settings.json
