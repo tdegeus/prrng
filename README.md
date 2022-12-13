@@ -208,33 +208,29 @@ To enable them you have to compile on your system, as is discussed next.
 
 ##### From source
 
->   You need *xtensor*, *xtensor-python* and optionally *xsimd* as prerequisites.
->   In addition *scikit-build* is needed to control the build from Python.
->   The easiest is to use *conda* to get the prerequisites:
->
->   ```bash
->   conda install -c conda-forge xtensor-python
->   conda install -c conda-forge xsimd
->   conda install -c conda-forge scikit-build
->   ```
->
->   If you then compile and install with the same environment,
->   you should be good to go.
->   Otherwise, a bit of manual labour might be needed to
->   treat the dependencies.
-
 ```bash
 # Download prrng
 git checkout https://github.com/tdegeus/prrng.git
 cd prrng
 
-# Compile and install the Python module
-# (-vv can be omitted as is controls just the verbosity)
-python setup.py install --build-type Release -vv
+# Get prerequisites. An example is given using conda, but there are many other ways
+conda activate myenv
+conda env update --file environment.yaml
+# (if you use hardware optimisation, below, you also want)
+conda install -c conda-forge xsimd
 
-# OR, Compile and install the Python module with hardware optimisation
-# (with scikit-build CMake options can just be added as command-line arguments)
-python setup.py install --build-type Release -DUSE_SIMDD=1 -vv
+# Compile and install the Python module
+# (-v can be omitted as is controls just the verbosity)
+python -m pip install . -v
+
+# Or, compile with hardware optimisation (fastest), see scikit-build docs
+SKBUILD_CONFIGURE_OPTIONS="-DUSE_SIMD=1" python -m pip install . -v
+
+# Note that you can also compile with debug assertions (very slow)
+SKBUILD_CONFIGURE_OPTIONS="-USE_DEBUG=1" python -m pip install . -v
+
+# Or, without any assertions (slightly faster, but more dangerous)
+SKBUILD_CONFIGURE_OPTIONS="-USE_ASSERT=1" python -m pip install . -v
 ```
 
 ### Compiling user code
