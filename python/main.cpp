@@ -140,6 +140,25 @@ void init_GeneratorBase_array(C& cls)
         py::arg("scale") = 1);
 
     cls.def(
+        "power",
+        py::overload_cast<const std::vector<size_t>&, double>(
+            &Parent::template power<xt::pyarray<double>, std::vector<size_t>>),
+        "ndarray of random numbers, distributed according to a power distribution. "
+        "See :cpp:func:`prrng::GeneratorBase_array::power`.",
+        py::arg("ishape"),
+        py::arg("k") = 1);
+
+    cls.def(
+        "pareto",
+        py::overload_cast<const std::vector<size_t>&, double, double>(
+            &Parent::template pareto<xt::pyarray<double>, std::vector<size_t>>),
+        "ndarray of random numbers, distributed according to a pareto distribution. "
+        "See :cpp:func:`prrng::GeneratorBase_array::pareto`.",
+        py::arg("ishape"),
+        py::arg("k") = 1,
+        py::arg("scale") = 1);
+
+    cls.def(
         "weibull",
         py::overload_cast<const std::vector<size_t>&, double, double>(
             &Parent::template weibull<xt::pyarray<double>, std::vector<size_t>>),
@@ -198,6 +217,23 @@ void init_GeneratorBase_array(C& cls)
         "Cumsum of ``n`` random numbers. "
         "See :cpp:func:`prrng::GeneratorBase_array::cumsum_delta`.",
         py::arg("n"),
+        py::arg("scale") = 1);
+
+    cls.def(
+        "cumsum_power",
+        &Parent::template cumsum_power<xt::pyarray<double>, xt::pyarray<size_t>>,
+        "Cumsum of ``n`` random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::cumsum_power`.",
+        py::arg("n"),
+        py::arg("k") = 1);
+
+    cls.def(
+        "cumsum_pareto",
+        &Parent::template cumsum_pareto<xt::pyarray<double>, xt::pyarray<size_t>>,
+        "Cumsum of ``n`` random numbers. "
+        "See :cpp:func:`prrng::GeneratorBase_array::cumsum_pareto`.",
+        py::arg("n"),
+        py::arg("k") = 1,
         py::arg("scale") = 1);
 
     cls.def(
@@ -434,10 +470,12 @@ PYBIND11_MODULE(_prrng, m)
 
     py::enum_<prrng::distribution>(m, "distribution")
         .value("random", prrng::distribution::random)
+        .value("pareto", prrng::distribution::pareto)
         .value("weibull", prrng::distribution::weibull)
         .value("gamma", prrng::distribution::gamma)
         .value("normal", prrng::distribution::normal)
         .value("exponential", prrng::distribution::exponential)
+        .value("power", prrng::distribution::power)
         .value("delta", prrng::distribution::delta)
         .value("custom", prrng::distribution::custom)
         .export_values();
@@ -474,6 +512,73 @@ PYBIND11_MODULE(_prrng, m)
 
         .def("__repr__", [](const prrng::normal_distribution&) {
             return "<prrng.normal_distribution>";
+        });
+
+    py::class_<prrng::pareto_distribution>(m, "pareto_distribution")
+
+        .def(
+            py::init<double, double>(),
+            "pareto distribution. "
+            "See :cpp:class:`prrng::pareto_distribution`.",
+            py::arg("k") = 1,
+            py::arg("scale") = 1)
+
+        .def(
+            "pdf",
+            &prrng::pareto_distribution::pdf<xt::pytensor<double, 1>>,
+            "Probability density distribution. "
+            "See :cpp:func:`prrng::pareto_distribution::pdf`.",
+            py::arg("x"))
+
+        .def(
+            "cdf",
+            &prrng::pareto_distribution::cdf<xt::pytensor<double, 1>>,
+            "Cumulative density distribution. "
+            "See :cpp:func:`prrng::pareto_distribution::cdf`.",
+            py::arg("x"))
+
+        .def(
+            "quantile",
+            &prrng::pareto_distribution::quantile<xt::pyarray<double>>,
+            "Quantile (inverse of cumulative density distribution). "
+            "See :cpp:func:`prrng::pareto_distribution::quantile`.",
+            py::arg("r"))
+
+        .def("__repr__", [](const prrng::pareto_distribution&) {
+            return "<prrng.pareto_distribution>";
+        });
+
+    py::class_<prrng::power_distribution>(m, "power_distribution")
+
+        .def(
+            py::init<double>(),
+            "Powerlaw distribution. "
+            "See :cpp:class:`prrng::power_distribution`.",
+            py::arg("k") = 2)
+
+        .def(
+            "pdf",
+            &prrng::power_distribution::pdf<xt::pytensor<double, 1>>,
+            "Probability density distribution. "
+            "See :cpp:func:`prrng::power_distribution::pdf`.",
+            py::arg("x"))
+
+        .def(
+            "cdf",
+            &prrng::power_distribution::cdf<xt::pytensor<double, 1>>,
+            "Cumulative density distribution. "
+            "See :cpp:func:`prrng::power_distribution::cdf`.",
+            py::arg("x"))
+
+        .def(
+            "quantile",
+            &prrng::power_distribution::quantile<xt::pyarray<double>>,
+            "Quantile (inverse of cumulative density distribution). "
+            "See :cpp:func:`prrng::power_distribution::quantile`.",
+            py::arg("r"))
+
+        .def("__repr__", [](const prrng::power_distribution&) {
+            return "<prrng.power_distribution>";
         });
 
     py::class_<prrng::exponential_distribution>(m, "exponential_distribution")
@@ -547,7 +652,7 @@ PYBIND11_MODULE(_prrng, m)
 
         .def(
             py::init<double, double>(),
-            "Weibull distribution. "
+            "Gamma distribution. "
             "See :cpp:class:`prrng::gamma_distribution`.",
             py::arg("k") = 1,
             py::arg("scale") = 1)
@@ -609,11 +714,28 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("scale") = 1)
 
         .def(
+            "cumsum_power",
+            &prrng::GeneratorBase::cumsum_power,
+            "The result of the cumsum of `n` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase::cumsum_power`.",
+            py::arg("n"),
+            py::arg("k") = 1)
+
+        .def(
             "cumsum_delta",
             &prrng::GeneratorBase::cumsum_delta,
             "The result of the cumsum of `n` random numbers. "
             "See :cpp:func:`prrng::GeneratorBase::cumsum_delta`.",
             py::arg("n"),
+            py::arg("scale") = 1)
+
+        .def(
+            "cumsum_pareto",
+            &prrng::GeneratorBase::cumsum_pareto,
+            "The result of the cumsum of `n` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase::cumsum_pareto`.",
+            py::arg("n"),
+            py::arg("k") = 1,
             py::arg("scale") = 1)
 
         .def(
@@ -721,6 +843,25 @@ PYBIND11_MODULE(_prrng, m)
             "ndarray of random numbers, distributed according to a exponential distribution. "
             "See :cpp:func:`prrng::GeneratorBase::exponential`.",
             py::arg("shape"),
+            py::arg("scale") = 1)
+
+        .def(
+            "power",
+            py::overload_cast<const std::vector<size_t>&, double>(
+                &prrng::GeneratorBase::power<xt::pyarray<double>, std::vector<size_t>>),
+            "ndarray of random numbers, distributed according to a power distribution. "
+            "See :cpp:func:`prrng::GeneratorBase::power`.",
+            py::arg("shape"),
+            py::arg("k") = 1)
+
+        .def(
+            "pareto",
+            py::overload_cast<const std::vector<size_t>&, double, double>(
+                &prrng::GeneratorBase::pareto<xt::pyarray<double>, std::vector<size_t>>),
+            "ndarray of random numbers, distributed according to a pareto distribution. "
+            "See :cpp:func:`prrng::GeneratorBase::pareto`.",
+            py::arg("shape"),
+            py::arg("k") = 1,
             py::arg("scale") = 1)
 
         .def(

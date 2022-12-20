@@ -155,6 +155,8 @@ namespace prrng {
  */
 enum distribution {
     random, ///< flat
+    power, ///< power
+    pareto, ///< pareto
     weibull, ///< weibull
     gamma, ///< gamma
     normal, ///< normal
@@ -183,6 +185,12 @@ std::vector<double> default_parameters(
         break;
     case distribution::delta:
         ret = std::vector<double>{1, 0};
+        break;
+    case distribution::power:
+        ret = std::vector<double>{1, 0};
+        break;
+    case distribution::pareto:
+        ret = std::vector<double>{1, 1, 0};
         break;
     case distribution::weibull:
         ret = std::vector<double>{1, 1, 0};
@@ -1098,6 +1106,138 @@ private:
 };
 
 /**
+ * Pareto distribution
+ *
+ * \f$ P(x) = k (x_m)^k x^{-(k + 1)} \f$
+ *
+ * with \f$ k > 0 \f$ and \f$ x_m > 0 \f$.
+ *
+ * References:
+ *
+ *  -   https://en.wikipedia.org/wiki/Pareto_distribution
+ *  -   https://numpy.org/doc/stable/reference/random/generated/numpy.random.pareto.html
+ */
+class pareto_distribution {
+public:
+    /**
+     * Constructor.
+     *
+     * @param k Shape.
+     * @param scale Scale.
+     */
+    pareto_distribution(double k = 1, double scale = 1)
+    {
+        m_k = k;
+        m_scale = scale;
+        PRRNG_ASSERT(m_k > 0);
+        PRRNG_ASSERT(m_scale > 0);
+    }
+
+    /**
+     * Probability density function.
+     *
+     * @param x Coordinates.
+     * @return Probability density for each `x`.
+     */
+    template <class T>
+    T pdf(const T& x)
+    {
+        return m_k * std::pow(m_scale, m_k) * xt::pow(x, -(m_k + 1.0));
+    }
+
+    /**
+     * Cumulative density function.
+     *
+     * @param x Coordinates.
+     * @return Cumulative density for each `x`.
+     */
+    template <class T>
+    T cdf(const T& x)
+    {
+        return 1.0 - std::pow(m_scale, m_k) * xt::pow(x, -m_k);
+    }
+
+    /**
+     * Quantile (the inverse of the cumulative density function).
+     *
+     * @param p Probability [0, 1].
+     * @return Quantile for each `p`.
+     */
+    template <class T>
+    T quantile(const T& p)
+    {
+        return m_scale * xt::pow(1.0 - p, -1.0 / m_k);
+    }
+
+private:
+    double m_k;
+    double m_scale;
+};
+
+/**
+ * Power distribution
+ *
+ * \f$ P(x) = k x^{k - 1} \f$
+ *
+ * with \f$ k > 0 \f$ and \f$ 0 \leq x \leq 1 \f$.
+ *
+ * References:
+ *
+ *  -   https://numpy.org/doc/stable/reference/random/generated/numpy.random.power.html
+ */
+class power_distribution {
+public:
+    /**
+     * Constructor.
+     *
+     * @param k Exponent
+     */
+    power_distribution(double k = 1)
+    {
+        m_k = k;
+    }
+
+    /**
+     * Probability density function.
+     *
+     * @param x Coordinates.
+     * @return Probability density for each `x`.
+     */
+    template <class T>
+    T pdf(const T& x)
+    {
+        return m_k * xt::pow(x, m_k - 1.0);
+    }
+
+    /**
+     * Cumulative density function.
+     *
+     * @param x Coordinates.
+     * @return Cumulative density for each `x`.
+     */
+    template <class T>
+    T cdf(const T& x)
+    {
+        return xt::pow(x, m_k);
+    }
+
+    /**
+     * Quantile (the inverse of the cumulative density function).
+     *
+     * @param p Probability [0, 1].
+     * @return Quantile for each `p`.
+     */
+    template <class T>
+    T quantile(const T& p)
+    {
+        return xt::pow(1.0 - p, 1.0 / m_k);
+    }
+
+private:
+    double m_k;
+};
+
+/**
  * Weibull distribution.
  *
  * References:
@@ -1298,6 +1438,41 @@ public:
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
             ret += draw_double();
+        }
+        return ret;
+    }
+
+    /**
+     * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
+     * Pareto distribution, see pareto_distribution(),
+     * @param n Number of steps.
+     * @param k Shape.
+     * @param scale Scale.
+     * @return Cumulative sum.
+     */
+    double cumsum_pareto(size_t n, double k = 1, double scale = 1)
+    {
+        double ret = 0.0;
+        double exponent = -1.0 / k;
+        for (size_t i = 0; i < n; ++i) {
+            ret += std::pow(1.0 - this->draw_double(), exponent);
+        }
+        return scale * ret;
+    }
+
+    /**
+     * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
+     * power distribution, see power_distribution(),
+     * @param n Number of steps.
+     * @param k Scale.
+     * @return Cumulative sum.
+     */
+    double cumsum_power(size_t n, double k = 1)
+    {
+        double ret = 0.0;
+        double exponent = 1.0 / k;
+        for (size_t i = 0; i < n; ++i) {
+            ret += std::pow(1.0 - this->draw_double(), exponent);
         }
         return ret;
     }
@@ -1728,7 +1903,7 @@ public:
     /**
      * Return a random number distributed according to an exponential distribution.
      *
-     * @param scale The scale.
+     * @param scale Scale.
      * @return Random number.
      */
     double exponential(double scale = 1)
@@ -1740,7 +1915,7 @@ public:
      * Generate an nd-array of random numbers distributed according to an exponential distribution.
      *
      * @param shape The shape of the nd-array.
-     * @param scale The scale.
+     * @param scale Scale.
      * @return The sample of shape `shape`.
      */
     template <class S>
@@ -1780,6 +1955,121 @@ public:
     R exponential(const I (&shape)[L], double scale = 1)
     {
         return this->exponential_impl<R>(shape, scale);
+    }
+
+    /**
+     * Return a random number distributed according to an power distribution.
+     *
+     * @param k Scale.
+     * @return Random number.
+     */
+    double power(double k = 1)
+    {
+        return std::pow(1.0 - this->draw_double(), 1.0 / k);
+    }
+
+    /**
+     * Generate an nd-array of random numbers distributed according to an power distribution.
+     *
+     * @param shape The shape of the nd-array.
+     * @param k Scale.
+     * @return The sample of shape `shape`.
+     */
+    template <class S>
+    auto power(const S& shape, double k = 1) -> typename detail::return_type<double, S>::type
+    {
+        using R = typename detail::return_type<double, S>::type;
+        return this->power_impl<R>(shape, k);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::power(const S&, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class S>
+    R power(const S& shape, double k = 1)
+    {
+        return this->power_impl<R>(shape, k);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::power(const S&, double)
+     */
+    template <class I, std::size_t L>
+    auto power(const I (&shape)[L], double k = 1) ->
+        typename detail::return_type_fixed<double, L>::type
+    {
+        using R = typename detail::return_type_fixed<double, L>::type;
+        return this->power_impl<R>(shape, k);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::power(const S&, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class I, std::size_t L>
+    R power(const I (&shape)[L], double k = 1)
+    {
+        return this->power_impl<R>(shape, k);
+    }
+
+    /**
+     * Return a random number distributed according to a Pareto distribution.
+     *
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     * @return Random number.
+     */
+    double pareto(double k = 1, double scale = 1)
+    {
+        return scale * std::pow(1.0 - this->draw_double(), -1.0 / k);
+    }
+
+    /**
+     * Generate an nd-array of random numbers distributed according to a Pareto distribution.
+     *
+     * @param shape The shape of the nd-array.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     * @return The sample of shape `shape`.
+     */
+    template <class S>
+    auto pareto(const S& shape, double k = 1, double scale = 1) ->
+        typename detail::return_type<double, S>::type
+    {
+        using R = typename detail::return_type<double, S>::type;
+        return this->pareto_impl<R>(shape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::pareto(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class S>
+    R pareto(const S& shape, double k = 1, double scale = 1)
+    {
+        return this->pareto_impl<R>(shape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::pareto(const S&, double, double)
+     */
+    template <class I, std::size_t L>
+    auto pareto(const I (&shape)[L], double k = 1, double scale = 1) ->
+        typename detail::return_type_fixed<double, L>::type
+    {
+        using R = typename detail::return_type_fixed<double, L>::type;
+        return this->pareto_impl<R>(shape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::pareto(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class I, std::size_t L>
+    R pareto(const I (&shape)[L], double k = 1, double scale = 1)
+    {
+        return this->pareto_impl<R>(shape, k, scale);
     }
 
     /**
@@ -2039,6 +2329,20 @@ private:
     {
         R r = this->random_impl<R>(shape);
         return exponential_distribution(scale).quantile(r);
+    }
+
+    template <class R, class S>
+    R power_impl(const S& shape, double k)
+    {
+        R r = this->random_impl<R>(shape);
+        return power_distribution(k).quantile(r);
+    }
+
+    template <class R, class S>
+    R pareto_impl(const S& shape, double k, double scale)
+    {
+        R r = this->random_impl<R>(shape);
+        return pareto_distribution(k, scale).quantile(r);
     }
 
     template <class R, class S>
@@ -2802,12 +3106,29 @@ private:
                        static_cast<double>(n) * m_param[1];
             };
             return;
+        case power:
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.power<Data>({n}, m_param[0]) + m_param[1];
+            };
+            m_sum = [this](size_t n) -> double {
+                return m_gen.cumsum_power(n, m_param[0]) + static_cast<double>(n) * m_param[1];
+            };
+            return;
         case delta:
             m_draw = [this](size_t n) -> Data {
                 return m_gen.delta<Data>({n}, m_param[0]) + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_delta(n, m_param[0]) + static_cast<double>(n) * m_param[1];
+            };
+            return;
+        case pareto:
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.pareto<Data>({n}, m_param[0], m_param[1]) + m_param[2];
+            };
+            m_sum = [this](size_t n) -> double {
+                return m_gen.cumsum_pareto(n, m_param[0], m_param[1]) +
+                       static_cast<double>(n) * m_param[2];
             };
             return;
         case weibull:
@@ -2873,8 +3194,10 @@ public:
      *
      *      -   prrng::distribution::random: {scale = 1, offset = 0}
      *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
+     *      -   prrng::distribution::pareto: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::weibull: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
+     *      -   prrng::distribution::power: {k = 1, offset = 0}
      *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
      *      -   prrng::distribution::delta: {scale = 1, offset = 0}
      *      -   prrng::distribution::custom: {}
@@ -3422,7 +3745,7 @@ public:
      * according to an exponential distribution.
      *
      * @param ishape The shape of the nd-array drawn per generator.
-     * @param scale The scale.
+     * @param scale Scale.
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
@@ -3462,6 +3785,101 @@ public:
     R exponential(const I (&ishape)[L], double scale = 1)
     {
         return this->exponential_impl<R>(detail::to_array(ishape), scale);
+    }
+
+    /**
+     * Per generator, generate an nd-array of random numbers distributed
+     * according to an power distribution.
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param k Scale.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
+    template <class S>
+    auto power(const S& ishape, double k = 1) ->
+        typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->power_impl<R>(ishape, k);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::power(const S&, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class S>
+    R power(const S& ishape, double k = 1)
+    {
+        return this->power_impl<R>(ishape, k);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::power(const S&, double)
+     */
+    template <class I, std::size_t L>
+    auto power(const I (&ishape)[L], double k = 1) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->power_impl<R>(detail::to_array(ishape), k);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::power(const S&, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class I, std::size_t L>
+    R power(const I (&ishape)[L], double k = 1)
+    {
+        return this->power_impl<R>(detail::to_array(ishape), k);
+    }
+
+    /**
+     * Per generator, generate an nd-array of random numbers distributed
+     * according to a Pareto distribution.
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param k The "shape" parameter \f$ k \f$.
+     * @param scale The "scale" parameter \f$ \lambda \f$.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
+    template <class S>
+    auto pareto(const S& ishape, double k = 1, double scale = 1) ->
+        typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->pareto_impl<R>(ishape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::pareto(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class S>
+    R pareto(const S& ishape, double k = 1, double scale = 1)
+    {
+        return this->pareto_impl<R>(ishape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::pareto(const S&, double, double)
+     */
+    template <class I, std::size_t L>
+    auto pareto(const I (&ishape)[L], double k = 1, double scale = 1) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->pareto_impl<R>(detail::to_array(ishape), k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::pareto(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class I, std::size_t L>
+    R pareto(const I (&ishape)[L], double k = 1, double scale = 1)
+    {
+        return this->pareto_impl<R>(detail::to_array(ishape), k, scale);
     }
 
     /**
@@ -3712,6 +4130,37 @@ public:
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to an power distribution, see power_distribution(),
+     * @param n Number of steps.
+     * @param k Scale.
+     * @return Cumulative sum.
+     */
+    template <class T>
+    auto cumsum_power(const T& n, double k = 1) -> typename detail::return_type<double, M>::type
+    {
+        using R = typename detail::return_type<double, M>::type;
+        R ret = R::from_shape(m_shape);
+        this->cumsum_power_impl(ret.data(), n.data(), k);
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to an power distribution, see power_distribution(),
+     * @param n Number of steps.
+     * @param k Scale.
+     * @return Cumulative sum.
+     */
+    template <class R, class T>
+    R cumsum_power(const T& n, double k = 1)
+    {
+        R ret = R::from_shape(m_shape);
+        this->cumsum_power_impl(ret.data(), n.data(), k);
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
      * distributed according to a delta distribution,
      * @param n Number of steps.
      * @param scale Scale.
@@ -3742,6 +4191,40 @@ public:
         for (size_t i = 0; i < ret.size(); ++i) {
             ret.flat(i) = static_cast<double>(n.flat(i)) * scale;
         }
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a pareto distribution, see pareto_distribution(),
+     * @param n Number of steps.
+     * @param k Shape.
+     * @param scale Scale.
+     * @return Cumulative sum.
+     */
+    template <class T>
+    auto cumsum_pareto(const T& n, double k = 1, double scale = 1) ->
+        typename detail::return_type<double, M>::type
+    {
+        using R = typename detail::return_type<double, M>::type;
+        R ret = R::from_shape(m_shape);
+        this->cumsum_pareto_impl(ret.data(), n.data(), k, scale);
+        return ret;
+    }
+
+    /**
+     * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
+     * distributed according to a pareto distribution, see pareto_distribution(),
+     * @param n Number of steps.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     * @return Cumulative sum.
+     */
+    template <class R, class T>
+    R cumsum_pareto(const T& n, double k = 1, double scale = 1)
+    {
+        R ret = R::from_shape(m_shape);
+        this->cumsum_pareto_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -3996,6 +4479,20 @@ private:
     }
 
     template <class R, class S>
+    R power_impl(const S& ishape, double k)
+    {
+        R r = this->random_impl<R>(ishape);
+        return power_distribution(k).quantile(r);
+    }
+
+    template <class R, class S>
+    R pareto_impl(const S& ishape, double k, double scale)
+    {
+        R r = this->random_impl<R>(ishape);
+        return pareto_distribution(k, scale).quantile(r);
+    }
+
+    template <class R, class S>
     R weibull_impl(const S& ishape, double k, double scale)
     {
         R r = this->random_impl<R>(ishape);
@@ -4076,6 +4573,26 @@ protected:
      * @param n Number to draw, per generator.
      */
     virtual void cumsum_exponential_impl(double* ret, const size_t* n, double)
+    {
+        return cumsum_random_impl(ret, n); // dummy
+    }
+
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     */
+    virtual void cumsum_power_impl(double* ret, const size_t* n, double)
+    {
+        return cumsum_random_impl(ret, n); // dummy
+    }
+
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     */
+    virtual void cumsum_pareto_impl(double* ret, const size_t* n, double, double)
     {
         return cumsum_random_impl(ret, n); // dummy
     }
@@ -4493,6 +5010,33 @@ protected:
      * @brief Return the result of the cumulative sum of `n` random numbers.
      * @param ret Output, per generator.
      * @param n Number to draw, per generator.
+     * @param k Scale.
+     */
+    void cumsum_power_impl(double* ret, const size_t* n, double k) override
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            ret[i] = m_gen[i].cumsum_power(n[i], k);
+        }
+    }
+
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     */
+    void cumsum_pareto_impl(double* ret, const size_t* n, double k, double scale) override
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            ret[i] = m_gen[i].cumsum_pareto(n[i], k, scale);
+        }
+    }
+
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
      * @param k Shape parameter.
      * @param scale Scale parameter.
      */
@@ -4870,6 +5414,8 @@ protected:
      *
      *      -   prrng::distribution::random: {scale = 1, offset = 0}
      *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
+     *      -   prrng::distribution::power: {k = 1, offset = 0}
+     *      -   prrng::distribution::pareto: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::weibull: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
@@ -4961,6 +5507,17 @@ protected:
                 };
             }
             return;
+        case power:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template power<R>({n}, m_param[0]) + m_param[1];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_power(n, m_param[0]) +
+                           static_cast<double>(n) * m_param[1];
+                };
+            }
+            return;
         case delta:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
@@ -4969,6 +5526,17 @@ protected:
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_delta(n, m_param[0]) +
                            static_cast<double>(n) * m_param[1];
+                };
+            }
+            return;
+        case pareto:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template pareto<R>({n}, m_param[0], m_param[1]) + m_param[2];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_pareto(n, m_param[0], m_param[1]) +
+                           static_cast<double>(n) * m_param[2];
                 };
             }
             return;
