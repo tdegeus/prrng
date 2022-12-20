@@ -163,16 +163,15 @@ enum distribution {
     custom ///< unknown
 };
 
-namespace detail {
-
 /**
- * @brief Default parameters
+ * @brief Add default parameters depending on the distribution.
  * @param distribution Distribution.
- * @param parameters Parameters.
+ * @param parameters Parameters (defaults appended if needed).
  * @return Parameters with defaults filled.
  */
-std::vector<double>
-default_parameters_cumsum(enum distribution distribution, const std::vector<double>& parameters)
+std::vector<double> default_parameters(
+    enum distribution distribution,
+    const std::vector<double>& parameters = std::vector<double>{})
 {
     std::vector<double> ret;
     switch (distribution) {
@@ -203,6 +202,8 @@ default_parameters_cumsum(enum distribution distribution, const std::vector<doub
     std::copy(parameters.begin(), parameters.end(), ret.begin());
     return ret;
 }
+
+namespace detail {
 
 /**
  * Remove " from string.
@@ -4908,7 +4909,7 @@ protected:
         m_start = xt::zeros<typename Index::value_type>(m_gen.shape());
         m_i = m_n * xt::ones<typename Index::value_type>(m_gen.shape());
 
-        auto par = detail::default_parameters_cumsum(distribution, parameters);
+        auto par = default_parameters(distribution, parameters);
         std::copy(par.begin(), par.end(), m_param.begin());
 
         this->auto_functions();

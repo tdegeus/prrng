@@ -381,6 +381,13 @@ PYBIND11_MODULE(_prrng, m)
         py::arg("proximity") = 10);
 
     m.def(
+        "default_parameters",
+        &prrng::default_parameters,
+        "Add default parameters for a distribution.",
+        py::arg("distribution"),
+        py::arg("parameters") = std::vector<double>{});
+
+    m.def(
         "cumsum_chunk",
         &prrng::cumsum_chunk<xt::pyarray<double>, xt::pyarray<ptrdiff_t>>,
         "Compute chunk of chunked cumsum",
