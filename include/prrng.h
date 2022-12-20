@@ -61,8 +61,8 @@
 /**
  * \cond
  */
-#define Q(x) #x
-#define QUOTE(x) Q(x)
+#define PRRNG_QUOTE_HELPER(x) #x
+#define PRRNG_QUOTE(x) PRRNG_QUOTE_HELPER(x)
 
 #define PRRNG_ASSERT_IMPL(expr, file, line) \
     if (!(expr)) { \
@@ -437,7 +437,7 @@ std::array<I, L> to_array(const I (&shape)[L])
  */
 inline std::string version()
 {
-    return detail::unquote(std::string(QUOTE(PRRNG_VERSION)));
+    return detail::unquote(std::string(PRRNG_QUOTE(PRRNG_VERSION)));
 }
 
 /**
@@ -457,29 +457,30 @@ inline std::vector<std::string> version_dependencies()
     ret.push_back("prrng=" + version());
 
     ret.push_back(
-        "xtensor=" + detail::unquote(std::string(QUOTE(XTENSOR_VERSION_MAJOR))) + "." +
-        detail::unquote(std::string(QUOTE(XTENSOR_VERSION_MINOR))) + "." +
-        detail::unquote(std::string(QUOTE(XTENSOR_VERSION_PATCH))));
+        "xtensor=" + detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_VERSION_MAJOR))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_VERSION_MINOR))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_VERSION_PATCH))));
 
 #ifdef XSIMD_VERSION_MAJOR
     ret.push_back(
-        "xsimd=" + detail::unquote(std::string(QUOTE(XSIMD_VERSION_MAJOR))) + "." +
-        detail::unquote(std::string(QUOTE(XSIMD_VERSION_MINOR))) + "." +
-        detail::unquote(std::string(QUOTE(XSIMD_VERSION_PATCH))));
+        "xsimd=" + detail::unquote(std::string(PRRNG_QUOTE(XSIMD_VERSION_MAJOR))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(XSIMD_VERSION_MINOR))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(XSIMD_VERSION_PATCH))));
 #endif
 
 #ifdef XTL_VERSION_MAJOR
     ret.push_back(
-        "xtl=" + detail::unquote(std::string(QUOTE(XTL_VERSION_MAJOR))) + "." +
-        detail::unquote(std::string(QUOTE(XTL_VERSION_MINOR))) + "." +
-        detail::unquote(std::string(QUOTE(XTL_VERSION_PATCH))));
+        "xtl=" + detail::unquote(std::string(PRRNG_QUOTE(XTL_VERSION_MAJOR))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(XTL_VERSION_MINOR))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(XTL_VERSION_PATCH))));
 #endif
 
 #if defined(XTENSOR_PYTHON_VERSION_MAJOR)
     ret.push_back(
-        "xtensor-python=" + detail::unquote(std::string(QUOTE(XTENSOR_PYTHON_VERSION_MAJOR))) +
-        "." + detail::unquote(std::string(QUOTE(XTENSOR_PYTHON_VERSION_MINOR))) + "." +
-        detail::unquote(std::string(QUOTE(XTENSOR_PYTHON_VERSION_PATCH))));
+        "xtensor-python=" +
+        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_PYTHON_VERSION_MAJOR))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_PYTHON_VERSION_MINOR))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_PYTHON_VERSION_PATCH))));
 #endif
 
 #ifdef BOOST_VERSION
@@ -503,7 +504,7 @@ inline std::vector<std::string> version_compiler()
     std::vector<std::string> ret;
 
 #ifdef __DATE__
-    std::string date = detail::unquote(std::string(QUOTE(__DATE__)));
+    std::string date = detail::unquote(std::string(PRRNG_QUOTE(__DATE__)));
     ret.push_back("date=" + detail::replace(detail::replace(date, " ", "-"), "--", "-"));
 #endif
 
@@ -529,16 +530,16 @@ inline std::vector<std::string> version_compiler()
 
 #ifdef __clang_version__
     ret.push_back(
-        "clang=" + detail::unquote(std::string(QUOTE(__clang_major__))) + "." +
-        detail::unquote(std::string(QUOTE(__clang_minor__))) + "." +
-        detail::unquote(std::string(QUOTE(__clang_patchlevel__))));
+        "clang=" + detail::unquote(std::string(PRRNG_QUOTE(__clang_major__))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(__clang_minor__))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(__clang_patchlevel__))));
 #endif
 
 #ifdef __GNUC__
     ret.push_back(
-        "gcc=" + detail::unquote(std::string(QUOTE(__GNUC__))) + "." +
-        detail::unquote(std::string(QUOTE(__GNUC_MINOR__))) + "." +
-        detail::unquote(std::string(QUOTE(__GNUC_PATCHLEVEL__))));
+        "gcc=" + detail::unquote(std::string(PRRNG_QUOTE(__GNUC__))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(__GNUC_MINOR__))) + "." +
+        detail::unquote(std::string(PRRNG_QUOTE(__GNUC_PATCHLEVEL__))));
 #endif
 
 #ifdef _MSC_VER
@@ -548,7 +549,7 @@ inline std::vector<std::string> version_compiler()
     // c++ version
 
 #ifdef __cplusplus
-    ret.push_back("c++=" + detail::unquote(std::string(QUOTE(__cplusplus))));
+    ret.push_back("c++=" + detail::unquote(std::string(PRRNG_QUOTE(__cplusplus))));
 #endif
 
     std::sort(ret.begin(), ret.end(), std::greater<std::string>());
