@@ -161,6 +161,71 @@ class Test_pcg32_basic(unittest.TestCase):
         self.assertAlmostEqual(aprime[-1], bprime)
         self.assertAlmostEqual(acustom[-1], bcustom)
 
+    def test_pcg32_cumsum_power(self):
+
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+        rate = 1.2
+
+        gen.restore(state)
+        a = np.cumsum(gen.power([n]))
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.power([n]))
+
+        gen.restore(state)
+        acustom = np.cumsum(offset + mean * gen.power([n], rate))
+
+        gen.restore(state)
+        b = gen.cumsum_power(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_power(n)
+
+        gen.restore(state)
+        bcustom = offset * n + mean * gen.cumsum_power(n, rate)
+
+        self.assertAlmostEqual(a[-1], b)
+        self.assertAlmostEqual(aprime[-1], bprime)
+        self.assertAlmostEqual(acustom[-1], bcustom)
+
+    def test_pcg32_cumsum_pareto(self):
+
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        state = gen.state()
+        n = 10000
+        offset = 0.1
+        mean = 2.3
+        lam = 1.2
+        k = 0.3
+
+        gen.restore(state)
+        a = np.cumsum(gen.pareto([n]))
+
+        gen.restore(state)
+        aprime = np.cumsum(offset + mean * gen.pareto([n]))
+
+        gen.restore(state)
+        acustom = np.cumsum(offset + mean * gen.pareto([n], lam, k))
+
+        gen.restore(state)
+        b = gen.cumsum_pareto(n)
+
+        gen.restore(state)
+        bprime = offset * n + mean * gen.cumsum_pareto(n)
+
+        gen.restore(state)
+        bcustom = offset * n + mean * gen.cumsum_pareto(n, lam, k)
+
+        self.assertAlmostEqual(a[-1], b)
+        self.assertAlmostEqual(aprime[-1], bprime)
+        self.assertAlmostEqual(acustom[-1], bcustom)
+
     def test_pcg32_cumsum_weibull(self):
 
         seed = int(time.time())

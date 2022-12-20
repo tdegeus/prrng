@@ -106,6 +106,97 @@ class Test_pcg32_cumum(unittest.TestCase):
         chunk.align(target)
         self.assertEqual(i, chunk.index)
 
+    def test_power(self):
+        """
+        Chunked storage: power
+        """
+
+        k = 2
+        offset = 0.1
+        ref = prrng.pcg32(seed)
+        xref = np.cumsum(offset + ref.power([10000], k))
+
+        n = 100
+        chunk = prrng.pcg32_cumsum([n], seed, distribution=prrng.power, parameters=[k, offset])
+        self.assertEqual(chunk.start, 0)
+        self.assertTrue(np.allclose(chunk.data, xref[0:n]))
+
+        for i in range(1, 10):
+            chunk.next()
+            self.assertEqual(chunk.start, i * n)
+            self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
+
+        index = chunk.start
+        state = chunk.state_at(index)
+        value = chunk.data[0]
+        ref = np.copy(chunk.data)
+
+        for i in range(i - 1, 5, -1):
+            chunk.prev()
+            self.assertEqual(chunk.start, i * n)
+            self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
+
+        i = n * 15 + 2
+        target = 0.5 * (xref[i] + xref[i + 1])
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
+        self.assertAlmostEqual(chunk.data[0], xref[i])
+        self.assertAlmostEqual(chunk.data[1], xref[i + 1])
+
+        chunk.restore(state, value, index)
+        self.assertTrue(np.allclose(ref, chunk.data))
+        self.assertEqual(index, chunk.start)
+
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
+
+    def test_pareto(self):
+        """
+        Chunked storage: pareto
+        """
+
+        k = 2
+        scale = 5
+        offset = 0.1
+        ref = prrng.pcg32(seed)
+        xref = np.cumsum(offset + ref.pareto([10000], k, scale))
+
+        n = 100
+        chunk = prrng.pcg32_cumsum(
+            [n], seed, distribution=prrng.pareto, parameters=[k, scale, offset]
+        )
+        self.assertEqual(chunk.start, 0)
+        self.assertTrue(np.allclose(chunk.data, xref[0:n]))
+
+        for i in range(1, 10):
+            chunk.next()
+            self.assertEqual(chunk.start, i * n)
+            self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
+
+        index = chunk.start
+        state = chunk.state_at(index)
+        value = chunk.data[0]
+        ref = np.copy(chunk.data)
+
+        for i in range(i - 1, 5, -1):
+            chunk.prev()
+            self.assertEqual(chunk.start, i * n)
+            self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
+
+        i = n * 15 + 2
+        target = 0.5 * (xref[i] + xref[i + 1])
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
+        self.assertAlmostEqual(chunk.data[0], xref[i])
+        self.assertAlmostEqual(chunk.data[1], xref[i + 1])
+
+        chunk.restore(state, value, index)
+        self.assertTrue(np.allclose(ref, chunk.data))
+        self.assertEqual(index, chunk.start)
+
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
+
     def test_weibull(self):
         """
         Chunked storage: Weibull
