@@ -15,10 +15,12 @@ class Test_cumsum(unittest.TestCase):
     def test_default_parameters(self):
 
         self.assertEqual(prrng.default_parameters(prrng.distribution.random), [1, 0])
-        self.assertEqual(prrng.default_parameters(prrng.distribution.exponential), [1, 0])
         self.assertEqual(prrng.default_parameters(prrng.distribution.delta), [1, 0])
-        self.assertEqual(prrng.default_parameters(prrng.distribution.weibull), [1, 1, 0])
+        self.assertEqual(prrng.default_parameters(prrng.distribution.exponential), [1, 0])
+        self.assertEqual(prrng.default_parameters(prrng.distribution.power), [1, 0])
         self.assertEqual(prrng.default_parameters(prrng.distribution.gamma), [1, 1, 0])
+        self.assertEqual(prrng.default_parameters(prrng.distribution.pareto), [1, 1, 0])
+        self.assertEqual(prrng.default_parameters(prrng.distribution.weibull), [1, 1, 0])
         self.assertEqual(prrng.default_parameters(prrng.distribution.normal), [1, 0, 0])
         self.assertEqual(prrng.default_parameters(prrng.distribution.custom), [])
 

@@ -155,13 +155,13 @@ namespace prrng {
  */
 enum distribution {
     random, ///< flat
+    delta, ///< delta
+    exponential, ///< exponential
     power, ///< power
+    gamma, ///< gamma
     pareto, ///< pareto
     weibull, ///< weibull
-    gamma, ///< gamma
     normal, ///< normal
-    exponential, ///< exponential
-    delta, ///< delta
     custom ///< unknown
 };
 
@@ -180,22 +180,22 @@ std::vector<double> default_parameters(
     case distribution::random:
         ret = std::vector<double>{1, 0};
         break;
-    case distribution::exponential:
+    case distribution::delta:
         ret = std::vector<double>{1, 0};
         break;
-    case distribution::delta:
+    case distribution::exponential:
         ret = std::vector<double>{1, 0};
         break;
     case distribution::power:
         ret = std::vector<double>{1, 0};
         break;
+    case distribution::gamma:
+        ret = std::vector<double>{1, 1, 0};
+        break;
     case distribution::pareto:
         ret = std::vector<double>{1, 1, 0};
         break;
     case distribution::weibull:
-        ret = std::vector<double>{1, 1, 0};
-        break;
-    case distribution::gamma:
         ret = std::vector<double>{1, 1, 0};
         break;
     case distribution::normal:
@@ -959,92 +959,6 @@ void align(
 } // namespace detail
 
 /**
- * Normal distribution.
- *
- * References:
- *
- * -   https://en.wikipedia.org/wiki/Normal_distribution
- * -   https://www.boost.org/doc/libs/1_63_0/libs/math/doc/html/math_toolkit/sf_erf/error_inv.html
- * -   https://www.boost.org/doc/libs/1_78_0/boost/math/special_functions/detail/erf_inv.hpp
- */
-class normal_distribution {
-public:
-    /**
-     * Constructor.
-     *
-     * @param mu Average.
-     * @param sigma Standard deviation.
-     */
-    normal_distribution(double mu = 0, double sigma = 1)
-    {
-        m_mu = mu;
-        m_sigma = sigma;
-        m_sigma_sqrt2 = m_sigma * std::sqrt(2.0);
-    }
-
-    /**
-     * Probability density function.
-     *
-     * @param x Coordinates.
-     * @return Probability density for each `x`.
-     */
-    template <class T>
-    T pdf(const T& x)
-    {
-        return xt::exp(-0.5 * xt::pow((x - m_mu) / m_sigma, 2.0)) /
-               (m_sigma_sqrt2 * std::sqrt(xt::numeric_constants<double>::PI));
-    }
-
-    /**
-     * Cumulative density function.
-     *
-     * \f$
-     *      \Phi(x) = \frac{1}{2} \left[
-     *          1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
-     *      \right]
-     * \f$
-     *
-     * @param x Coordinates.
-     * @return Cumulative density for each `x`.
-     */
-    template <class T>
-    T cdf(const T& x)
-    {
-        return 0.5 * (1.0 + xt::erf((x - m_mu) / m_sigma_sqrt2));
-    }
-
-    /**
-     * Quantile (the inverse of the cumulative density function).
-     * For a given probability \f$ p \f$ the output is
-     *
-     * \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2p - 1) \f$
-     *
-     * @param p Probability [0, 1].
-     * @return Quantile for each `p`.
-     */
-    template <class T>
-    T quantile(const T& p)
-    {
-        using value_type = typename detail::get_value_type<T>::type;
-
-#if PRRNG_USE_BOOST
-        auto f = xt::vectorize(boost::math::erf_inv<value_type>);
-        return m_mu + m_sigma_sqrt2 * f(2.0 * p - 1.0);
-#else
-        static_assert(xt::is_xexpression<T>::value, "T must be an xexpression");
-        auto ret = p;
-        ret.fill(std::numeric_limits<value_type>::quiet_NaN());
-        return ret;
-#endif
-    }
-
-private:
-    double m_mu;
-    double m_sigma;
-    double m_sigma_sqrt2;
-};
-
-/**
  * Exponential distribution.
  *
  * References:
@@ -1102,75 +1016,6 @@ public:
     }
 
 private:
-    double m_scale;
-};
-
-/**
- * Pareto distribution
- *
- * \f$ P(x) = k (x_m)^k x^{-(k + 1)} \f$
- *
- * with \f$ k > 0 \f$ and \f$ x_m > 0 \f$.
- *
- * References:
- *
- *  -   https://en.wikipedia.org/wiki/Pareto_distribution
- *  -   https://numpy.org/doc/stable/reference/random/generated/numpy.random.pareto.html
- */
-class pareto_distribution {
-public:
-    /**
-     * Constructor.
-     *
-     * @param k Shape.
-     * @param scale Scale.
-     */
-    pareto_distribution(double k = 1, double scale = 1)
-    {
-        m_k = k;
-        m_scale = scale;
-        PRRNG_ASSERT(m_k > 0);
-        PRRNG_ASSERT(m_scale > 0);
-    }
-
-    /**
-     * Probability density function.
-     *
-     * @param x Coordinates.
-     * @return Probability density for each `x`.
-     */
-    template <class T>
-    T pdf(const T& x)
-    {
-        return m_k * std::pow(m_scale, m_k) * xt::pow(x, -(m_k + 1.0));
-    }
-
-    /**
-     * Cumulative density function.
-     *
-     * @param x Coordinates.
-     * @return Cumulative density for each `x`.
-     */
-    template <class T>
-    T cdf(const T& x)
-    {
-        return 1.0 - std::pow(m_scale, m_k) * xt::pow(x, -m_k);
-    }
-
-    /**
-     * Quantile (the inverse of the cumulative density function).
-     *
-     * @param p Probability [0, 1].
-     * @return Quantile for each `p`.
-     */
-    template <class T>
-    T quantile(const T& p)
-    {
-        return m_scale * xt::pow(1.0 - p, -1.0 / m_k);
-    }
-
-private:
-    double m_k;
     double m_scale;
 };
 
@@ -1235,89 +1080,6 @@ public:
 
 private:
     double m_k;
-};
-
-/**
- * Weibull distribution.
- *
- * References:
- *
- * -   https://en.wikipedia.org/wiki/Weibull_distribution
- * -   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/weibull.hpp
- */
-class weibull_distribution {
-public:
-    /**
-     * Constructor.
-     *
-     * @param k Shape parameter \f$ k \f$.
-     * @param scale Scale parameter \f$ \lambda \f$.
-     */
-    weibull_distribution(double k = 1, double scale = 1)
-    {
-        m_shape = k;
-        m_scale = scale;
-    }
-
-    /**
-     * Probability density function.
-     *
-     * @param x Coordinates.
-     * @return Probability density for each `x`.
-     */
-    template <class T>
-    T pdf(const T& x)
-    {
-        T ret = xt::exp(-xt::pow(x / m_scale, m_shape));
-        ret *= xt::pow(x / m_scale, m_shape - 1.0) * m_shape / m_scale;
-
-        if (xt::any(xt::equal(x, 0))) {
-            if (m_shape == 1) {
-                ret = xt::where(xt::equal(x, 0), 1.0 / m_scale, ret);
-            }
-            else if (m_shape > 1) {
-                ret = xt::where(xt::equal(x, 0), 0.0, ret);
-            }
-            else {
-                throw std::runtime_error("[prrng::weibull_distribution::pdf] Overflow error");
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Cumulative density function.
-     *
-     * \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
-     *
-     * @param x Coordinates.
-     * @return Cumulative density for each `x`.
-     */
-    template <class T>
-    T cdf(const T& x)
-    {
-        return -xt::expm1(-xt::pow(x / m_scale, m_shape));
-    }
-
-    /**
-     * Quantile (the inverse of the cumulative density function).
-     * For a given probability \f$ p \f$ the output is
-     *
-     * \f$ x = \lambda (- \ln (1 - p))^{1 / k}) \f$
-     *
-     * @param p Probability [0, 1].
-     * @return Quantile for each `p`.
-     */
-    template <class T>
-    T quantile(const T& p)
-    {
-        return m_scale * xt::pow(-xt::log1p(-p), 1.0 / m_shape);
-    }
-
-private:
-    double m_shape;
-    double m_scale;
 };
 
 /**
@@ -1419,6 +1181,244 @@ private:
 };
 
 /**
+ * Pareto distribution
+ *
+ * \f$ P(x) = k (x_m)^k x^{-(k + 1)} \f$
+ *
+ * with \f$ k > 0 \f$ and \f$ x_m > 0 \f$.
+ *
+ * References:
+ *
+ *  -   https://en.wikipedia.org/wiki/Pareto_distribution
+ *  -   https://numpy.org/doc/stable/reference/random/generated/numpy.random.pareto.html
+ */
+class pareto_distribution {
+public:
+    /**
+     * Constructor.
+     *
+     * @param k Shape.
+     * @param scale Scale.
+     */
+    pareto_distribution(double k = 1, double scale = 1)
+    {
+        m_k = k;
+        m_scale = scale;
+        PRRNG_ASSERT(m_k > 0);
+        PRRNG_ASSERT(m_scale > 0);
+    }
+
+    /**
+     * Probability density function.
+     *
+     * @param x Coordinates.
+     * @return Probability density for each `x`.
+     */
+    template <class T>
+    T pdf(const T& x)
+    {
+        return m_k * std::pow(m_scale, m_k) * xt::pow(x, -(m_k + 1.0));
+    }
+
+    /**
+     * Cumulative density function.
+     *
+     * @param x Coordinates.
+     * @return Cumulative density for each `x`.
+     */
+    template <class T>
+    T cdf(const T& x)
+    {
+        return 1.0 - std::pow(m_scale, m_k) * xt::pow(x, -m_k);
+    }
+
+    /**
+     * Quantile (the inverse of the cumulative density function).
+     *
+     * @param p Probability [0, 1].
+     * @return Quantile for each `p`.
+     */
+    template <class T>
+    T quantile(const T& p)
+    {
+        return m_scale * xt::pow(1.0 - p, -1.0 / m_k);
+    }
+
+private:
+    double m_k;
+    double m_scale;
+};
+
+/**
+ * Weibull distribution.
+ *
+ * References:
+ *
+ * -   https://en.wikipedia.org/wiki/Weibull_distribution
+ * -   https://github.com/boostorg/math/blob/develop/include/boost/math/distributions/weibull.hpp
+ */
+class weibull_distribution {
+public:
+    /**
+     * Constructor.
+     *
+     * @param k Shape parameter \f$ k \f$.
+     * @param scale Scale parameter \f$ \lambda \f$.
+     */
+    weibull_distribution(double k = 1, double scale = 1)
+    {
+        m_shape = k;
+        m_scale = scale;
+    }
+
+    /**
+     * Probability density function.
+     *
+     * @param x Coordinates.
+     * @return Probability density for each `x`.
+     */
+    template <class T>
+    T pdf(const T& x)
+    {
+        T ret = xt::exp(-xt::pow(x / m_scale, m_shape));
+        ret *= xt::pow(x / m_scale, m_shape - 1.0) * m_shape / m_scale;
+
+        if (xt::any(xt::equal(x, 0))) {
+            if (m_shape == 1) {
+                ret = xt::where(xt::equal(x, 0), 1.0 / m_scale, ret);
+            }
+            else if (m_shape > 1) {
+                ret = xt::where(xt::equal(x, 0), 0.0, ret);
+            }
+            else {
+                throw std::runtime_error("[prrng::weibull_distribution::pdf] Overflow error");
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Cumulative density function.
+     *
+     * \f$ \Phi(x) = 1 - e^{-(x / \lambda)^k} \f$
+     *
+     * @param x Coordinates.
+     * @return Cumulative density for each `x`.
+     */
+    template <class T>
+    T cdf(const T& x)
+    {
+        return -xt::expm1(-xt::pow(x / m_scale, m_shape));
+    }
+
+    /**
+     * Quantile (the inverse of the cumulative density function).
+     * For a given probability \f$ p \f$ the output is
+     *
+     * \f$ x = \lambda (- \ln (1 - p))^{1 / k}) \f$
+     *
+     * @param p Probability [0, 1].
+     * @return Quantile for each `p`.
+     */
+    template <class T>
+    T quantile(const T& p)
+    {
+        return m_scale * xt::pow(-xt::log1p(-p), 1.0 / m_shape);
+    }
+
+private:
+    double m_shape;
+    double m_scale;
+};
+
+/**
+ * Normal distribution.
+ *
+ * References:
+ *
+ * -   https://en.wikipedia.org/wiki/Normal_distribution
+ * -   https://www.boost.org/doc/libs/1_63_0/libs/math/doc/html/math_toolkit/sf_erf/error_inv.html
+ * -   https://www.boost.org/doc/libs/1_78_0/boost/math/special_functions/detail/erf_inv.hpp
+ */
+class normal_distribution {
+public:
+    /**
+     * Constructor.
+     *
+     * @param mu Average.
+     * @param sigma Standard deviation.
+     */
+    normal_distribution(double mu = 0, double sigma = 1)
+    {
+        m_mu = mu;
+        m_sigma = sigma;
+        m_sigma_sqrt2 = m_sigma * std::sqrt(2.0);
+    }
+
+    /**
+     * Probability density function.
+     *
+     * @param x Coordinates.
+     * @return Probability density for each `x`.
+     */
+    template <class T>
+    T pdf(const T& x)
+    {
+        return xt::exp(-0.5 * xt::pow((x - m_mu) / m_sigma, 2.0)) /
+               (m_sigma_sqrt2 * std::sqrt(xt::numeric_constants<double>::PI));
+    }
+
+    /**
+     * Cumulative density function.
+     *
+     * \f$
+     *      \Phi(x) = \frac{1}{2} \left[
+     *          1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
+     *      \right]
+     * \f$
+     *
+     * @param x Coordinates.
+     * @return Cumulative density for each `x`.
+     */
+    template <class T>
+    T cdf(const T& x)
+    {
+        return 0.5 * (1.0 + xt::erf((x - m_mu) / m_sigma_sqrt2));
+    }
+
+    /**
+     * Quantile (the inverse of the cumulative density function).
+     * For a given probability \f$ p \f$ the output is
+     *
+     * \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2p - 1) \f$
+     *
+     * @param p Probability [0, 1].
+     * @return Quantile for each `p`.
+     */
+    template <class T>
+    T quantile(const T& p)
+    {
+        using value_type = typename detail::get_value_type<T>::type;
+
+#if PRRNG_USE_BOOST
+        auto f = xt::vectorize(boost::math::erf_inv<value_type>);
+        return m_mu + m_sigma_sqrt2 * f(2.0 * p - 1.0);
+#else
+        static_assert(xt::is_xexpression<T>::value, "T must be an xexpression");
+        auto ret = p;
+        ret.fill(std::numeric_limits<value_type>::quiet_NaN());
+        return ret;
+#endif
+    }
+
+private:
+    double m_mu;
+    double m_sigma;
+    double m_sigma_sqrt2;
+};
+
+/**
  * Base class of the pseudorandom number generators.
  * This class provides common methods, but itself does not really do much.
  */
@@ -1443,19 +1443,29 @@ public:
     }
 
     /**
-     * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
-     * Pareto distribution, see pareto_distribution(),
+     * @brief Result of the cumulative sum of `n` 'random' numbers, distributed according to a
+     * delta distribution,
      * @param n Number of steps.
-     * @param k Shape.
      * @param scale Scale.
      * @return Cumulative sum.
      */
-    double cumsum_pareto(size_t n, double k = 1, double scale = 1)
+    double cumsum_delta(size_t n, double scale = 1)
+    {
+        return static_cast<double>(n) * scale;
+    }
+
+    /**
+     * @brief Result of the cumulative sum of `n` random numbers, distributed according to an
+     * exponential distribution, see exponential_distribution(),
+     * @param n Number of steps.
+     * @param scale Scale.
+     * @return Cumulative sum.
+     */
+    double cumsum_exponential(size_t n, double scale = 1)
     {
         double ret = 0.0;
-        double exponent = -1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(1.0 - this->draw_double(), exponent);
+            ret -= std::log(1.0 - this->draw_double());
         }
         return scale * ret;
     }
@@ -1479,51 +1489,41 @@ public:
 
     /**
      * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
-     * normal distribution, see normal_distribution(),
+     * gamma distribution, see gamma_distribution(),
      * @param n Number of steps.
-     * @param mu Mean.
-     * @param sigma Standard deviation.
+     * @param k Shape.
+     * @param scale Scale.
      * @return Cumulative sum.
      */
-    double cumsum_normal(size_t n, double mu = 0, double sigma = 1)
+    double cumsum_gamma(size_t n, double k = 1, double scale = 1)
     {
 #if PRRNG_USE_BOOST
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += boost::math::erf_inv<double>(2.0 * this->draw_double() - 1.0);
+            ret += boost::math::gamma_p_inv<double, double>(k, this->draw_double());
         }
-        return static_cast<double>(n) * mu + sigma * std::sqrt(2.0) * ret;
+        return scale * ret;
 #else
         return std::numeric_limits<double>::quiet_NaN();
 #endif
     }
 
     /**
-     * @brief Result of the cumulative sum of `n` random numbers, distributed according to an
-     * exponential distribution, see exponential_distribution(),
+     * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
+     * Pareto distribution, see pareto_distribution(),
      * @param n Number of steps.
+     * @param k Shape.
      * @param scale Scale.
      * @return Cumulative sum.
      */
-    double cumsum_exponential(size_t n, double scale = 1)
+    double cumsum_pareto(size_t n, double k = 1, double scale = 1)
     {
         double ret = 0.0;
+        double exponent = -1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret -= std::log(1.0 - this->draw_double());
+            ret += std::pow(1.0 - this->draw_double(), exponent);
         }
         return scale * ret;
-    }
-
-    /**
-     * @brief Result of the cumulative sum of `n` 'random' numbers, distributed according to a
-     * delta distribution,
-     * @param n Number of steps.
-     * @param scale Scale.
-     * @return Cumulative sum.
-     */
-    double cumsum_delta(size_t n, double scale = 1)
-    {
-        return static_cast<double>(n) * scale;
     }
 
     /**
@@ -1546,20 +1546,20 @@ public:
 
     /**
      * @brief Result of the cumulative sum of `n` random numbers, distributed according to a
-     * gamma distribution, see gamma_distribution(),
+     * normal distribution, see normal_distribution(),
      * @param n Number of steps.
-     * @param k Shape.
-     * @param scale Scale.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
      * @return Cumulative sum.
      */
-    double cumsum_gamma(size_t n, double k = 1, double scale = 1)
+    double cumsum_normal(size_t n, double mu = 0, double sigma = 1)
     {
 #if PRRNG_USE_BOOST
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += boost::math::gamma_p_inv<double, double>(k, this->draw_double());
+            ret += boost::math::erf_inv<double>(2.0 * this->draw_double() - 1.0);
         }
-        return scale * ret;
+        return static_cast<double>(n) * mu + sigma * std::sqrt(2.0) * ret;
 #else
         return std::numeric_limits<double>::quiet_NaN();
 #endif
@@ -1837,67 +1837,61 @@ public:
     }
 
     /**
-     * Return a random number distributed according to a normal distribution.
+     * Return a number distributed according to a delta distribution.
      *
-     * @param mu The average.
-     * @param sigma The standard deviation.
+     * @param scale The value of the 'peak' of the delta distribution.
      * @return Random number.
      */
-    double normal(double mu = 0, double sigma = 1)
+    double delta(double scale = 1)
     {
-#if PRRNG_USE_BOOST
-        return mu + sigma * std::sqrt(2.0) *
-                        boost::math::erf_inv<double>(2.0 * this->draw_double() - 1.0);
-#else
-        return std::numeric_limits<double>::quiet_NaN();
-#endif
+        return scale;
     }
 
     /**
-     * Generate an nd-array of random numbers distributed according to a normal distribution.
+     * Generate an nd-array of numbers that are delta distribution.
+     * These numbers are not random; calling this function does not change the state of the
+     * generators.
      *
      * @param shape The shape of the nd-array.
-     * @param mu The average.
-     * @param sigma The standard deviation.
+     * @param scale The value of the 'peak' of the delta distribution.
      * @return The sample of shape `shape`.
      */
     template <class S>
-    auto normal(const S& shape, double mu = 0, double sigma = 1) ->
-        typename detail::return_type<double, S>::type
+    auto delta(const S& shape, double scale = 1) -> typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
-        return this->normal_impl<R>(shape, mu, sigma);
+        return this->delta_impl<R>(shape, scale);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::delta(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R normal(const S& shape, double mu = 0, double sigma = 1)
+    R delta(const S& shape, double scale = 1)
     {
-        return this->normal_impl<R>(shape, mu, sigma);
+        return this->delta_impl<R>(shape, scale);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::delta(const S&, double)
      */
     template <class I, std::size_t L>
-    auto normal(const I (&shape)[L], double mu = 0, double sigma = 1) ->
+    auto delta(const I (&shape)[L], double scale = 1) ->
         typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
-        return this->normal_impl<R>(shape, mu, sigma);
+        return this->delta_impl<R>(shape, scale);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::delta(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R normal(const I (&shape)[L], double mu = 0, double sigma = 1)
+    R delta(const I (&shape)[L], double scale = 1)
     {
-        return this->normal_impl<R>(shape, mu, sigma);
+        return this->delta_impl<R>(shape, scale);
     }
 
     /**
@@ -2011,6 +2005,70 @@ public:
     R power(const I (&shape)[L], double k = 1)
     {
         return this->power_impl<R>(shape, k);
+    }
+
+    /**
+     * Return a random number distributed according to a Gamma distribution.
+     *
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     * @return Random number.
+     */
+    double gamma(double k = 1, double scale = 1)
+    {
+#if PRRNG_USE_BOOST
+        return scale * boost::math::gamma_p_inv<double, double>(k, this->draw_double());
+#else
+        return std::numeric_limits<double>::quiet_NaN();
+#endif
+    }
+
+    /**
+     * Generate an nd-array of random numbers distributed according to a Gamma distribution.
+     * Only available when compiled with PRRNG_USE_BOOST.
+     *
+     * @param shape The shape of the nd-array.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     * @return The sample of shape `shape`.
+     */
+    template <class S>
+    auto gamma(const S& shape, double k = 1, double scale = 1) ->
+        typename detail::return_type<double, S>::type
+    {
+        using R = typename detail::return_type<double, S>::type;
+        return this->gamma_impl<R>(shape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class S>
+    R gamma(const S& shape, double k = 1, double scale = 1)
+    {
+        return this->gamma_impl<R>(shape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
+     */
+    template <class I, std::size_t L>
+    auto gamma(const I (&shape)[L], double k = 1, double scale = 1) ->
+        typename detail::return_type_fixed<double, L>::type
+    {
+        using R = typename detail::return_type_fixed<double, L>::type;
+        return this->gamma_impl<R>(shape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class I, std::size_t L>
+    R gamma(const I (&shape)[L], double k = 1, double scale = 1)
+    {
+        return this->gamma_impl<R>(shape, k, scale);
     }
 
     /**
@@ -2132,125 +2190,67 @@ public:
     }
 
     /**
-     * Return a random number distributed according to a Gamma distribution.
+     * Return a random number distributed according to a normal distribution.
      *
-     * @param k Shape parameter.
-     * @param scale Scale parameter.
+     * @param mu The average.
+     * @param sigma The standard deviation.
      * @return Random number.
      */
-    double gamma(double k = 1, double scale = 1)
+    double normal(double mu = 0, double sigma = 1)
     {
 #if PRRNG_USE_BOOST
-        return scale * boost::math::gamma_p_inv<double, double>(k, this->draw_double());
+        return mu + sigma * std::sqrt(2.0) *
+                        boost::math::erf_inv<double>(2.0 * this->draw_double() - 1.0);
 #else
         return std::numeric_limits<double>::quiet_NaN();
 #endif
     }
 
     /**
-     * Generate an nd-array of random numbers distributed according to a Gamma distribution.
-     * Only available when compiled with PRRNG_USE_BOOST.
+     * Generate an nd-array of random numbers distributed according to a normal distribution.
      *
      * @param shape The shape of the nd-array.
-     * @param k Shape parameter.
-     * @param scale Scale parameter.
+     * @param mu The average.
+     * @param sigma The standard deviation.
      * @return The sample of shape `shape`.
      */
     template <class S>
-    auto gamma(const S& shape, double k = 1, double scale = 1) ->
+    auto normal(const S& shape, double mu = 0, double sigma = 1) ->
         typename detail::return_type<double, S>::type
     {
         using R = typename detail::return_type<double, S>::type;
-        return this->gamma_impl<R>(shape, k, scale);
+        return this->normal_impl<R>(shape, mu, sigma);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R gamma(const S& shape, double k = 1, double scale = 1)
+    R normal(const S& shape, double mu = 0, double sigma = 1)
     {
-        return this->gamma_impl<R>(shape, k, scale);
+        return this->normal_impl<R>(shape, mu, sigma);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto gamma(const I (&shape)[L], double k = 1, double scale = 1) ->
+    auto normal(const I (&shape)[L], double mu = 0, double sigma = 1) ->
         typename detail::return_type_fixed<double, L>::type
     {
         using R = typename detail::return_type_fixed<double, L>::type;
-        return this->gamma_impl<R>(shape, k, scale);
+        return this->normal_impl<R>(shape, mu, sigma);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase::gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase::normal(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R gamma(const I (&shape)[L], double k = 1, double scale = 1)
+    R normal(const I (&shape)[L], double mu = 0, double sigma = 1)
     {
-        return this->gamma_impl<R>(shape, k, scale);
-    }
-
-    /**
-     * Return a number distributed according to a delta distribution.
-     *
-     * @param scale The value of the 'peak' of the delta distribution.
-     * @return Random number.
-     */
-    double delta(double scale = 1)
-    {
-        return scale;
-    }
-
-    /**
-     * Generate an nd-array of numbers that are delta distribution.
-     * These numbers are not random; calling this function does not change the state of the
-     * generators.
-     *
-     * @param shape The shape of the nd-array.
-     * @param scale The value of the 'peak' of the delta distribution.
-     * @return The sample of shape `shape`.
-     */
-    template <class S>
-    auto delta(const S& shape, double scale = 1) -> typename detail::return_type<double, S>::type
-    {
-        using R = typename detail::return_type<double, S>::type;
-        return this->delta_impl<R>(shape, scale);
-    }
-
-    /**
-     * @copydoc prrng::GeneratorBase::delta(const S&, double)
-     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
-     */
-    template <class R, class S>
-    R delta(const S& shape, double scale = 1)
-    {
-        return this->delta_impl<R>(shape, scale);
-    }
-
-    /**
-     * @copydoc prrng::GeneratorBase::delta(const S&, double)
-     */
-    template <class I, std::size_t L>
-    auto delta(const I (&shape)[L], double scale = 1) ->
-        typename detail::return_type_fixed<double, L>::type
-    {
-        using R = typename detail::return_type_fixed<double, L>::type;
-        return this->delta_impl<R>(shape, scale);
-    }
-
-    /**
-     * @copydoc prrng::GeneratorBase::delta(const S&, double)
-     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
-     */
-    template <class R, class I, std::size_t L>
-    R delta(const I (&shape)[L], double scale = 1)
-    {
-        return this->delta_impl<R>(shape, scale);
+        return this->normal_impl<R>(shape, mu, sigma);
     }
 
 private:
@@ -2318,10 +2318,11 @@ private:
     }
 
     template <class R, class S>
-    R normal_impl(const S& shape, double mu, double sigma)
+    R delta_impl(const S& shape, double scale)
     {
-        R r = this->random_impl<R>(shape);
-        return normal_distribution(mu, sigma).quantile(r);
+        R ret = xt::empty<typename R::value_type>(shape);
+        ret.fill(scale);
+        return ret;
     }
 
     template <class R, class S>
@@ -2339,6 +2340,13 @@ private:
     }
 
     template <class R, class S>
+    R gamma_impl(const S& shape, double k, double scale)
+    {
+        R r = this->random_impl<R>(shape);
+        return gamma_distribution(k, scale).quantile(r);
+    }
+
+    template <class R, class S>
     R pareto_impl(const S& shape, double k, double scale)
     {
         R r = this->random_impl<R>(shape);
@@ -2353,18 +2361,10 @@ private:
     }
 
     template <class R, class S>
-    R gamma_impl(const S& shape, double k, double scale)
+    R normal_impl(const S& shape, double mu, double sigma)
     {
         R r = this->random_impl<R>(shape);
-        return gamma_distribution(k, scale).quantile(r);
-    }
-
-    template <class R, class S>
-    R delta_impl(const S& shape, double scale)
-    {
-        R ret = xt::empty<typename R::value_type>(shape);
-        ret.fill(scale);
-        return ret;
+        return normal_distribution(mu, sigma).quantile(r);
     }
 
 protected:
@@ -2454,6 +2454,24 @@ public:
         static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
         static_assert(sizeof(uint64_t) >= sizeof(S), "Down-casting not allowed.");
         this->seed(static_cast<uint64_t>(initstate), static_cast<uint64_t>(initseq));
+    }
+
+    /**
+     * @brief Seed the generator (constructor alias).
+     *
+     * @param initstate Initial state.
+     * @param initseq Initial sequence.
+     */
+    void seed(uint64_t initstate = PRRNG_PCG32_INITSTATE, uint64_t initseq = PRRNG_PCG32_INITSEQ)
+    {
+        m_initstate = initstate;
+        m_initseq = initseq;
+
+        m_state = 0U;
+        m_inc = (initseq << 1u) | 1u;
+        (*this)();
+        m_state += initstate;
+        (*this)();
     }
 
     /**
@@ -2876,25 +2894,6 @@ protected:
         }
     }
 
-public:
-    /**
-     * @brief Seed the generator.
-     *
-     * @param initstate Initial state.
-     * @param initseq Initial sequence.
-     */
-    void seed(uint64_t initstate = PRRNG_PCG32_INITSTATE, uint64_t initseq = PRRNG_PCG32_INITSEQ)
-    {
-        m_initstate = initstate;
-        m_initseq = initseq;
-
-        m_state = 0U;
-        m_inc = (initseq << 1u) | 1u;
-        (*this)();
-        m_state += initstate;
-        (*this)();
-    }
-
 protected:
     uint64_t m_initstate; ///< State initiator
     uint64_t m_initseq; ///< Sequence initiator
@@ -3097,6 +3096,14 @@ private:
                 return m_gen.cumsum_random(n) * m_param[0] + static_cast<double>(n) * m_param[1];
             };
             return;
+        case delta:
+            m_draw = [this](size_t n) -> Data {
+                return m_gen.delta<Data>({n}, m_param[0]) + m_param[1];
+            };
+            m_sum = [this](size_t n) -> double {
+                return m_gen.cumsum_delta(n, m_param[0]) + static_cast<double>(n) * m_param[1];
+            };
+            return;
         case exponential:
             m_draw = [this](size_t n) -> Data {
                 return m_gen.exponential<Data>({n}, m_param[0]) + m_param[1];
@@ -3114,12 +3121,13 @@ private:
                 return m_gen.cumsum_power(n, m_param[0]) + static_cast<double>(n) * m_param[1];
             };
             return;
-        case delta:
+        case gamma:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.delta<Data>({n}, m_param[0]) + m_param[1];
+                return m_gen.gamma<Data>({n}, m_param[0], m_param[1]) + m_param[2];
             };
             m_sum = [this](size_t n) -> double {
-                return m_gen.cumsum_delta(n, m_param[0]) + static_cast<double>(n) * m_param[1];
+                return m_gen.cumsum_gamma(n, m_param[0], m_param[1]) +
+                       static_cast<double>(n) * m_param[2];
             };
             return;
         case pareto:
@@ -3137,15 +3145,6 @@ private:
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_weibull(n, m_param[0], m_param[1]) +
-                       static_cast<double>(n) * m_param[2];
-            };
-            return;
-        case gamma:
-            m_draw = [this](size_t n) -> Data {
-                return m_gen.gamma<Data>({n}, m_param[0], m_param[1]) + m_param[2];
-            };
-            m_sum = [this](size_t n) -> double {
-                return m_gen.cumsum_gamma(n, m_param[0], m_param[1]) +
                        static_cast<double>(n) * m_param[2];
             };
             return;
@@ -3193,13 +3192,13 @@ public:
      *      Parameters for the distribution. The following is default (and the expected order):
      *
      *      -   prrng::distribution::random: {scale = 1, offset = 0}
-     *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
+     *      -   prrng::distribution::delta: {scale = 1, offset = 0}
+     *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
+     *      -   prrng::distribution::power: {k = 1, offset = 0}
+     *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::pareto: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::weibull: {k = 1, scale = 1, offset = 0}
-     *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
-     *      -   prrng::distribution::power: {k = 1, offset = 0}
-     *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
-     *      -   prrng::distribution::delta: {scale = 1, offset = 0}
+     *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
      *      -   prrng::distribution::custom: {}
      *
      *      Warning: if you want to use a custom distribution, you have to call
@@ -3684,60 +3683,51 @@ public:
     }
 
     /**
-     * Per generator, generate an nd-array of random numbers distributed
-     * according to a normal distribution.
-     * Internally, the output of random() is converted using the cumulative density
-     *
-     * \f$ \Phi(x) = \frac{1}{2} \left[
-     *     1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
-     * \right]\f$
-     *
-     * such that the output `r` from random() leads to
-     *
-     * \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
+     * Per generator, generate an nd-array of numbers that are delta distribution.
+     * These numbers are not random; calling this function does not change the state of the
+     * generators.
      *
      * @param ishape The shape of the nd-array drawn per generator.
-     * @param mu The average.
-     * @param sigma The standard deviation.
+     * @param scale The value of the 'peak' of the delta distribution.
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
-    auto normal(const S& ishape, double mu = 0, double sigma = 1) ->
+    auto delta(const S& ishape, double scale = 1) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
-        return this->normal_impl<R>(ishape, mu, sigma);
+        return this->delta_impl<R>(ishape, scale);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R normal(const S& ishape, double mu = 0, double sigma = 1)
+    R delta(const S& ishape, double scale = 1)
     {
-        return this->normal_impl<R>(ishape, mu, sigma);
+        return this->delta_impl<R>(ishape, scale);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
      */
     template <class I, std::size_t L>
-    auto normal(const I (&ishape)[L], double mu = 0, double sigma = 1) ->
+    auto delta(const I (&ishape)[L], double scale = 1) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
-        return this->normal_impl<R>(detail::to_array(ishape), mu, sigma);
+        return this->delta_impl<R>(detail::to_array(ishape), scale);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R normal(const I (&ishape)[L], double mu = 0, double sigma = 1)
+    R delta(const I (&ishape)[L], double scale = 1)
     {
-        return this->normal_impl<R>(detail::to_array(ishape), mu, sigma);
+        return this->delta_impl<R>(detail::to_array(ishape), scale);
     }
 
     /**
@@ -3832,6 +3822,56 @@ public:
     R power(const I (&ishape)[L], double k = 1)
     {
         return this->power_impl<R>(detail::to_array(ishape), k);
+    }
+
+    /**
+     * Per generator, generate an nd-array of random numbers distributed
+     * according to a Gamma distribution.
+     * Only available when compiled with PRRNG_USE_BOOST
+     * (e.g. using the CMake target `prrng::use_boost`).
+     *
+     * @param ishape The shape of the nd-array drawn per generator.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     * @return The array of arrays of samples: [#shape, `ishape`]
+     */
+    template <class S>
+    auto gamma(const S& ishape, double k = 1, double scale = 1) ->
+        typename detail::composite_return_type<double, M, S>::type
+    {
+        using R = typename detail::composite_return_type<double, M, S>::type;
+        return this->gamma_impl<R>(ishape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class S>
+    R gamma(const S& ishape, double k = 1, double scale = 1)
+    {
+        return this->gamma_impl<R>(ishape, k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
+     */
+    template <class I, std::size_t L>
+    auto gamma(const I (&ishape)[L], double k = 1, double scale = 1) ->
+        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
+    {
+        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
+        return this->gamma_impl<R>(detail::to_array(ishape), k, scale);
+    }
+
+    /**
+     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
+     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
+     */
+    template <class R, class I, std::size_t L>
+    R gamma(const I (&ishape)[L], double k = 1, double scale = 1)
+    {
+        return this->gamma_impl<R>(detail::to_array(ishape), k, scale);
     }
 
     /**
@@ -3939,100 +3979,59 @@ public:
 
     /**
      * Per generator, generate an nd-array of random numbers distributed
-     * according to a Gamma distribution.
-     * Only available when compiled with PRRNG_USE_BOOST
-     * (e.g. using the CMake target `prrng::use_boost`).
+     * according to a normal distribution.
+     * Internally, the output of random() is converted using the cumulative density
+     *
+     * \f$ \Phi(x) = \frac{1}{2} \left[
+     *     1 + \mathrm{erf}\left( \frac{x - \mu}{\sigma \sqrt{2}} \right)
+     * \right]\f$
+     *
+     * such that the output `r` from random() leads to
+     *
+     * \f$ x = \mu + \sigma \sqrt{2} \mathrm{erf}^{-1} (2r - 1) \f$
      *
      * @param ishape The shape of the nd-array drawn per generator.
-     * @param k Shape parameter.
-     * @param scale Scale parameter.
+     * @param mu The average.
+     * @param sigma The standard deviation.
      * @return The array of arrays of samples: [#shape, `ishape`]
      */
     template <class S>
-    auto gamma(const S& ishape, double k = 1, double scale = 1) ->
+    auto normal(const S& ishape, double mu = 0, double sigma = 1) ->
         typename detail::composite_return_type<double, M, S>::type
     {
         using R = typename detail::composite_return_type<double, M, S>::type;
-        return this->gamma_impl<R>(ishape, k, scale);
+        return this->normal_impl<R>(ishape, mu, sigma);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class S>
-    R gamma(const S& ishape, double k = 1, double scale = 1)
+    R normal(const S& ishape, double mu = 0, double sigma = 1)
     {
-        return this->gamma_impl<R>(ishape, k, scale);
+        return this->normal_impl<R>(ishape, mu, sigma);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
      */
     template <class I, std::size_t L>
-    auto gamma(const I (&ishape)[L], double k = 1, double scale = 1) ->
+    auto normal(const I (&ishape)[L], double mu = 0, double sigma = 1) ->
         typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
     {
         using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
-        return this->gamma_impl<R>(detail::to_array(ishape), k, scale);
+        return this->normal_impl<R>(detail::to_array(ishape), mu, sigma);
     }
 
     /**
-     * @copydoc prrng::GeneratorBase_array::gamma(const S&, double, double)
+     * @copydoc prrng::GeneratorBase_array::normal(const S&, double, double)
      * @tparam R return type, e.g. `xt::xtensor<double, 1>`
      */
     template <class R, class I, std::size_t L>
-    R gamma(const I (&ishape)[L], double k = 1, double scale = 1)
+    R normal(const I (&ishape)[L], double mu = 0, double sigma = 1)
     {
-        return this->gamma_impl<R>(detail::to_array(ishape), k, scale);
-    }
-
-    /**
-     * Per generator, generate an nd-array of numbers that are delta distribution.
-     * These numbers are not random; calling this function does not change the state of the
-     * generators.
-     *
-     * @param ishape The shape of the nd-array drawn per generator.
-     * @param scale The value of the 'peak' of the delta distribution.
-     * @return The array of arrays of samples: [#shape, `ishape`]
-     */
-    template <class S>
-    auto delta(const S& ishape, double scale = 1) ->
-        typename detail::composite_return_type<double, M, S>::type
-    {
-        using R = typename detail::composite_return_type<double, M, S>::type;
-        return this->delta_impl<R>(ishape, scale);
-    }
-
-    /**
-     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
-     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
-     */
-    template <class R, class S>
-    R delta(const S& ishape, double scale = 1)
-    {
-        return this->delta_impl<R>(ishape, scale);
-    }
-
-    /**
-     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
-     */
-    template <class I, std::size_t L>
-    auto delta(const I (&ishape)[L], double scale = 1) ->
-        typename detail::composite_return_type<double, M, std::array<size_t, L>>::type
-    {
-        using R = typename detail::composite_return_type<double, M, std::array<size_t, L>>::type;
-        return this->delta_impl<R>(detail::to_array(ishape), scale);
-    }
-
-    /**
-     * @copydoc prrng::GeneratorBase_array::delta(const S&, double)
-     * @tparam R return type, e.g. `xt::xtensor<double, 1>`
-     */
-    template <class R, class I, std::size_t L>
-    R delta(const I (&ishape)[L], double scale = 1)
-    {
-        return this->delta_impl<R>(detail::to_array(ishape), scale);
+        return this->normal_impl<R>(detail::to_array(ishape), mu, sigma);
     }
 
     /**
@@ -4064,35 +4063,36 @@ public:
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
-     * distributed according to a normal distribution, see normal_distribution(),
+     * distributed according to a delta distribution,
      * @param n Number of steps.
-     * @param mu Mean.
-     * @param sigma Standard deviation.
+     * @param scale Scale.
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_normal(const T& n, double mu = 0, double sigma = 1) ->
-        typename detail::return_type<double, M>::type
+    auto cumsum_delta(const T& n, double scale = 1) -> typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
+        for (size_t i = 0; i < ret.size(); ++i) {
+            ret.flat(i) = static_cast<double>(n.flat(i)) * scale;
+        }
         return ret;
     }
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
-     * distributed according to a normal distribution, see normal_distribution(),
+     * distributed according to a delta distribution,
      * @param n Number of steps.
-     * @param mu Mean.
-     * @param sigma Standard deviation.
+     * @param scale Scale.
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_normal(const T& n, double mu = 0, double sigma = 1)
+    R cumsum_delta(const T& n, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
+        for (size_t i = 0; i < ret.size(); ++i) {
+            ret.flat(i) = static_cast<double>(n.flat(i)) * scale;
+        }
         return ret;
     }
 
@@ -4161,36 +4161,35 @@ public:
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
-     * distributed according to a delta distribution,
+     * distributed according to a gamma distribution, see gamma_distribution(),
      * @param n Number of steps.
-     * @param scale Scale.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_delta(const T& n, double scale = 1) -> typename detail::return_type<double, M>::type
+    auto cumsum_gamma(const T& n, double k = 1, double scale = 1) ->
+        typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        for (size_t i = 0; i < ret.size(); ++i) {
-            ret.flat(i) = static_cast<double>(n.flat(i)) * scale;
-        }
+        this->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
-     * distributed according to a delta distribution,
+     * distributed according to a gamma distribution, see gamma_distribution(),
      * @param n Number of steps.
-     * @param scale Scale.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_delta(const T& n, double scale = 1)
+    R cumsum_gamma(const T& n, double k = 1, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
-        for (size_t i = 0; i < ret.size(); ++i) {
-            ret.flat(i) = static_cast<double>(n.flat(i)) * scale;
-        }
+        this->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -4264,35 +4263,35 @@ public:
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
-     * distributed according to a gamma distribution, see gamma_distribution(),
+     * distributed according to a normal distribution, see normal_distribution(),
      * @param n Number of steps.
-     * @param k Shape parameter.
-     * @param scale Scale parameter.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
      * @return Cumulative sum.
      */
     template <class T>
-    auto cumsum_gamma(const T& n, double k = 1, double scale = 1) ->
+    auto cumsum_normal(const T& n, double mu = 0, double sigma = 1) ->
         typename detail::return_type<double, M>::type
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
+        this->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
         return ret;
     }
 
     /**
      * @brief Per generator, return the result of the cumulative sum of `n` random numbers,
-     * distributed according to a gamma distribution, see gamma_distribution(),
+     * distributed according to a normal distribution, see normal_distribution(),
      * @param n Number of steps.
-     * @param k Shape parameter.
-     * @param scale Scale parameter.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
      * @return Cumulative sum.
      */
     template <class R, class T>
-    R cumsum_gamma(const T& n, double k = 1, double scale = 1)
+    R cumsum_normal(const T& n, double mu = 0, double sigma = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
+        this->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
         return ret;
     }
 
@@ -4465,10 +4464,11 @@ private:
     }
 
     template <class R, class S>
-    R normal_impl(const S& ishape, double mu, double sigma)
+    R delta_impl(const S& ishape, double scale)
     {
-        R r = this->random_impl<R>(ishape);
-        return normal_distribution(mu, sigma).quantile(r);
+        R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
+        ret.fill(scale);
+        return ret;
     }
 
     template <class R, class S>
@@ -4486,6 +4486,13 @@ private:
     }
 
     template <class R, class S>
+    R gamma_impl(const S& ishape, double k, double scale)
+    {
+        R r = this->random_impl<R>(ishape);
+        return gamma_distribution(k, scale).quantile(r);
+    }
+
+    template <class R, class S>
     R pareto_impl(const S& ishape, double k, double scale)
     {
         R r = this->random_impl<R>(ishape);
@@ -4500,18 +4507,10 @@ private:
     }
 
     template <class R, class S>
-    R gamma_impl(const S& ishape, double k, double scale)
+    R normal_impl(const S& ishape, double mu, double sigma)
     {
         R r = this->random_impl<R>(ishape);
-        return gamma_distribution(k, scale).quantile(r);
-    }
-
-    template <class R, class S>
-    R delta_impl(const S& ishape, double scale)
-    {
-        R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
-        ret.fill(scale);
-        return ret;
+        return normal_distribution(mu, sigma).quantile(r);
     }
 
 protected:
@@ -4562,16 +4561,6 @@ protected:
      * @param ret Output, per generator.
      * @param n Number to draw, per generator.
      */
-    virtual void cumsum_normal_impl(double* ret, const size_t* n, double, double)
-    {
-        return cumsum_random_impl(ret, n); // dummy
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
-     */
     virtual void cumsum_exponential_impl(double* ret, const size_t* n, double)
     {
         return cumsum_random_impl(ret, n); // dummy
@@ -4583,6 +4572,16 @@ protected:
      * @param n Number to draw, per generator.
      */
     virtual void cumsum_power_impl(double* ret, const size_t* n, double)
+    {
+        return cumsum_random_impl(ret, n); // dummy
+    }
+
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     */
+    virtual void cumsum_gamma_impl(double* ret, const size_t* n, double, double)
     {
         return cumsum_random_impl(ret, n); // dummy
     }
@@ -4612,7 +4611,7 @@ protected:
      * @param ret Output, per generator.
      * @param n Number to draw, per generator.
      */
-    virtual void cumsum_gamma_impl(double* ret, const size_t* n, double, double)
+    virtual void cumsum_normal_impl(double* ret, const size_t* n, double, double)
     {
         return cumsum_random_impl(ret, n); // dummy
     }
@@ -4983,20 +4982,6 @@ protected:
      * @brief Return the result of the cumulative sum of `n` random numbers.
      * @param ret Output, per generator.
      * @param n Number to draw, per generator.
-     * @param mu Mean.
-     * @param sigma Standard deviation.
-     */
-    void cumsum_normal_impl(double* ret, const size_t* n, double mu, double sigma) override
-    {
-        for (size_t i = 0; i < m_size; ++i) {
-            ret[i] = m_gen[i].cumsum_normal(n[i], mu, sigma);
-        }
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
      * @param scale Scale.
      */
     void cumsum_exponential_impl(double* ret, const size_t* n, double scale) override
@@ -5016,6 +5001,20 @@ protected:
     {
         for (size_t i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_power(n[i], k);
+        }
+    }
+
+    /**
+     * @brief Return the result of the cumulative sum of `n` random numbers.
+     * @param ret Output, per generator.
+     * @param n Number to draw, per generator.
+     * @param k Shape parameter.
+     * @param scale Scale parameter.
+     */
+    void cumsum_gamma_impl(double* ret, const size_t* n, double k, double scale) override
+    {
+        for (size_t i = 0; i < m_size; ++i) {
+            ret[i] = m_gen[i].cumsum_gamma(n[i], k, scale);
         }
     }
 
@@ -5051,13 +5050,13 @@ protected:
      * @brief Return the result of the cumulative sum of `n` random numbers.
      * @param ret Output, per generator.
      * @param n Number to draw, per generator.
-     * @param k Shape parameter.
-     * @param scale Scale parameter.
+     * @param mu Mean.
+     * @param sigma Standard deviation.
      */
-    void cumsum_gamma_impl(double* ret, const size_t* n, double k, double scale) override
+    void cumsum_normal_impl(double* ret, const size_t* n, double mu, double sigma) override
     {
         for (size_t i = 0; i < m_size; ++i) {
-            ret[i] = m_gen[i].cumsum_gamma(n[i], k, scale);
+            ret[i] = m_gen[i].cumsum_normal(n[i], mu, sigma);
         }
     }
 
@@ -5121,28 +5120,6 @@ protected:
     using GeneratorBase_array<Shape>::m_shape;
     using GeneratorBase_array<Shape>::m_strides;
 };
-
-// todo: remove
-// template <class Generator, class Shape>
-// class pcg32_index_arrayBase : public pcg32_arrayBase<Generator, Shape>
-// {
-// protected:
-//     using pcg32_arrayBase<Generator, Shape>::m_gen;
-
-// public:
-//     template <class R, class I>
-//     R state(const I& index)
-//     {
-//         using value_type = typename R::value_type;
-//         R ret = R::from_shape(index.shape());
-
-//         for (size_t i = 0; i < index.size(); ++i) {
-//             ret.flat(i) = static_cast<value_type>(m_gen[i].state(index.flat(i)));
-//         }
-
-//         return ret;
-//     }
-// };
 
 /**
  * Array of independent generators.
@@ -5413,13 +5390,13 @@ protected:
      *      Parameters for the distribution. The following is default (and the expected order):
      *
      *      -   prrng::distribution::random: {scale = 1, offset = 0}
-     *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
+     *      -   prrng::distribution::delta: {scale = 1, offset = 0}
+     *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
      *      -   prrng::distribution::power: {k = 1, offset = 0}
+     *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::pareto: {k = 1, scale = 1, offset = 0}
      *      -   prrng::distribution::weibull: {k = 1, scale = 1, offset = 0}
-     *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
-     *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
-     *      -   prrng::distribution::delta: {scale = 1, offset = 0}
+     *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
      *      -   prrng::distribution::custom: {}
      *
      * @param align Alignment parameters, see prrng::alignment().
@@ -5496,6 +5473,17 @@ protected:
                 };
             }
             return;
+        case delta:
+            for (size_t i = 0; i < m_gen.size(); ++i) {
+                m_draw[i] = [this, i](size_t n) -> R {
+                    return m_gen[i].template delta<R>({n}, m_param[0]) + m_param[1];
+                };
+                m_sum[i] = [this, i](size_t n) -> double {
+                    return m_gen[i].cumsum_delta(n, m_param[0]) +
+                           static_cast<double>(n) * m_param[1];
+                };
+            }
+            return;
         case exponential:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
@@ -5518,14 +5506,14 @@ protected:
                 };
             }
             return;
-        case delta:
+        case gamma:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template delta<R>({n}, m_param[0]) + m_param[1];
+                    return m_gen[i].template gamma<R>({n}, m_param[0], m_param[1]) + m_param[2];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_delta(n, m_param[0]) +
-                           static_cast<double>(n) * m_param[1];
+                    return m_gen[i].cumsum_gamma(n, m_param[0], m_param[1]) +
+                           static_cast<double>(n) * m_param[2];
                 };
             }
             return;
@@ -5547,17 +5535,6 @@ protected:
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_weibull(n, m_param[0], m_param[1]) +
-                           static_cast<double>(n) * m_param[2];
-                };
-            }
-            return;
-        case gamma:
-            for (size_t i = 0; i < m_gen.size(); ++i) {
-                m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template gamma<R>({n}, m_param[0], m_param[1]) + m_param[2];
-                };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_gamma(n, m_param[0], m_param[1]) +
                            static_cast<double>(n) * m_param[2];
                 };
             }

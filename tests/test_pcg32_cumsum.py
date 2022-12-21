@@ -8,6 +8,50 @@ seed = int(time.time())
 
 
 class Test_pcg32_cumum(unittest.TestCase):
+    def test_random(self):
+        """
+        Chunked storage: random
+        """
+
+        scale = 5
+        offset = 0.1
+        ref = prrng.pcg32(seed)
+        xref = np.cumsum(offset + scale * ref.random([10000]))
+
+        n = 100
+        chunk = prrng.pcg32_cumsum([n], seed, distribution=prrng.random, parameters=[scale, offset])
+        self.assertEqual(chunk.start, 0)
+        self.assertTrue(np.allclose(chunk.data, xref[0:n]))
+
+        for i in range(1, 10):
+            chunk.next()
+            self.assertEqual(chunk.start, i * n)
+            self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
+
+        index = chunk.start
+        state = chunk.state_at(index)
+        value = chunk.data[0]
+        ref = np.copy(chunk.data)
+
+        for i in range(i - 1, 5, -1):
+            chunk.prev()
+            self.assertEqual(chunk.start, i * n)
+            self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
+
+        i = n * 15 + 2
+        target = 0.5 * (xref[i] + xref[i + 1])
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
+        self.assertAlmostEqual(chunk.data[0], xref[i])
+        self.assertAlmostEqual(chunk.data[1], xref[i + 1])
+
+        chunk.restore(state, value, index)
+        self.assertTrue(np.allclose(ref, chunk.data))
+        self.assertEqual(index, chunk.start)
+
+        chunk.align(target)
+        self.assertEqual(i, chunk.index)
+
     def test_delta(self):
         """
         Chunked storage: delta
@@ -57,50 +101,6 @@ class Test_pcg32_cumum(unittest.TestCase):
         chunk.restore(state, value, index)
         self.assertTrue(np.allclose(ref, chunk.data))
         self.assertEqual(state, chunk.state_at(chunk.start))
-        self.assertEqual(index, chunk.start)
-
-        chunk.align(target)
-        self.assertEqual(i, chunk.index)
-
-    def test_random(self):
-        """
-        Chunked storage: random
-        """
-
-        scale = 5
-        offset = 0.1
-        ref = prrng.pcg32(seed)
-        xref = np.cumsum(offset + scale * ref.random([10000]))
-
-        n = 100
-        chunk = prrng.pcg32_cumsum([n], seed, distribution=prrng.random, parameters=[scale, offset])
-        self.assertEqual(chunk.start, 0)
-        self.assertTrue(np.allclose(chunk.data, xref[0:n]))
-
-        for i in range(1, 10):
-            chunk.next()
-            self.assertEqual(chunk.start, i * n)
-            self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
-
-        index = chunk.start
-        state = chunk.state_at(index)
-        value = chunk.data[0]
-        ref = np.copy(chunk.data)
-
-        for i in range(i - 1, 5, -1):
-            chunk.prev()
-            self.assertEqual(chunk.start, i * n)
-            self.assertTrue(np.allclose(chunk.data, xref[i * n : (i + 1) * n]))
-
-        i = n * 15 + 2
-        target = 0.5 * (xref[i] + xref[i + 1])
-        chunk.align(target)
-        self.assertEqual(i, chunk.index)
-        self.assertAlmostEqual(chunk.data[0], xref[i])
-        self.assertAlmostEqual(chunk.data[1], xref[i + 1])
-
-        chunk.restore(state, value, index)
-        self.assertTrue(np.allclose(ref, chunk.data))
         self.assertEqual(index, chunk.start)
 
         chunk.align(target)
@@ -287,9 +287,9 @@ class Test_pcg32_cumum(unittest.TestCase):
         self.assertTrue(np.allclose(ref, chunk.data))
         self.assertTrue(np.allclose(index, chunk.start))
 
-    def test_array_delta(self):
+    def test_array_random(self):
         """
-        Array: delta.
+        Array: random.
         """
 
         scale = 5
@@ -298,17 +298,14 @@ class Test_pcg32_cumum(unittest.TestCase):
         initstate = np.arange(N, dtype=np.uint64)
         seq = np.zeros_like(initstate)
         ref = prrng.pcg32_array(initstate, seq)
-        state = ref.state()
         x0 = ref.random([]).reshape(-1, 1)
         ref = prrng.pcg32_array(initstate, seq)
-        self.assertTrue(np.all(np.equal(state, ref.state())))
-        xref = np.cumsum(offset + scale * ref.delta([10000]), axis=-1) + x0
-        self.assertTrue(np.all(np.equal(state, ref.state())))
+        xref = np.cumsum(offset + scale * ref.random([10000]), axis=-1) + x0
 
         n = 100
         margin = 10
         align = prrng.alignment(margin=margin, strict=True)
-        chunk = prrng.pcg32_array_cumsum([n], initstate, seq, prrng.delta, [scale, offset], align)
+        chunk = prrng.pcg32_array_cumsum([n], initstate, seq, prrng.random, [scale, offset], align)
         chunk += x0
         self.assertTrue(np.allclose(xref[..., :n], chunk.data))
         self.assertTrue(np.allclose(xref[np.arange(N), chunk.start], chunk.data[..., 0]))
@@ -338,9 +335,9 @@ class Test_pcg32_cumum(unittest.TestCase):
         chunk.align(target)
         self.assertTrue(np.all(chunk.index == i))
 
-    def test_array_random(self):
+    def test_array_delta(self):
         """
-        Array: random.
+        Array: delta.
         """
 
         scale = 5
@@ -349,14 +346,17 @@ class Test_pcg32_cumum(unittest.TestCase):
         initstate = np.arange(N, dtype=np.uint64)
         seq = np.zeros_like(initstate)
         ref = prrng.pcg32_array(initstate, seq)
+        state = ref.state()
         x0 = ref.random([]).reshape(-1, 1)
         ref = prrng.pcg32_array(initstate, seq)
-        xref = np.cumsum(offset + scale * ref.random([10000]), axis=-1) + x0
+        self.assertTrue(np.all(np.equal(state, ref.state())))
+        xref = np.cumsum(offset + scale * ref.delta([10000]), axis=-1) + x0
+        self.assertTrue(np.all(np.equal(state, ref.state())))
 
         n = 100
         margin = 10
         align = prrng.alignment(margin=margin, strict=True)
-        chunk = prrng.pcg32_array_cumsum([n], initstate, seq, prrng.random, [scale, offset], align)
+        chunk = prrng.pcg32_array_cumsum([n], initstate, seq, prrng.delta, [scale, offset], align)
         chunk += x0
         self.assertTrue(np.allclose(xref[..., :n], chunk.data))
         self.assertTrue(np.allclose(xref[np.arange(N), chunk.start], chunk.data[..., 0]))
