@@ -1062,6 +1062,21 @@ class Test_pcg32_normal(unittest.TestCase):
 
 
 class Test_pcg32_array(unittest.TestCase):
+    def test_basic(self):
+
+        seed = np.arange(10).reshape([2, -1])
+        gen = prrng.pcg32_array(seed)
+        gens = [prrng.pcg32(s) for s in seed.ravel()]
+        shape = [5, 6, 4]
+
+        a = gen.random(shape).ravel()
+
+        b = []
+        for g in gens:
+            b += g.random(shape).ravel().tolist()
+
+        self.assertTrue(np.allclose(a, b))
+
     def test_list(self):
 
         seed = np.arange(5)
@@ -1219,210 +1234,43 @@ class Test_pcg32_array(unittest.TestCase):
         self.assertTrue(np.all(a < high))
         self.assertLess((m - c) / c, 1e-3)
 
-    def test_cumsum_random(self):
+    def test_cumsum(self):
 
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
         state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
+        n = int(10000)
 
-        gen.restore(state)
-        a = np.cumsum(gen.random([n]), axis=-1)
+        parameters = {
+            prrng.distribution.random: [(0.1, 2.3), gen.random, gen.cumsum_random],
+            prrng.distribution.delta: [(0.1, 2.3), gen.delta, gen.cumsum_delta],
+            prrng.distribution.exponential: [(0.1, 2.3), gen.exponential, gen.cumsum_exponential],
+            prrng.distribution.power: [(0.1, 2.3), gen.power, gen.cumsum_power],
+            prrng.distribution.pareto: [(1.1, 0.1, 2.3), gen.pareto, gen.cumsum_pareto],
+            prrng.distribution.weibull: [(1.1, 0.1, 2.3), gen.weibull, gen.cumsum_weibull],
+            prrng.distribution.gamma: [(1.1, 0.1, 2.3), gen.gamma, gen.cumsum_gamma],
+            prrng.distribution.normal: [(1.1, 0.1, 2.3), gen.normal, gen.cumsum_normal],
+        }
 
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.random([n]), axis=-1)
+        for dist, [param, draw, cumsum] in parameters.items():
 
-        gen.restore(state)
-        b = gen.cumsum_random(n * np.ones_like(seed))
+            if dist != prrng.distribution.delta:
+                gen.restore(state)
 
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_random(n * np.ones_like(seed))
+            if dist == prrng.distribution.random:
+                a = np.cumsum(draw([n]) * param[0] + param[-1], axis=-1)[..., -1]
+            else:
+                a = np.cumsum(draw([n], *param[:-1]) + param[-1], axis=-1)[..., -1]
 
-        self.assertTrue(np.allclose(a[..., -1], b))
-        self.assertTrue(np.allclose(aprime[..., -1], bprime))
+            if dist != prrng.distribution.delta:
+                gen.restore(state)
 
-    def test_cumsum_delta(self):
+            if dist == prrng.distribution.random:
+                b = cumsum(n * np.ones(state.shape, dtype=int)) * param[0] + n * param[-1]
+            else:
+                b = cumsum(n * np.ones(state.shape, dtype=int), *param[:-1]) + n * param[-1]
 
-        seed = np.arange(10).reshape([2, -1])
-        gen = prrng.pcg32_array(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-
-        gen.restore(state)
-        a = np.cumsum(gen.delta([n]), axis=-1)
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.delta([n]), axis=-1)
-
-        gen.restore(state)
-        b = gen.cumsum_delta(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_delta(n * np.ones_like(seed))
-
-        self.assertTrue(np.allclose(a[..., -1], b))
-        self.assertTrue(np.allclose(aprime[..., -1], bprime))
-
-    def test_cumsum_exponential(self):
-
-        seed = np.arange(10).reshape([2, -1])
-        gen = prrng.pcg32_array(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        scale = 2.3
-        k = 1.2
-
-        gen.restore(state)
-        a = np.cumsum(gen.exponential([n], k), axis=-1)
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + scale * gen.exponential([n], k), axis=-1)
-
-        gen.restore(state)
-        b = gen.cumsum_exponential(n * np.ones_like(seed), k)
-
-        gen.restore(state)
-        bprime = offset * n + scale * gen.cumsum_exponential(n * np.ones_like(seed), k)
-
-        self.assertTrue(np.allclose(a[..., -1], b))
-        self.assertTrue(np.allclose(aprime[..., -1], bprime))
-
-    def test_cumsum_gamma(self):
-
-        seed = np.arange(10).reshape([2, -1])
-        gen = prrng.pcg32_array(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        k = 1.2
-        scale = 0.5
-
-        gen.restore(state)
-        a = np.cumsum(gen.gamma([n]), axis=-1)
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.gamma([n]), axis=-1)
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.gamma([n], k, scale), axis=-1)
-
-        gen.restore(state)
-        b = gen.cumsum_gamma(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_gamma(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_gamma(n * np.ones_like(seed), k, scale)
-
-        self.assertTrue(np.allclose(a[..., -1], b))
-        self.assertTrue(np.allclose(aprime[..., -1], bprime))
-        self.assertTrue(np.allclose(acustom[..., -1], bcustom))
-
-    def test_cumsum_pareto(self):
-
-        seed = np.arange(10).reshape([2, -1])
-        gen = prrng.pcg32_array(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        k = 1.2
-        scale = 0.5
-
-        gen.restore(state)
-        a = np.cumsum(gen.pareto([n]), axis=-1)
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.pareto([n]), axis=-1)
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.pareto([n], k, scale), axis=-1)
-
-        gen.restore(state)
-        b = gen.cumsum_pareto(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_pareto(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_pareto(n * np.ones_like(seed), k, scale)
-
-        self.assertTrue(np.allclose(a[..., -1], b))
-        self.assertTrue(np.allclose(aprime[..., -1], bprime))
-        self.assertTrue(np.allclose(acustom[..., -1], bcustom))
-
-    def test_cumsum_weibull(self):
-
-        seed = np.arange(10).reshape([2, -1])
-        gen = prrng.pcg32_array(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        k = 1.2
-        scale = 0.5
-
-        gen.restore(state)
-        a = np.cumsum(gen.weibull([n]), axis=-1)
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.weibull([n]), axis=-1)
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.weibull([n], k, scale), axis=-1)
-
-        gen.restore(state)
-        b = gen.cumsum_weibull(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_weibull(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_weibull(n * np.ones_like(seed), k, scale)
-
-        self.assertTrue(np.allclose(a[..., -1], b))
-        self.assertTrue(np.allclose(aprime[..., -1], bprime))
-        self.assertTrue(np.allclose(acustom[..., -1], bcustom))
-
-    def test_cumsum_normal(self):
-
-        seed = np.arange(10).reshape([2, -1])
-        gen = prrng.pcg32_array(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        mu = 1.2
-        sigma = 0.5
-
-        gen.restore(state)
-        a = np.cumsum(gen.normal([n]), axis=-1)
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.normal([n]), axis=-1)
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.normal([n], mu, sigma), axis=-1)
-
-        gen.restore(state)
-        b = gen.cumsum_normal(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_normal(n * np.ones_like(seed))
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_normal(n * np.ones_like(seed), mu, sigma)
-
-        self.assertTrue(np.allclose(a[..., -1], b))
-        self.assertTrue(np.allclose(aprime[..., -1], bprime))
-        self.assertTrue(np.allclose(acustom[..., -1], bcustom))
+            self.assertTrue(np.allclose(a, b))
 
 
 if __name__ == "__main__":

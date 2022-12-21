@@ -51,6 +51,12 @@ void init_GeneratorBase_array(C& cls)
         py::arg("axis"));
 
     cls.def(
+        "strides",
+        &Parent::strides,
+        "Strides of the array of generators. "
+        "See :cpp:func:`prrng::GeneratorBase_array::strides`.");
+
+    cls.def(
         "size",
         &Parent::size,
         "Size of the array of generators. "

@@ -3651,6 +3651,16 @@ public:
     }
 
     /**
+     * Return the strides of the array of generators.
+     *
+     * @return vector of unsigned ints
+     */
+    M strides() const
+    {
+        return m_strides;
+    }
+
+    /**
      * Return the shape of the array of generators.
      *
      * @return vector of unsigned ints
