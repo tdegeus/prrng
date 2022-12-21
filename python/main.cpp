@@ -893,6 +893,38 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("mu") = 0,
             py::arg("sigma") = 1)
 
+        .def(
+            "draw",
+            static_cast<double (prrng::GeneratorBase::*)(
+                enum prrng::distribution, std::vector<double>, bool)>(&prrng::GeneratorBase::draw),
+            "random number. "
+            "See :cpp:func:`prrng::GeneratorBase_array::draw`.",
+            py::arg("distribution"),
+            py::arg("parameters") = std::vector<double>{},
+            py::arg("append_default") = false)
+
+        .def(
+            "draw",
+            static_cast<xt::pyarray<double> (prrng::GeneratorBase::*)(
+                const std::vector<size_t>&, enum prrng::distribution, std::vector<double>, bool)>(
+                &prrng::GeneratorBase::draw),
+            "ndarray of random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase_array::draw`.",
+            py::arg("ishape"),
+            py::arg("distribution"),
+            py::arg("parameters") = std::vector<double>{},
+            py::arg("append_default") = false)
+
+        .def(
+            "cumsum",
+            &prrng::GeneratorBase::cumsum,
+            "cumsum of ``n`` random numbers. "
+            "See :cpp:func:`prrng::GeneratorBase_array::cumsum`.",
+            py::arg("n"),
+            py::arg("distribution"),
+            py::arg("parameters") = std::vector<double>{},
+            py::arg("append_default") = false)
+
         .def("__repr__", [](const prrng::GeneratorBase&) { return "<prrng.GeneratorBase>"; });
 
     py::class_<prrng::pcg32, prrng::GeneratorBase>(m, "pcg32")
@@ -901,6 +933,14 @@ PYBIND11_MODULE(_prrng, m)
             py::init<uint64_t, uint64_t>(),
             "Random number generator. "
             "See :cpp:class:`prrng::pcg32`.",
+            py::arg("initstate") = PRRNG_PCG32_INITSTATE,
+            py::arg("initseq") = PRRNG_PCG32_INITSEQ)
+
+        .def(
+            "seed",
+            &prrng::pcg32::seed,
+            "Seed random number generator. "
+            "See :cpp:func:`prrng::pcg32::seed`.",
             py::arg("initstate") = PRRNG_PCG32_INITSTATE,
             py::arg("initseq") = PRRNG_PCG32_INITSEQ)
 

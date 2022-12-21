@@ -214,6 +214,36 @@ std::vector<double> default_parameters(
 namespace detail {
 
 /**
+ * @brief Check the number of parameters.
+ * @param distribution Distribution.
+ * @param parameters Parameters.
+ * @return `true` is the number of parameters is correct.
+ */
+bool has_correct_parameters(enum distribution distribution, const std::vector<double>& parameters)
+{
+    switch (distribution) {
+    case distribution::random:
+        return parameters.size() == 2;
+    case distribution::delta:
+        return parameters.size() == 2;
+    case distribution::exponential:
+        return parameters.size() == 2;
+    case distribution::power:
+        return parameters.size() == 2;
+    case distribution::gamma:
+        return parameters.size() == 3;
+    case distribution::pareto:
+        return parameters.size() == 3;
+    case distribution::weibull:
+        return parameters.size() == 3;
+    case distribution::normal:
+        return parameters.size() == 3;
+    case distribution::custom:
+        return true;
+    }
+}
+
+/**
  * Remove " from string.
  *
  * @param arg Input string.
@@ -2251,6 +2281,136 @@ public:
     R normal(const I (&shape)[L], double mu = 0, double sigma = 1)
     {
         return this->normal_impl<R>(shape, mu, sigma);
+    }
+
+    /**
+     * @brief Get a random number according to some distribution.
+     *
+     * @param distribution Type of distribution, see prrg::distribution.
+     * @param parameters Parameters for the distribution, see prrng::default_parameters.
+     * @param append_default Append default parameters to `parameters`.
+     */
+    double draw(
+        enum prrng::distribution distribution,
+        std::vector<double> parameters = std::vector<double>{},
+        bool append_default = true)
+    {
+        if (append_default) {
+            parameters = default_parameters(distribution, parameters);
+        }
+        else {
+            PRRNG_ASSERT(detail::has_correct_parameters(distribution, parameters));
+        }
+
+        switch (distribution) {
+        case prrng::distribution::random:
+            return this->random() * parameters[0] + parameters[1];
+        case prrng::distribution::delta:
+            return this->delta(parameters[0]) + parameters[1];
+        case prrng::distribution::exponential:
+            return this->exponential(parameters[0]) + parameters[1];
+        case prrng::distribution::power:
+            return this->power(parameters[0]) + parameters[1];
+        case prrng::distribution::pareto:
+            return this->pareto(parameters[0], parameters[1]) + parameters[2];
+        case prrng::distribution::weibull:
+            return this->weibull(parameters[0], parameters[1]) + parameters[2];
+        case prrng::distribution::gamma:
+            return this->gamma(parameters[0], parameters[1]) + parameters[2];
+        case prrng::distribution::normal:
+            return this->normal(parameters[0], parameters[1]) + parameters[2];
+        case prrng::distribution::custom:
+            throw std::runtime_error("Unknown distribution");
+        }
+    }
+
+    /**
+     * @brief Get an nd-array of random numbers according to some distribution.
+     *
+     * @param shape The shape of the nd-array.
+     * @param distribution Type of distribution, see prrg::distribution.
+     * @param parameters Parameters for the distribution, see prrng::default_parameters.
+     * @param append_default Append default parameters to `parameters`.s
+     */
+    template <class R, class S>
+    R draw(
+        const S& shape,
+        enum prrng::distribution distribution,
+        std::vector<double> parameters = std::vector<double>{},
+        bool append_default = true)
+    {
+        if (append_default) {
+            parameters = default_parameters(distribution, parameters);
+        }
+        else {
+            PRRNG_ASSERT(detail::has_correct_parameters(distribution, parameters));
+        }
+
+        switch (distribution) {
+        case prrng::distribution::random:
+            return this->random<R>(shape) * parameters[0] + parameters[1];
+        case prrng::distribution::delta:
+            return this->delta<R>(shape, parameters[0]) + parameters[1];
+        case prrng::distribution::exponential:
+            return this->exponential<R>(shape, parameters[0]) + parameters[1];
+        case prrng::distribution::power:
+            return this->power<R>(shape, parameters[0]) + parameters[1];
+        case prrng::distribution::pareto:
+            return this->pareto<R>(shape, parameters[0], parameters[1]) + parameters[2];
+        case prrng::distribution::weibull:
+            return this->weibull<R>(shape, parameters[0], parameters[1]) + parameters[2];
+        case prrng::distribution::gamma:
+            return this->gamma<R>(shape, parameters[0], parameters[1]) + parameters[2];
+        case prrng::distribution::normal:
+            return this->normal<R>(shape, parameters[0], parameters[1]) + parameters[2];
+        case prrng::distribution::custom:
+            throw std::runtime_error("Unknown distribution");
+        }
+    }
+
+    /**
+     * @brief Get the cumulative sum of `n` random numbers according to some distribution.
+     *
+     * @param n Number of random numbers to sum.
+     * @param distribution Type of distribution, see prrg::distribution.
+     * @param parameters Parameters for the distribution, see prrng::default_parameters.
+     * @param append_default Append default parameters to `parameters`.
+     */
+    double cumsum(
+        size_t n,
+        enum prrng::distribution distribution,
+        std::vector<double> parameters = std::vector<double>{},
+        bool append_default = true)
+    {
+        if (append_default) {
+            parameters = default_parameters(distribution, parameters);
+        }
+        else {
+            PRRNG_ASSERT(detail::has_correct_parameters(distribution, parameters));
+        }
+
+        double m = static_cast<double>(n);
+
+        switch (distribution) {
+        case prrng::distribution::random:
+            return this->cumsum_random(n) * parameters[0] + m * parameters[1];
+        case prrng::distribution::delta:
+            return this->cumsum_delta(n, parameters[0]) + m * parameters[1];
+        case prrng::distribution::exponential:
+            return this->cumsum_exponential(n, parameters[0]) + m * parameters[1];
+        case prrng::distribution::power:
+            return this->cumsum_power(n, parameters[0]) + m * parameters[1];
+        case prrng::distribution::pareto:
+            return this->cumsum_pareto(n, parameters[0], parameters[1]) + m * parameters[2];
+        case prrng::distribution::weibull:
+            return this->cumsum_weibull(n, parameters[0], parameters[1]) + m * parameters[2];
+        case prrng::distribution::gamma:
+            return this->cumsum_gamma(n, parameters[0], parameters[1]) + m * parameters[2];
+        case prrng::distribution::normal:
+            return this->cumsum_normal(n, parameters[0], parameters[1]) + m * parameters[2];
+        case prrng::distribution::custom:
+            throw std::runtime_error("Unknown distribution");
+        }
     }
 
 private:

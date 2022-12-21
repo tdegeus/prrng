@@ -72,249 +72,94 @@ class Test_pcg32_basic(unittest.TestCase):
         gen.decide(p, decision)
         self.assertTrue(not np.any(decision))
 
-    def test_pcg32_cumsum_random(self):
+    def test_draw(self):
 
         seed = int(time.time())
-        gen = prrng.pcg32(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
+        gen = prrng.pcg32()
+        shape = [5, 6, 7]
 
-        gen.restore(state)
-        a = np.cumsum(gen.random([n]))
+        parameters = {
+            prrng.distribution.random: [(0.1, 2.3), gen.random],
+            prrng.distribution.delta: [(0.1, 2.3), gen.delta],
+            prrng.distribution.exponential: [(0.1, 2.3), gen.exponential],
+            prrng.distribution.power: [(0.1, 2.3), gen.power],
+            prrng.distribution.pareto: [(1.1, 0.1, 2.3), gen.pareto],
+            prrng.distribution.weibull: [(1.1, 0.1, 2.3), gen.weibull],
+            prrng.distribution.gamma: [(1.1, 0.1, 2.3), gen.gamma],
+            prrng.distribution.normal: [(1.1, 0.1, 2.3), gen.normal],
+        }
 
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.random([n]))
+        for dist, [param, func] in parameters.items():
 
-        gen.restore(state)
-        b = gen.cumsum_random(n)
+            if dist != prrng.distribution.delta:
+                gen.seed(seed)
 
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_random(n)
+            if dist == prrng.distribution.random:
+                a = func([]) * param[0] + param[-1]
+            else:
+                a = func([], *param[:-1]) + param[-1]
 
-        self.assertAlmostEqual(a[-1], b)
-        self.assertAlmostEqual(aprime[-1], bprime)
+            if dist != prrng.distribution.delta:
+                gen.seed(seed)
 
-    def test_pcg32_cumsum_delta(self):
+            b = gen.draw(dist, param)
 
-        seed = int(time.time())
-        gen = prrng.pcg32(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
+            self.assertAlmostEqual(a, b)
 
-        gen.restore(state)
-        a = np.cumsum(gen.delta([n]))
+            if dist != prrng.distribution.delta:
+                gen.seed(seed)
 
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.delta([n]))
+            if dist == prrng.distribution.random:
+                a = func(shape) * param[0] + param[-1]
+            else:
+                a = func(shape, *param[:-1]) + param[-1]
 
-        gen.restore(state)
-        b = gen.cumsum_delta(n)
+            if dist != prrng.distribution.delta:
+                gen.seed(seed)
 
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_delta(n)
+            b = gen.draw(shape, dist, param)
 
-        self.assertAlmostEqual(a[-1], b)
-        self.assertAlmostEqual(aprime[-1], bprime)
+            self.assertTrue(np.allclose(a, b))
 
-    def test_pcg32_cumsum_exponential(self):
-
-        seed = int(time.time())
-        gen = prrng.pcg32(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        rate = 1.2
-
-        gen.restore(state)
-        a = np.cumsum(gen.exponential([n]))
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.exponential([n]))
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.exponential([n], rate))
-
-        gen.restore(state)
-        b = gen.cumsum_exponential(n)
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_exponential(n)
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_exponential(n, rate)
-
-        self.assertAlmostEqual(a[-1], b)
-        self.assertAlmostEqual(aprime[-1], bprime)
-        self.assertAlmostEqual(acustom[-1], bcustom)
-
-    def test_pcg32_cumsum_power(self):
+    def test_pcg32_cumsum(self):
 
         seed = int(time.time())
-        gen = prrng.pcg32(seed)
-        state = gen.state()
+        gen = prrng.pcg32()
         n = 10000
-        offset = 0.1
-        mean = 2.3
-        rate = 1.2
 
-        gen.restore(state)
-        a = np.cumsum(gen.power([n]))
+        parameters = {
+            prrng.distribution.random: [(0.1, 2.3), gen.cumsum_random],
+            prrng.distribution.delta: [(0.1, 2.3), gen.cumsum_delta],
+            prrng.distribution.exponential: [(0.1, 2.3), gen.cumsum_exponential],
+            prrng.distribution.power: [(0.1, 2.3), gen.cumsum_power],
+            prrng.distribution.pareto: [(1.1, 0.1, 2.3), gen.cumsum_pareto],
+            prrng.distribution.weibull: [(1.1, 0.1, 2.3), gen.cumsum_weibull],
+            prrng.distribution.gamma: [(1.1, 0.1, 2.3), gen.cumsum_gamma],
+            prrng.distribution.normal: [(1.1, 0.1, 2.3), gen.cumsum_normal],
+        }
 
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.power([n]))
+        for dist, [param, func] in parameters.items():
 
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.power([n], rate))
+            if dist != prrng.distribution.delta:
+                gen.seed(seed)
 
-        gen.restore(state)
-        b = gen.cumsum_power(n)
+            a = np.cumsum(gen.draw([n], dist, param))
 
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_power(n)
+            if dist != prrng.distribution.delta:
+                gen.seed(seed)
 
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_power(n, rate)
+            b = gen.cumsum(n, dist, param)
 
-        self.assertAlmostEqual(a[-1], b)
-        self.assertAlmostEqual(aprime[-1], bprime)
-        self.assertAlmostEqual(acustom[-1], bcustom)
+            if dist != prrng.distribution.delta:
+                gen.seed(seed)
 
-    def test_pcg32_cumsum_gamma(self):
+            if dist == prrng.distribution.random:
+                c = func(n) * param[0] + n * param[-1]
+            else:
+                c = func(n, *param[:-1]) + n * param[-1]
 
-        seed = int(time.time())
-        gen = prrng.pcg32(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        k = 1.2
-        theta = 0.3
-
-        gen.restore(state)
-        a = np.cumsum(gen.gamma([n]))
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.gamma([n]))
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.gamma([n], k, theta))
-
-        gen.restore(state)
-        b = gen.cumsum_gamma(n)
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_gamma(n)
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_gamma(n, k, theta)
-
-        self.assertAlmostEqual(a[-1], b)
-        self.assertAlmostEqual(aprime[-1], bprime)
-        self.assertAlmostEqual(acustom[-1], bcustom)
-
-    def test_pcg32_cumsum_pareto(self):
-
-        seed = int(time.time())
-        gen = prrng.pcg32(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        lam = 1.2
-        k = 0.3
-
-        gen.restore(state)
-        a = np.cumsum(gen.pareto([n]))
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.pareto([n]))
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.pareto([n], lam, k))
-
-        gen.restore(state)
-        b = gen.cumsum_pareto(n)
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_pareto(n)
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_pareto(n, lam, k)
-
-        self.assertAlmostEqual(a[-1], b)
-        self.assertAlmostEqual(aprime[-1], bprime)
-        self.assertAlmostEqual(acustom[-1], bcustom)
-
-    def test_pcg32_cumsum_weibull(self):
-
-        seed = int(time.time())
-        gen = prrng.pcg32(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        lam = 1.2
-        k = 0.3
-
-        gen.restore(state)
-        a = np.cumsum(gen.weibull([n]))
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.weibull([n]))
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.weibull([n], lam, k))
-
-        gen.restore(state)
-        b = gen.cumsum_weibull(n)
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_weibull(n)
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_weibull(n, lam, k)
-
-        self.assertAlmostEqual(a[-1], b)
-        self.assertAlmostEqual(aprime[-1], bprime)
-        self.assertAlmostEqual(acustom[-1], bcustom)
-
-    def test_pcg32_cumsum_normal(self):
-
-        seed = int(time.time())
-        gen = prrng.pcg32(seed)
-        state = gen.state()
-        n = 10000
-        offset = 0.1
-        mean = 2.3
-        mu = 1.2
-        sigma = 0.3
-
-        gen.restore(state)
-        a = np.cumsum(gen.normal([n]))
-
-        gen.restore(state)
-        aprime = np.cumsum(offset + mean * gen.normal([n]))
-
-        gen.restore(state)
-        acustom = np.cumsum(offset + mean * gen.normal([n], mu, sigma))
-
-        gen.restore(state)
-        b = gen.cumsum_normal(n)
-
-        gen.restore(state)
-        bprime = offset * n + mean * gen.cumsum_normal(n)
-
-        gen.restore(state)
-        bcustom = offset * n + mean * gen.cumsum_normal(n, mu, sigma)
-
-        self.assertAlmostEqual(a[-1], b)
-        self.assertAlmostEqual(aprime[-1], bprime)
-        self.assertAlmostEqual(acustom[-1], bcustom)
+            self.assertAlmostEqual(a[-1], b)
+            self.assertAlmostEqual(a[-1], c)
 
 
 class Test_pcg32_random(unittest.TestCase):
