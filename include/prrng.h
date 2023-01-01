@@ -241,6 +241,8 @@ bool has_correct_parameters(enum distribution distribution, const std::vector<do
     case distribution::custom:
         return true;
     }
+
+    return true;
 }
 
 /**
@@ -2322,6 +2324,8 @@ public:
         case prrng::distribution::custom:
             throw std::runtime_error("Unknown distribution");
         }
+
+        throw std::runtime_error("Unknown distribution");
     }
 
     /**
@@ -2366,6 +2370,8 @@ public:
         case prrng::distribution::custom:
             throw std::runtime_error("Unknown distribution");
         }
+
+        throw std::runtime_error("Unknown distribution");
     }
 
     /**
@@ -2411,6 +2417,8 @@ public:
         case prrng::distribution::custom:
             throw std::runtime_error("Unknown distribution");
         }
+
+        throw std::runtime_error("Unknown distribution");
     }
 
 private:
