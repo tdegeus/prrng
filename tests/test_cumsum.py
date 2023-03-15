@@ -13,7 +13,6 @@ class Test_cumsum(unittest.TestCase):
     """
 
     def test_default_parameters(self):
-
         self.assertEqual(prrng.default_parameters(prrng.distribution.random), [1, 0])
         self.assertEqual(prrng.default_parameters(prrng.distribution.delta), [1, 0])
         self.assertEqual(prrng.default_parameters(prrng.distribution.exponential), [1, 0])
@@ -25,7 +24,6 @@ class Test_cumsum(unittest.TestCase):
         self.assertEqual(prrng.default_parameters(prrng.distribution.custom), [])
 
     def test_cumsum_simple(self):
-
         da = np.random.random(1100)
         a = np.cumsum(da)
 
@@ -45,7 +43,6 @@ class Test_cumsum(unittest.TestCase):
             self.assertTrue(np.allclose(chunk, a[istart : istart + nchunk]))
 
     def test_example_prrng(self):
-
         N = 3
 
         initstate = np.arange(N)
@@ -98,7 +95,6 @@ class Test_cumsum(unittest.TestCase):
         nchunk = chunk.shape[-1]
 
         for t in range(x.shape[1]):
-
             ilocal = prrng.lower_bound(chunk, x[:, t], ilocal).astype(np.int64)
             shift = ilocal  # some choice just for testing
 
@@ -120,5 +116,4 @@ class Test_cumsum(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main(verbosity=2)

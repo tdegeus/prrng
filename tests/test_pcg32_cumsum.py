@@ -532,5 +532,4 @@ class Test_pcg32_cumum(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

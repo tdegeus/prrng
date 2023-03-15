@@ -7,7 +7,6 @@ gen = prrng.pcg32()
 fig, axes = plt.subplots(figsize=(16, 6), ncols=2)
 
 for (mu, sigma), c in zip([(1.0, 1.0), (1.0, 0.5), (-2.0, 1.0), (-2.0, 2.0)], ["r", "g", "b", "c"]):
-
     x = np.linspace(-10, 10, 1000)
     P = prrng.normal_distribution(mu, sigma).pdf(x)
     axes[0].plot(x, P, c=c)
@@ -35,12 +34,10 @@ for (mu, sigma), c in zip([(1.0, 1.0), (1.0, 0.5), (-2.0, 1.0), (-2.0, 2.0)], ["
     axes[1].plot(x, P, c=c, ls="--")
 
 for ax in [axes[0]]:
-
     ax.set_xlabel("x")
     ax.set_ylabel("P(x)")
 
 for ax in [axes[1]]:
-
     ax.set_xlabel("x")
     ax.set_ylabel("P(x)")
 
