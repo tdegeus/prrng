@@ -1237,14 +1237,50 @@ PYBIND11_MODULE(_prrng, m)
 
         cls.def(
             py::init<
-                const std::vector<size_t>&,
+                const std::array<size_t, 1>&,
                 const State&,
                 const State&,
                 prrng::distribution,
                 const std::vector<double>&,
                 const prrng::alignment&>(),
-            "Random number generator. "
-            "See :cpp:class:`prrng::pcg32_array`.",
+            "Chunk of size ``[c]`` of cumulative sum of ``[n]`` random number generators. "
+            "The chunk can be interpreted as a matrix of shape ``[c, m]``."
+            "See :cpp:class:`prrng::pcg32_tensor_cumsum`.",
+            py::arg("shape"),
+            py::arg("initstate"),
+            py::arg("initseq"),
+            py::arg("distribution"),
+            py::arg("parameters"),
+            py::arg("align") = prrng::alignment());
+
+        init_pcg32_arrayBase_cumsum<Class, Parent, Data, State, Value, Index>(cls);
+
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_tensor_cumsum_1_1>"; });
+    }
+
+    {
+        // rank generators N = 2
+        // rank data n = 1
+        using Data = xt::pytensor<double, 3>; // N + n
+        using Index = xt::pytensor<ptrdiff_t, 2>; // N
+        using Parent = prrng::pcg32_tensor_cumsum<Data, Index, 2>; // N
+        using State = xt::pytensor<uint64_t, 2>; // N
+        using Value = xt::pytensor<double, 2>; // N
+        using Class = py::class_<Parent>;
+
+        Class cls(m, "pcg32_tensor_cumsum_2_1");
+
+        cls.def(
+            py::init<
+                const std::array<size_t, 2>&,
+                const State&,
+                const State&,
+                prrng::distribution,
+                const std::vector<double>&,
+                const prrng::alignment&>(),
+            "Chunk of size ``[c, d]`` of cumulative sum of ``[n]`` random number generators. "
+            "The chunk can be interpreted as a matrix of shape ``[c, d, m]``."
+            "See :cpp:class:`prrng::pcg32_tensor_cumsum`.",
             py::arg("shape"),
             py::arg("initstate"),
             py::arg("initseq"),
