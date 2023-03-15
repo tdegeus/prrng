@@ -7,7 +7,6 @@ gen = prrng.pcg32()
 fig, axes = plt.subplots(figsize=(16, 6), ncols=2)
 
 for k, c in zip([1.0, 2.0, 4.0], ["r", "g", "b"]):
-
     x = np.logspace(-2, 1, 100)
     P = prrng.gamma_distribution(k).pdf(x)
     axes[0].plot(x, P, c=c)
@@ -35,7 +34,6 @@ for k, c in zip([1.0, 2.0, 4.0], ["r", "g", "b"]):
     axes[1].plot(x, P, c=c, ls="--")
 
 for ax in [axes[0]]:
-
     ax.set_xscale("log")
     ax.set_yscale("log")
 
@@ -46,7 +44,6 @@ for ax in [axes[0]]:
     ax.set_ylabel("P(x)")
 
 for ax in [axes[1]]:
-
     ax.set_xlabel("x")
     ax.set_ylabel("P(x)")
 

@@ -7,7 +7,6 @@ import prrng
 
 class Test_pcg32_basic(unittest.TestCase):
     def test_seed(self):
-
         seed = int(time.time())
 
         gen_a = prrng.pcg32(seed)
@@ -19,7 +18,6 @@ class Test_pcg32_basic(unittest.TestCase):
         self.assertTrue(np.allclose(a, b))
 
     def test_restore(self):
-
         seed = int(time.time())
         gen = prrng.pcg32(seed)
         gen.random([123])
@@ -33,7 +31,6 @@ class Test_pcg32_basic(unittest.TestCase):
         self.assertTrue(np.allclose(a, b))
 
     def test_rowmajor(self):
-
         seed = int(time.time())
         gen = prrng.pcg32(seed)
         gen.random([123])
@@ -48,7 +45,6 @@ class Test_pcg32_basic(unittest.TestCase):
         self.assertTrue(np.allclose(a[-1, ...], b))
 
     def test_pcg32_decide(self):
-
         seed = int(time.time())
         gen = prrng.pcg32(seed)
         p = gen.random([5, 10])
@@ -73,7 +69,6 @@ class Test_pcg32_basic(unittest.TestCase):
         self.assertTrue(not np.any(decision))
 
     def test_draw(self):
-
         seed = int(time.time())
         gen = prrng.pcg32()
         shape = [5, 6, 7]
@@ -90,7 +85,6 @@ class Test_pcg32_basic(unittest.TestCase):
         }
 
         for dist, [param, func] in parameters.items():
-
             if dist != prrng.distribution.delta:
                 gen.seed(seed)
 
@@ -122,7 +116,6 @@ class Test_pcg32_basic(unittest.TestCase):
             self.assertTrue(np.allclose(a, b))
 
     def test_pcg32_cumsum(self):
-
         seed = int(time.time())
         gen = prrng.pcg32()
         n = 10000
@@ -139,7 +132,6 @@ class Test_pcg32_basic(unittest.TestCase):
         }
 
         for dist, [param, func] in parameters.items():
-
             if dist != prrng.distribution.delta:
                 gen.seed(seed)
 
@@ -168,7 +160,6 @@ class Test_pcg32_random(unittest.TestCase):
     """
 
     def test_historic(self):
-
         gen = prrng.pcg32()
 
         a = gen.random([100])
@@ -283,7 +274,6 @@ class Test_pcg32_random(unittest.TestCase):
 
 class Test_pcg32_delta(unittest.TestCase):
     def test_array(self):
-
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
         state = gen.state()
@@ -298,7 +288,6 @@ class Test_pcg32_exponential(unittest.TestCase):
     """
 
     def test_historic(self):
-
         a = prrng.pcg32().exponential([102])
         b = prrng.pcg32().exponential([102], 2.0)
 
@@ -390,7 +379,6 @@ class Test_pcg32_power(unittest.TestCase):
     """
 
     def test_historic(self):
-
         a = prrng.pcg32().power([102])
         b = prrng.pcg32().power([102], 2.0)
 
@@ -448,7 +436,6 @@ class Test_pcg32_gamma(unittest.TestCase):
     """
 
     def test_historic(self):
-
         gen = prrng.pcg32()
 
         a = gen.gamma([100])
@@ -677,7 +664,6 @@ class Test_pcg32_pareto(unittest.TestCase):
     """
 
     def test_historic(self):
-
         a = prrng.pcg32().pareto([102])
         b = prrng.pcg32().pareto([102], 2.0)
         c = prrng.pcg32().pareto([102], 2.0, 2.0)
@@ -759,7 +745,6 @@ class Test_pcg32_weibull(unittest.TestCase):
     """
 
     def test_historic(self):
-
         gen = prrng.pcg32()
 
         a = gen.weibull([100])
@@ -985,7 +970,6 @@ class Test_pcg32_normal(unittest.TestCase):
     """
 
     def test_historic(self):
-
         a = prrng.pcg32().normal([102])
         b = prrng.pcg32().normal([102], 2.0)
         c = prrng.pcg32().normal([102], 2.0, 2.0)
@@ -1063,7 +1047,6 @@ class Test_pcg32_normal(unittest.TestCase):
 
 class Test_pcg32_array(unittest.TestCase):
     def test_basic(self):
-
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
         gens = [prrng.pcg32(s) for s in seed.ravel()]
@@ -1078,7 +1061,6 @@ class Test_pcg32_array(unittest.TestCase):
         self.assertTrue(np.allclose(a, b))
 
     def test_list(self):
-
         seed = np.arange(5)
         gen = prrng.pcg32_array(seed)
         state = gen.state()
@@ -1114,7 +1096,6 @@ class Test_pcg32_array(unittest.TestCase):
             self.assertTrue(gen[i].initseq() == initseq[i])
 
     def test_array(self):
-
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
         state = gen.state()
@@ -1161,7 +1142,6 @@ class Test_pcg32_array(unittest.TestCase):
                 self.assertTrue(gen[i, j].initseq() == initseq[i, j])
 
     def test_distance(self):
-
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
         regen = prrng.pcg32_array(seed)
@@ -1174,7 +1154,6 @@ class Test_pcg32_array(unittest.TestCase):
         self.assertTrue(np.all(regen.distance(gen) == -4 * 5 * np.ones(seed.shape)))
 
     def test_decide(self):
-
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
         p = gen.random([])
@@ -1212,7 +1191,6 @@ class Test_pcg32_array(unittest.TestCase):
         )
 
     def test_randint(self):
-
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
 
@@ -1235,7 +1213,6 @@ class Test_pcg32_array(unittest.TestCase):
         self.assertLess((m - c) / c, 1e-3)
 
     def test_cumsum(self):
-
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
         state = gen.state()
@@ -1253,7 +1230,6 @@ class Test_pcg32_array(unittest.TestCase):
         }
 
         for dist, [param, draw, cumsum] in parameters.items():
-
             if dist != prrng.distribution.delta:
                 gen.restore(state)
 
@@ -1274,5 +1250,4 @@ class Test_pcg32_array(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

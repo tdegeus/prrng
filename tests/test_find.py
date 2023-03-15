@@ -13,7 +13,6 @@ class Test_find(unittest.TestCase):
     """
 
     def test_find_matrix_random(self):
-
         a = np.cumsum(0.1 + np.random.random(50000)).reshape(10, -1)
         tests = np.random.randint(0, a.shape[1], 3000).reshape(a.shape[0], -1)
         i = np.zeros(a.shape[0], dtype=np.int64)
@@ -24,7 +23,6 @@ class Test_find(unittest.TestCase):
             self.assertTrue(np.all(np.equal(tests[:, col], i)))
 
     def test_out_of_bounds(self):
-
         a = np.arange(10).astype(np.float64)
         self.assertTrue(prrng.lower_bound(a, -1.0) == 0)
         self.assertTrue(prrng.lower_bound(a, 0.0) == 0)
@@ -41,5 +39,4 @@ class Test_find(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main(verbosity=2)
