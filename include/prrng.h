@@ -71,6 +71,10 @@
             ": assertion failed (" #expr ") \n\t"); \
     }
 
+#define PRRNG_WARNING_IMPL(message, file, line, function) \
+    std::cout << std::string(file) + ":" + std::to_string(line) + " (" + std::string(function) + \
+                     ")" + ": " message ") \n\t";
+
 /**
  * \endcond
  */
@@ -143,6 +147,36 @@
 #define PRRNG_DEBUG(expr) PRRNG_ASSERT_IMPL(expr, __FILE__, __LINE__)
 #else
 #define PRRNG_DEBUG(expr)
+#endif
+
+/**
+ * Warnings are implemented as:
+ *
+ *      PRRNG_WARNING(...)
+ *
+ * They can be disabled by:
+ *
+ *      #define PRRNG_DISABLE_WARNING
+ */
+#ifdef PRRNG_DISABLE_WARNING
+#define PRRNG_WARNING(message)
+#else
+#define PRRNG_WARNING(message) PRRNG_WARNING_IMPL(message, __FILE__, __LINE__, __FUNCTION__)
+#endif
+
+/**
+ * Warnings specific to the Python API are implemented as:
+ *
+ *      PRRNG_WARNING_PYTHON(...)
+ *
+ * They can be enabled by:
+ *
+ *      #define PRRNG_ENABLE_WARNING_PYTHON
+ */
+#ifdef PRRNG_ENABLE_WARNING_PYTHON
+#define PRRNG_WARNING_PYTHON(message) PRRNG_WARNING_IMPL(message, __FILE__, __LINE__, __FUNCTION__)
+#else
+#define PRRNG_WARNING_PYTHON(message)
 #endif
 
 /**
@@ -3072,7 +3106,8 @@ protected:
 /**
  * @brief Overload of prrng::pcg32() that keeps track of the current index of the generator
  * in the sequence.
- * Warning: the user is responsible for updating the index.
+ *
+ * @warning The user is responsible for updating the index.
  * The purpose of this class is therefore mostly internal, to support prrng::pcg32_cumsum().
  */
 class pcg32_index : public pcg32 {
@@ -3103,6 +3138,7 @@ public:
      * @brief State at a specific index of the sequence.
      * Internally the generator is moved to the index, the state is stored,
      * and the generator is restored to its original state.
+     * This call can therefore be expensive.
      *
      * @param index Index at which to get the state.
      * @return uint64_t
@@ -3499,8 +3535,8 @@ public:
     }
 
     /**
-     * @brief Chunk.
-     * @return Pointer to the chunk.
+     * @brief The current chunk of the cumsum of random numbers.
+     * @return Reference to the chunk.
      */
     const Data& data() const
     {
@@ -3508,7 +3544,7 @@ public:
     }
 
     /**
-     * @brief Overwrite the chunk.
+     * @brief Overwrite the current chunk of the cumsum of random numbers.
      * Please check if set_state() or set_start() should be called too.
      *
      * @param data The chunk.
@@ -3538,10 +3574,20 @@ public:
     }
 
     /**
-     * @brief Global index of `target` (the last time prrng::pcg32_cumsum::align() was called).
+     * @brief Global index of `target`
+     * (the last time prrng::pcg32_cumsum::align() was called).
+     *
+     * Suppose that `cumsum` is the unlimited cumsum of random numbers starting from a seed, then:
+     *
+     *  -   `gen.left_of_target() == cumsum[gen.target_index()] <= target`.
+     *  -   `gen.right_of_target() == cumsum[gen.target_index() + 1] > target`.
+     *
+     * Note thought that `cumsum` is not constructed by this class, that instead only holds a chunk
+     * `gen.data() == cumsum[gen.start():gen.start() + gen.size()]`.
+     *
      * @return Global index.
      */
-    ptrdiff_t index() const
+    ptrdiff_t target_index() const
     {
         return m_start + m_i;
     }
@@ -3550,11 +3596,58 @@ public:
      * @brief Index of `target` relative to the beginning of the chunk
      * (the last time prrng::pcg32_cumsum::align() was called).
      *
+     * The currently held chunk of the cumsum of random numbers is is `gen.data()`. As such,
+     *
+     *  -  `gen.left_of_target() == gen.data()[gen.target_chunk_index()] <= target`.
+     *  -  `gen.right_of_target() == gen.data()[gen.target_chunk_index() + 1] > target`.
+     *
      * @return Local index.
      */
-    ptrdiff_t chunk_index() const
+    ptrdiff_t target_chunk_index() const
     {
         return m_i;
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::target_index() const
+     */
+    [[deprecated("use target_index() instead")]] ptrdiff_t index() const
+    {
+        PRRNG_WARNING_PYTHON("deprecated in favour of target_index()");
+        return this->target_index();
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::target_chunk_index() const
+     */
+    [[deprecated("use target_chunk_index() instead")]] ptrdiff_t chunk_index() const
+    {
+        PRRNG_WARNING_PYTHON("deprecated in favour of target_chunk_index()")
+        return this->target_chunk_index();
+    }
+
+    /**
+     * @brief Return the value of the cumsum left of the `target`
+     * (the last time prrng::pcg32_cumsum::align() was called).
+     * `gen.left_of_target() == gen.data()[gen.target_chunk_index()] <= target`.
+     *
+     * @return double
+     */
+    double left_of_target() const
+    {
+        return m_data[m_i];
+    }
+
+    /**
+     * @brief Return the value of the cumsum right of the `target`
+     * (the last time prrng::pcg32_cumsum::align() was called).
+     * `gen.right_of_target() == gen.data()[gen.target_chunk_index() + 1] > target`.
+     *
+     * @return double
+     */
+    double right_of_target() const
+    {
+        return m_data[m_i + 1];
     }
 
     /**
@@ -3619,6 +3712,16 @@ public:
 
     /**
      * @brief Align the chunk to encompass a target value.
+     * After this call:
+     *
+     *  -   prrng::pcg32_cumsum::target_index(): global index of `target` in the cumulative sum.
+     *
+     *  -   prrng::pcg32_cumsum::target_chunk_index(): local index of `target` in the currently
+     *      held chunk, whereby:
+     *
+     *      -  `gen.left_of_target() == gen.data()[gen.target_chunk_index()] <= target`.
+     *      -  `gen.right_of_target() == gen.data()[gen.target_chunk_index() + 1] > target`.
+     *
      * @param target Target value.
      */
     void align(double target)
@@ -5833,6 +5936,8 @@ public:
         }
     }
 
+    // todo: overload with array index
+
     /**
      * @copydoc prrng::pcg32_cumsum::align(double)
      * @param i Flat index of the item to align.
@@ -5858,11 +5963,9 @@ public:
             target);
     }
 
-    // todo: overload with array index
-
     /**
-     * @brief Generator array.
-     * @return Pointer to generator array.
+     * @brief Reference to the underlying generators.
+     * @return Reference to generator array.
      */
     const Generator& generators() const
     {
@@ -5926,19 +6029,69 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::index()
+     * @copydoc prrng::pcg32_cumsum::target_index()
      */
-    Index index() const
+    Index target_index() const
     {
         return m_start + m_i;
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::chunk_index()
+     * @copydoc prrng::pcg32_cumsum::target_chunk_index()
      */
-    const Index& chunk_index() const
+    const Index& target_chunk_index() const
     {
         return m_i;
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::target_index()
+     */
+    [[deprecated("use target_index() instead")]] Index index() const
+    {
+        PRRNG_WARNING_PYTHON("deprecated in favour of target_index()");
+        return this->target_index();
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::target_chunk_index()
+     */
+    [[deprecated("use target_chunk_index() instead")]] const Index& chunk_index() const
+    {
+        PRRNG_WARNING_PYTHON("deprecated in favour of target_chunk_index()")
+        return this->target_chunk_index();
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::left_of_target()
+     */
+    template <class R>
+    R left_of_target() const
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_gen.shape());
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            ret.flat(i) = static_cast<value_type>(m_data.flat(i * m_n + m_i.flat(i)));
+        }
+
+        return ret;
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::right_of_target()
+     */
+    template <class R>
+    R right_of_target() const
+    {
+        using value_type = typename R::value_type;
+        R ret = R::from_shape(m_gen.shape());
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            ret.flat(i) = static_cast<value_type>(m_data.flat(i * m_n + m_i.flat(i) + 1));
+        }
+
+        return ret;
     }
 
     /**

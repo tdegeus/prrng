@@ -8,6 +8,7 @@
 #include <xtensor-python/pytensor.hpp>
 #include <xtensor-python/xtensor_python_config.hpp> // todo: remove for xtensor-python >0.26.1
 
+#define PRRNG_ENABLE_WARNING_PYTHON
 #include <prrng.h>
 
 namespace py = pybind11;
@@ -342,7 +343,13 @@ void init_pcg32_arrayBase_cumsum(C& cls)
     cls.def_property_readonly("is_extendible", &Parent::is_extendible);
     cls.def_property("data", &Parent::data, &Parent::set_data);
     cls.def_property("start", &Parent::start, &Parent::set_start);
+    cls.def_property_readonly("target_index", &Parent::target_index);
+    cls.def_property_readonly("target_chunk_index", &Parent::target_chunk_index);
+    cls.def_property_readonly("left_of_target", &Parent::template left_of_target<Value>);
+    cls.def_property_readonly("right_of_target", &Parent::template right_of_target<Value>);
+    // deprecated
     cls.def_property_readonly("index", &Parent::index);
+    // deprecated
     cls.def_property_readonly("chunk_index", &Parent::chunk_index);
 
     cls.def(
@@ -1101,8 +1108,30 @@ PYBIND11_MODULE(_prrng, m)
             "Index of the first entry of the chunk.")
 
         .def_property_readonly(
+            "target_index",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::target_index,
+            "Index of ``target`` (last time ``align`` was called).")
+
+        .def_property_readonly(
+            "target_chunk_index",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::target_chunk_index,
+            "Index of ``target`` in the current chunk (last time ``align`` was called).")
+
+        .def_property_readonly(
+            "left_of_target",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::left_of_target,
+            "Value of the cumsum just left of ``target`` (last time ``align`` was called).")
+
+        .def_property_readonly(
+            "right_of_target",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::right_of_target,
+            "Value of the cumsum just right of ``target`` (last time ``align`` was called).")
+
+        // deprecated
+        .def_property_readonly(
             "index", &prrng::pcg32_cumsum<xt::pyarray<double>>::index, "Index or target.")
 
+        // deprecated
         .def_property_readonly(
             "chunk_index",
             &prrng::pcg32_cumsum<xt::pyarray<double>>::chunk_index,
