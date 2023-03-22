@@ -3591,15 +3591,15 @@ public:
      *
      * Suppose that `cumsum` is the unlimited cumsum of random numbers starting from a seed, then:
      *
-     *  -   `gen.left_of_target() == cumsum[gen.target_index()] <= target`.
-     *  -   `gen.right_of_target() == cumsum[gen.target_index() + 1] > target`.
+     *  -   `gen.left_of_align() == cumsum[gen.index_at_align()] <= target`.
+     *  -   `gen.right_of_align() == cumsum[gen.index_at_align() + 1] > target`.
      *
      * Note thought that `cumsum` is not constructed by this class, that instead only holds a chunk
      * `gen.data() == cumsum[gen.start():gen.start() + gen.size()]`.
      *
      * @return Global index.
      */
-    ptrdiff_t target_index() const
+    ptrdiff_t index_at_align() const
     {
         return m_start + m_i;
     }
@@ -3610,42 +3610,42 @@ public:
      *
      * The currently held chunk of the cumsum of random numbers is is `gen.data()`. As such,
      *
-     *  -  `gen.left_of_target() == gen.data()[gen.target_chunk_index()] <= target`.
-     *  -  `gen.right_of_target() == gen.data()[gen.target_chunk_index() + 1] > target`.
+     *  -  `gen.left_of_align() == gen.data()[gen.chunk_index_at_align()] <= target`.
+     *  -  `gen.right_of_align() == gen.data()[gen.chunk_index_at_align() + 1] > target`.
      *
      * @return Local index.
      */
-    ptrdiff_t target_chunk_index() const
+    ptrdiff_t chunk_index_at_align() const
     {
         return m_i;
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::target_index() const
+     * @copydoc prrng::pcg32_cumsum::index_at_align() const
      */
-    [[deprecated("use target_index() instead")]] ptrdiff_t index() const
+    [[deprecated("use index_at_align() instead")]] ptrdiff_t index() const
     {
-        PRRNG_WARNING_PYTHON("deprecated in favour of target_index()");
-        return this->target_index();
+        PRRNG_WARNING_PYTHON("deprecated in favour of index_at_align()");
+        return this->index_at_align();
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::target_chunk_index() const
+     * @copydoc prrng::pcg32_cumsum::chunk_index_at_align() const
      */
-    [[deprecated("use target_chunk_index() instead")]] ptrdiff_t chunk_index() const
+    [[deprecated("use chunk_index_at_align() instead")]] ptrdiff_t chunk_index() const
     {
-        PRRNG_WARNING_PYTHON("deprecated in favour of target_chunk_index()")
-        return this->target_chunk_index();
+        PRRNG_WARNING_PYTHON("deprecated in favour of chunk_index_at_align()")
+        return this->chunk_index_at_align();
     }
 
     /**
      * @brief Return the value of the cumsum left of the `target`
      * (the last time prrng::pcg32_cumsum::align() was called).
-     * `gen.left_of_target() == gen.data()[gen.target_chunk_index()] <= target`.
+     * `gen.left_of_align() == gen.data()[gen.chunk_index_at_align()] <= target`.
      *
      * @return double
      */
-    double left_of_target() const
+    double left_of_align() const
     {
         return m_data[m_i];
     }
@@ -3653,11 +3653,11 @@ public:
     /**
      * @brief Return the value of the cumsum right of the `target`
      * (the last time prrng::pcg32_cumsum::align() was called).
-     * `gen.right_of_target() == gen.data()[gen.target_chunk_index() + 1] > target`.
+     * `gen.right_of_align() == gen.data()[gen.chunk_index_at_align() + 1] > target`.
      *
      * @return double
      */
-    double right_of_target() const
+    double right_of_align() const
     {
         return m_data[m_i + 1];
     }
@@ -3726,13 +3726,13 @@ public:
      * @brief Align the chunk to encompass a target value.
      * After this call:
      *
-     *  -   prrng::pcg32_cumsum::target_index(): global index of `target` in the cumulative sum.
+     *  -   prrng::pcg32_cumsum::index_at_align(): global index of `target` in the cumulative sum.
      *
-     *  -   prrng::pcg32_cumsum::target_chunk_index(): local index of `target` in the currently
+     *  -   prrng::pcg32_cumsum::chunk_index_at_align(): local index of `target` in the currently
      *      held chunk, whereby:
      *
-     *      -  `gen.left_of_target() == gen.data()[gen.target_chunk_index()] <= target`.
-     *      -  `gen.right_of_target() == gen.data()[gen.target_chunk_index() + 1] > target`.
+     *      -  `gen.left_of_align() == gen.data()[gen.chunk_index_at_align()] <= target`.
+     *      -  `gen.right_of_align() == gen.data()[gen.chunk_index_at_align() + 1] > target`.
      *
      * @param target Target value.
      */
@@ -6041,68 +6041,88 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::target_index()
+     * @copydoc prrng::pcg32_cumsum::index_at_align()
      */
-    Index target_index() const
+    Index index_at_align() const
     {
         return m_start + m_i;
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::target_chunk_index()
+     * @copydoc prrng::pcg32_cumsum::chunk_index_at_align()
      */
-    const Index& target_chunk_index() const
+    const Index& chunk_index_at_align() const
     {
         return m_i;
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::target_index()
+     * @copydoc prrng::pcg32_cumsum::index_at_align()
      */
-    [[deprecated("use target_index() instead")]] Index index() const
+    [[deprecated("use index_at_align() instead")]] Index index() const
     {
-        PRRNG_WARNING_PYTHON("deprecated in favour of target_index()");
-        return this->target_index();
+        PRRNG_WARNING_PYTHON("deprecated in favour of index_at_align()");
+        return this->index_at_align();
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::target_chunk_index()
+     * @copydoc prrng::pcg32_cumsum::chunk_index_at_align()
      */
-    [[deprecated("use target_chunk_index() instead")]] const Index& chunk_index() const
+    [[deprecated("use chunk_index_at_align() instead")]] const Index& chunk_index() const
     {
-        PRRNG_WARNING_PYTHON("deprecated in favour of target_chunk_index()")
-        return this->target_chunk_index();
+        PRRNG_WARNING_PYTHON("deprecated in favour of chunk_index_at_align()")
+        return this->chunk_index_at_align();
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::left_of_target()
+     * @copydoc prrng::pcg32_cumsum::left_of_align()
+     * @param ret Array to store the result in.
      */
     template <class R>
-    R left_of_target() const
+    void left_of_align(R& ret) const
     {
+        PRRNG_ASSERT(xt::has_shape(ret, m_gen.shape()));
         using value_type = typename R::value_type;
-        R ret = R::from_shape(m_gen.shape());
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             ret.flat(i) = static_cast<value_type>(m_data.flat(i * m_n + m_i.flat(i)));
         }
-
-        return ret;
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::right_of_target()
+     * @copydoc prrng::pcg32_cumsum::right_of_align()
+     * @param ret Array to store the result in.
      */
     template <class R>
-    R right_of_target() const
+    void right_of_align(R& ret) const
     {
+        PRRNG_ASSERT(xt::has_shape(ret, m_gen.shape()));
         using value_type = typename R::value_type;
-        R ret = R::from_shape(m_gen.shape());
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             ret.flat(i) = static_cast<value_type>(m_data.flat(i * m_n + m_i.flat(i) + 1));
         }
+    }
 
+    /**
+     * @copydoc prrng::pcg32_cumsum::left_of_align()
+     */
+    template <class R>
+    R left_of_align() const
+    {
+        R ret = R::from_shape(m_gen.shape());
+        this->left_of_align(ret);
+        return ret;
+    }
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::right_of_align()
+     */
+    template <class R>
+    R right_of_align() const
+    {
+        R ret = R::from_shape(m_gen.shape());
+        this->right_of_align(ret);
         return ret;
     }
 

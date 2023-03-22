@@ -343,10 +343,14 @@ void init_pcg32_arrayBase_cumsum(C& cls)
     cls.def_property_readonly("is_extendible", &Parent::is_extendible);
     cls.def_property("data", &Parent::data, &Parent::set_data);
     cls.def_property("start", &Parent::start, &Parent::set_start);
-    cls.def_property_readonly("target_index", &Parent::target_index);
-    cls.def_property_readonly("target_chunk_index", &Parent::target_chunk_index);
-    cls.def_property_readonly("left_of_target", &Parent::template left_of_target<Value>);
-    cls.def_property_readonly("right_of_target", &Parent::template right_of_target<Value>);
+    cls.def_property_readonly("index_at_align", &Parent::index_at_align);
+    cls.def_property_readonly("chunk_index_at_align", &Parent::chunk_index_at_align);
+
+    cls.def_property_readonly(
+        "left_of_align", py::overload_cast<>(&Parent::template left_of_align<Value>, py::const_));
+    cls.def_property_readonly(
+        "right_of_align", py::overload_cast<>(&Parent::template right_of_align<Value>, py::const_));
+
     // deprecated
     cls.def_property_readonly("index", &Parent::index);
     // deprecated
@@ -1108,23 +1112,23 @@ PYBIND11_MODULE(_prrng, m)
             "Index of the first entry of the chunk.")
 
         .def_property_readonly(
-            "target_index",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::target_index,
+            "index_at_align",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::index_at_align,
             "Index of ``target`` (last time ``align`` was called).")
 
         .def_property_readonly(
-            "target_chunk_index",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::target_chunk_index,
+            "chunk_index_at_align",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::chunk_index_at_align,
             "Index of ``target`` in the current chunk (last time ``align`` was called).")
 
         .def_property_readonly(
-            "left_of_target",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::left_of_target,
+            "left_of_align",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::left_of_align,
             "Value of the cumsum just left of ``target`` (last time ``align`` was called).")
 
         .def_property_readonly(
-            "right_of_target",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::right_of_target,
+            "right_of_align",
+            &prrng::pcg32_cumsum<xt::pyarray<double>>::right_of_align,
             "Value of the cumsum just right of ``target`` (last time ``align`` was called).")
 
         // deprecated
