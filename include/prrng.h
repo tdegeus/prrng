@@ -404,7 +404,7 @@ struct allocate_return {
     template <class S>
     allocate_return(const S& shape)
     {
-        value = xt::empty<typename R::value_type>(shape);
+        value.resize(shape);
     }
 
     typename R::value_type* data()
@@ -2465,7 +2465,7 @@ private:
 
         detail::allocate_return<R> ret(shape);
         this->draw_list(ret.data(), ret.size());
-        return ret.value;
+        return std::move(ret.value);
     }
 
     template <class R, class S, typename T>
@@ -2483,7 +2483,7 @@ private:
         std::vector<uint32_t> tmp(ret.size());
         this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), ret.size());
         std::copy(tmp.begin(), tmp.end(), ret.data());
-        return ret.value;
+        return std::move(ret.value);
     }
 
     template <class R, class S, typename T, typename U>
@@ -2524,7 +2524,7 @@ private:
     {
         R ret = xt::empty<typename R::value_type>(shape);
         ret.fill(scale);
-        return ret;
+        return std::move(ret);
     }
 
     template <class R, class S>
@@ -3306,7 +3306,7 @@ private:
         switch (m_distro) {
         case random:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.random<Data>({n}) * m_param[0] + m_param[1];
+                return m_gen.random<Data>(std::array<size_t, 1>{n}) * m_param[0] + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_random(n) * m_param[0] + static_cast<double>(n) * m_param[1];
@@ -3314,7 +3314,7 @@ private:
             return;
         case delta:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.delta<Data>({n}, m_param[0]) + m_param[1];
+                return m_gen.delta<Data>(std::array<size_t, 1>{n}, m_param[0]) + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_delta(n, m_param[0]) + static_cast<double>(n) * m_param[1];
@@ -3322,7 +3322,7 @@ private:
             return;
         case exponential:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.exponential<Data>({n}, m_param[0]) + m_param[1];
+                return m_gen.exponential<Data>(std::array<size_t, 1>{n}, m_param[0]) + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_exponential(n, m_param[0]) +
@@ -3331,7 +3331,7 @@ private:
             return;
         case power:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.power<Data>({n}, m_param[0]) + m_param[1];
+                return m_gen.power<Data>(std::array<size_t, 1>{n}, m_param[0]) + m_param[1];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_power(n, m_param[0]) + static_cast<double>(n) * m_param[1];
@@ -3339,7 +3339,8 @@ private:
             return;
         case gamma:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.gamma<Data>({n}, m_param[0], m_param[1]) + m_param[2];
+                return m_gen.gamma<Data>(std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                       m_param[2];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_gamma(n, m_param[0], m_param[1]) +
@@ -3348,7 +3349,8 @@ private:
             return;
         case pareto:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.pareto<Data>({n}, m_param[0], m_param[1]) + m_param[2];
+                return m_gen.pareto<Data>(std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                       m_param[2];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_pareto(n, m_param[0], m_param[1]) +
@@ -3357,7 +3359,8 @@ private:
             return;
         case weibull:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.weibull<Data>({n}, m_param[0], m_param[1]) + m_param[2];
+                return m_gen.weibull<Data>(std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                       m_param[2];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_weibull(n, m_param[0], m_param[1]) +
@@ -3366,7 +3369,8 @@ private:
             return;
         case normal:
             m_draw = [this](size_t n) -> Data {
-                return m_gen.normal<Data>({n}, m_param[0], m_param[1]) + m_param[2];
+                return m_gen.normal<Data>(std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                       m_param[2];
             };
             m_sum = [this](size_t n) -> double {
                 return m_gen.cumsum_normal(n, m_param[0], m_param[1]) +
@@ -5758,7 +5762,8 @@ protected:
         case random:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template random<R>({n}) * m_param[0] + m_param[1];
+                    return m_gen[i].template random<R>(std::array<size_t, 1>{n}) * m_param[0] +
+                           m_param[1];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_random(n) * m_param[0] +
@@ -5769,7 +5774,8 @@ protected:
         case delta:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template delta<R>({n}, m_param[0]) + m_param[1];
+                    return m_gen[i].template delta<R>(std::array<size_t, 1>{n}, m_param[0]) +
+                           m_param[1];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_delta(n, m_param[0]) +
@@ -5780,7 +5786,8 @@ protected:
         case exponential:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template exponential<R>({n}, m_param[0]) + m_param[1];
+                    return m_gen[i].template exponential<R>(std::array<size_t, 1>{n}, m_param[0]) +
+                           m_param[1];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_exponential(n, m_param[0]) +
@@ -5791,7 +5798,8 @@ protected:
         case power:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template power<R>({n}, m_param[0]) + m_param[1];
+                    return m_gen[i].template power<R>(std::array<size_t, 1>{n}, m_param[0]) +
+                           m_param[1];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_power(n, m_param[0]) +
@@ -5802,7 +5810,9 @@ protected:
         case gamma:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template gamma<R>({n}, m_param[0], m_param[1]) + m_param[2];
+                    return m_gen[i].template gamma<R>(
+                               std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                           m_param[2];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_gamma(n, m_param[0], m_param[1]) +
@@ -5813,7 +5823,9 @@ protected:
         case pareto:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template pareto<R>({n}, m_param[0], m_param[1]) + m_param[2];
+                    return m_gen[i].template pareto<R>(
+                               std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                           m_param[2];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_pareto(n, m_param[0], m_param[1]) +
@@ -5824,7 +5836,9 @@ protected:
         case weibull:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template weibull<R>({n}, m_param[0], m_param[1]) + m_param[2];
+                    return m_gen[i].template weibull<R>(
+                               std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                           m_param[2];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_weibull(n, m_param[0], m_param[1]) +
@@ -5835,7 +5849,9 @@ protected:
         case normal:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
-                    return m_gen[i].template normal<R>({n}, m_param[0], m_param[1]) + m_param[2];
+                    return m_gen[i].template normal<R>(
+                               std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                           m_param[2];
                 };
                 m_sum[i] = [this, i](size_t n) -> double {
                     return m_gen[i].cumsum_normal(n, m_param[0], m_param[1]) +
