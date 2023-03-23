@@ -6075,7 +6075,7 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::left_of_align()
+     * @copybrief prrng::pcg32_cumsum::left_of_align()
      * @param ret Array to store the result in.
      */
     template <class R>
@@ -6090,7 +6090,7 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::right_of_align()
+     * @copybrief prrng::pcg32_cumsum::right_of_align()
      * @param ret Array to store the result in.
      */
     template <class R>
