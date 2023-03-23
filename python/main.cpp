@@ -38,26 +38,19 @@ private:
 template <class C, class Parent>
 void init_GeneratorBase_array(C& cls)
 {
-    cls.def(
+    cls.def_property_readonly(
         "shape",
         [](const Parent& s) { return s.shape(); },
         "Shape of the array of generators. "
         "See :cpp:func:`prrng::GeneratorBase_array::shape`.");
 
-    cls.def(
-        "shape",
-        py::overload_cast<size_t>(&Parent::template shape<size_t>, py::const_),
-        "Shape of the array of generators, along a certain axis. "
-        "See :cpp:func:`prrng::GeneratorBase_array::shape`.",
-        py::arg("axis"));
-
-    cls.def(
+    cls.def_property_readonly(
         "strides",
         &Parent::strides,
         "Strides of the array of generators. "
         "See :cpp:func:`prrng::GeneratorBase_array::strides`.");
 
-    cls.def(
+    cls.def_property_readonly(
         "size",
         &Parent::size,
         "Size of the array of generators. "

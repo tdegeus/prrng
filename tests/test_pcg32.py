@@ -1049,6 +1049,9 @@ class Test_pcg32_array(unittest.TestCase):
     def test_basic(self):
         seed = np.arange(10).reshape([2, -1])
         gen = prrng.pcg32_array(seed)
+        self.assertEqual(gen.size, seed.size)
+        self.assertEqual(list(gen.shape), list(seed.shape))
+
         gens = [prrng.pcg32(s) for s in seed.ravel()]
         shape = [5, 6, 4]
 
@@ -1076,7 +1079,7 @@ class Test_pcg32_array(unittest.TestCase):
 
         # test "__getitem__"
 
-        for i in range(gen.size()):
+        for i in range(gen.size):
             gen[i].restore(state[i])
 
         self.assertTrue(np.allclose(a, gen.random([4, 5])))
@@ -1087,11 +1090,11 @@ class Test_pcg32_array(unittest.TestCase):
         initstate = gen.initstate()
         initseq = gen.initseq()
 
-        for i in range(gen.size()):
+        for i in range(gen.size):
             self.assertTrue(gen[i].initstate() == initstate[i])
             self.assertTrue(gen[i].initseq() == initseq[i])
 
-        for i in range(gen.size()):
+        for i in range(gen.size):
             self.assertTrue(gen[i].initstate() == initstate[i])
             self.assertTrue(gen[i].initseq() == initseq[i])
 
@@ -1111,7 +1114,7 @@ class Test_pcg32_array(unittest.TestCase):
 
         # test "__getitem__"
 
-        for i in range(gen.size()):
+        for i in range(gen.size):
             gen[i].restore(state.ravel()[i])
 
         self.assertTrue(np.allclose(a, gen.random([4, 5])))
@@ -1119,8 +1122,8 @@ class Test_pcg32_array(unittest.TestCase):
 
         # test "__getitem__"
 
-        for i in range(gen.shape(0)):
-            for j in range(gen.shape(1)):
+        for i in range(gen.shape[0]):
+            for j in range(gen.shape[1]):
                 gen[i, j].restore(state[i, j])
 
         self.assertTrue(np.allclose(a, gen.random([4, 5])))
@@ -1131,13 +1134,13 @@ class Test_pcg32_array(unittest.TestCase):
         initstate = gen.initstate()
         initseq = gen.initseq()
 
-        for i in range(gen.shape(0)):
-            for j in range(gen.shape(1)):
+        for i in range(gen.shape[0]):
+            for j in range(gen.shape[1]):
                 self.assertTrue(gen[i, j].initstate() == initstate[i, j])
                 self.assertTrue(gen[i, j].initseq() == initseq[i, j])
 
-        for i in range(gen.shape(0)):
-            for j in range(gen.shape(1)):
+        for i in range(gen.shape[0]):
+            for j in range(gen.shape[1]):
                 self.assertTrue(gen[i, j].initstate() == initstate[i, j])
                 self.assertTrue(gen[i, j].initseq() == initseq[i, j])
 
