@@ -5680,6 +5680,9 @@ inline auto auto_pcg32(const T& initstate, const S& initseq)
  */
 template <class Generator, class Data, class Index>
 class pcg32_arrayBase_cumsum {
+public:
+    using size_type = typename Data::size_type; ///< Size type of the data container.
+
 protected:
     Generator m_gen; ///< Array of generators
     Data m_data; ///< Data container
@@ -5953,6 +5956,15 @@ public:
     bool is_extendible() const
     {
         return m_extendible;
+    }
+
+    /**
+     * @brief Size of the chunk per generator.
+     * @return Unsigned integer.
+     */
+    size_type chunk_size() const
+    {
+        return static_cast<size_type>(m_n);
     }
 
     /**
