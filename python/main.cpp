@@ -1227,6 +1227,25 @@ PYBIND11_MODULE(_prrng, m)
     }
 
     {
+        using Parent = prrng::pcg32_index_tensor<2>;
+        using Class = py::class_<Parent>;
+
+        Class cls(m, "pcg32_index_tensor2");
+
+        init_GeneratorBase_array<Class, Parent>(cls);
+        init_pcg32_arrayBase<Class, Parent>(cls);
+
+        cls.def(
+            py::init<const xt::pytensor<uint64_t, 2>&, const xt::pytensor<uint64_t, 2>&>(),
+            "Random number generator. "
+            "See :cpp:class:`prrng::pcg32_index_tensor`.",
+            py::arg("initstate"),
+            py::arg("initseq"));
+
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_index_tensor2>"; });
+    }
+
+    {
         using Data = xt::pyarray<double>;
         using Index = xt::pyarray<ptrdiff_t>;
         using Parent = prrng::pcg32_array_cumsum<Data, Index>;
@@ -1305,7 +1324,7 @@ PYBIND11_MODULE(_prrng, m)
 
         cls.def(
             py::init<
-                const std::array<size_t, 2>&,
+                const std::array<size_t, 1>&,
                 const State&,
                 const State&,
                 prrng::distribution,
@@ -1323,7 +1342,7 @@ PYBIND11_MODULE(_prrng, m)
 
         init_pcg32_arrayBase_cumsum<Class, Parent, Data, State, Value, Index>(cls);
 
-        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_tensor_cumsum_1_1>"; });
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_tensor_cumsum_2_1>"; });
     }
 
 } // PYBIND11_MODULE
