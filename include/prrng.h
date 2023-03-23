@@ -407,6 +407,14 @@ struct allocate_return {
         value.resize(shape);
     }
 
+    template <class I, std::size_t L>
+    allocate_return(const I (&shape)[L])
+    {
+        std::array<I, L> shape_;
+        std::copy(shape, shape + L, shape_.begin());
+        value.resize(shape_);
+    }
+
     typename R::value_type* data()
     {
         return &value.front();
