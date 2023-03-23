@@ -404,7 +404,18 @@ struct allocate_return {
     template <class S>
     allocate_return(const S& shape)
     {
+#if (XTENSOR_PYTHON_VERSION_MINOR == 26 && XTENSOR_PYTHON_VERSION_PATCH <= 1) || \
+    (XTENSOR_PYTHON_VERSION_MINOR < 26)
+        if (shape.size() == 0) {
+            std::array<typename R::size_type, 1> shape_ = {1};
+            value.resize(shape_);
+        }
+        else {
+            value.resize(shape);
+        }
+#else
         value.resize(shape);
+#endif
     }
 
     template <class I, std::size_t L>
@@ -2530,9 +2541,9 @@ private:
     template <class R, class S>
     R delta_impl(const S& shape, double scale)
     {
-        R ret = xt::empty<typename R::value_type>(shape);
-        ret.fill(scale);
-        return std::move(ret);
+        detail::allocate_return<R> ret(shape);
+        ret.value.fill(scale);
+        return std::move(ret.value);
     }
 
     template <class R, class S>
