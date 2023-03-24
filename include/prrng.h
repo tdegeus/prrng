@@ -3794,7 +3794,7 @@ public:
      *
      * @return unsigned int
      */
-    auto size() const
+    size_type size() const
     {
         return m_size;
     }
@@ -3804,7 +3804,7 @@ public:
      *
      * @return vector of unsigned ints
      */
-    const auto& strides() const
+    const shape_type& strides() const
     {
         return m_strides;
     }
@@ -3814,7 +3814,7 @@ public:
      *
      * @return vector of unsigned ints
      */
-    const auto& shape() const
+    const shape_type& shape() const
     {
         return m_shape;
     }
