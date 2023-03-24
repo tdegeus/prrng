@@ -40,7 +40,7 @@ void init_GeneratorBase_array(C& cls)
 {
     cls.def_property_readonly(
         "shape",
-        [](const Parent& s) { return s.shape(); },
+        static_cast<const typename Parent::shape_type& (Parent::*)() const>(&Parent::shape),
         "Shape of the array of generators. "
         "See :cpp:func:`prrng::GeneratorBase_array::shape`.");
 

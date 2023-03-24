@@ -3782,6 +3782,9 @@ public:
 template <class M>
 class GeneratorBase_array {
 public:
+    using shape_type = M; ///< Type of the shape and strides lists.
+    using size_type = typename M::value_type; ///< Type of sizes.
+
     GeneratorBase_array() = default;
 
     virtual ~GeneratorBase_array() = default;
@@ -3791,7 +3794,7 @@ public:
      *
      * @return unsigned int
      */
-    size_t size() const
+    auto size() const
     {
         return m_size;
     }
@@ -3801,7 +3804,7 @@ public:
      *
      * @return vector of unsigned ints
      */
-    M strides() const
+    const auto& strides() const
     {
         return m_strides;
     }
@@ -3811,7 +3814,7 @@ public:
      *
      * @return vector of unsigned ints
      */
-    M shape() const
+    const auto& shape() const
     {
         return m_shape;
     }
@@ -3823,7 +3826,7 @@ public:
      * @return vector of unsigned ints
      */
     template <class T>
-    size_t shape(T axis) const
+    auto shape(T axis) const
     {
         return m_shape[axis];
     }
@@ -3835,7 +3838,7 @@ public:
      * @return Flat index.
      */
     template <class T>
-    size_t flat_index(const T& index) const
+    auto flat_index(const T& index) const
     {
         PRRNG_DEBUG(this->inbounds(index));
         return std::inner_product(index.cbegin(), index.cend(), m_strides.cbegin(), 0);
@@ -4837,7 +4840,7 @@ protected:
      */
     virtual void decide_impl(const double* p, bool* ret)
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = 0.5 < p[i];
         }
     }
@@ -4850,7 +4853,7 @@ protected:
      */
     virtual void decide_masked_impl(const double* p, const bool* mask, bool* ret)
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             if (mask[i]) {
                 ret[i] = false;
             }
@@ -4867,7 +4870,7 @@ protected:
      */
     virtual void cumsum_random_impl(double* ret, const size_t* n)
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = (double)(n[i]) * 0.5;
         }
     }
@@ -4962,9 +4965,9 @@ protected:
     }
 
 protected:
-    size_t m_size = 0; ///< See size().
-    M m_shape; ///< See shape().
-    M m_strides; ///< The strides of the array of generators.
+    size_type m_size = 0; ///< See size().
+    shape_type m_shape; ///< See shape().
+    shape_type m_strides; ///< The strides of the array of generators.
 };
 
 /**
@@ -4972,6 +4975,10 @@ protected:
  */
 template <class Generator, class Shape>
 class pcg32_arrayBase : public GeneratorBase_array<Shape> {
+public:
+    using size_type = typename Shape::value_type; ///< Size type
+    using shape_type = Shape; ///< Shape type
+
 protected:
     /**
      * @brief Constructor alias.
@@ -4987,7 +4994,7 @@ protected:
         m_size = initstate.size();
         m_gen.reserve(m_size);
 
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             m_gen.push_back(Generator(initstate.flat(i)));
         }
     }
@@ -5009,7 +5016,7 @@ protected:
         m_size = initstate.size();
         m_gen.reserve(m_size);
 
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             m_gen.push_back(Generator(initstate.flat(i), initseq.flat(i)));
         }
     }
@@ -5115,7 +5122,7 @@ public:
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_shape);
 
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret.flat(i) = m_gen[i].template state<value_type>();
         }
 
@@ -5145,7 +5152,7 @@ public:
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_shape);
 
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret.flat(i) = m_gen[i].template initstate<value_type>();
         }
 
@@ -5176,7 +5183,7 @@ public:
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_shape);
 
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret.flat(i) = m_gen[i].template initseq<value_type>();
         }
 
@@ -5211,7 +5218,7 @@ public:
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_shape);
 
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret.flat(i) = m_gen[i].template distance<value_type>(arg.flat(i));
         }
 
@@ -5229,7 +5236,7 @@ public:
     template <class T>
     void advance(const T& arg)
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             m_gen[i].advance(arg.flat(i));
         }
     }
@@ -5246,7 +5253,7 @@ public:
     template <class T>
     void restore(const T& arg)
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             m_gen[i].restore(arg.flat(i));
         }
     }
@@ -5259,7 +5266,7 @@ protected:
      */
     void decide_impl(const double* p, bool* ret) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].next_double() < p[i];
         }
     }
@@ -5272,7 +5279,7 @@ protected:
      */
     void decide_masked_impl(const double* p, const bool* mask, bool* ret) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             if (mask[i]) {
                 ret[i] = false;
             }
@@ -5289,7 +5296,7 @@ protected:
      */
     void cumsum_random_impl(double* ret, const size_t* n) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_random(n[i]);
         }
     }
@@ -5302,7 +5309,7 @@ protected:
      */
     void cumsum_exponential_impl(double* ret, const size_t* n, double scale) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_exponential(n[i], scale);
         }
     }
@@ -5315,7 +5322,7 @@ protected:
      */
     void cumsum_power_impl(double* ret, const size_t* n, double k) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_power(n[i], k);
         }
     }
@@ -5329,7 +5336,7 @@ protected:
      */
     void cumsum_gamma_impl(double* ret, const size_t* n, double k, double scale) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_gamma(n[i], k, scale);
         }
     }
@@ -5343,7 +5350,7 @@ protected:
      */
     void cumsum_pareto_impl(double* ret, const size_t* n, double k, double scale) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_pareto(n[i], k, scale);
         }
     }
@@ -5357,7 +5364,7 @@ protected:
      */
     void cumsum_weibull_impl(double* ret, const size_t* n, double k, double scale) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_weibull(n[i], k, scale);
         }
     }
@@ -5371,7 +5378,7 @@ protected:
      */
     void cumsum_normal_impl(double* ret, const size_t* n, double mu, double sigma) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_normal(n[i], mu, sigma);
         }
     }
@@ -5385,7 +5392,7 @@ protected:
      */
     void draw_list(double* data, size_t n) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 data[i * n + j] = m_gen[i].next_double();
             }
@@ -5402,7 +5409,7 @@ protected:
      */
     void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n) override
     {
-        for (size_t i = 0; i < m_size; ++i) {
+        for (size_type i = 0; i < m_size; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 data[i * n + j] = m_gen[i].next_uint32(bound);
             }
@@ -5460,6 +5467,9 @@ protected:
  */
 class pcg32_array : public pcg32_arrayBase<pcg32, std::vector<size_t>> {
 public:
+    using size_type = size_t; ///< Size type
+    using shape_type = std::vector<size_t>; ///< Shape type
+
     pcg32_array() = default;
 
     /**
@@ -5492,10 +5502,10 @@ public:
     }
 
 protected:
-    using pcg32_arrayBase<pcg32, std::vector<size_t>>::m_gen;
-    using GeneratorBase_array<std::vector<size_t>>::m_size;
-    using GeneratorBase_array<std::vector<size_t>>::m_shape;
-    using GeneratorBase_array<std::vector<size_t>>::m_strides;
+    using pcg32_arrayBase<pcg32, shape_type>::m_gen;
+    using GeneratorBase_array<shape_type>::m_size;
+    using GeneratorBase_array<shape_type>::m_shape;
+    using GeneratorBase_array<shape_type>::m_strides;
 };
 
 /**
@@ -5504,6 +5514,9 @@ protected:
 template <size_t N>
 class pcg32_tensor : public pcg32_arrayBase<pcg32, std::array<size_t, N>> {
 public:
+    using size_type = size_t; ///< Size type
+    using shape_type = std::array<size_t, N>; ///< Shape type
+
     pcg32_tensor() = default;
 
     /**
@@ -5534,10 +5547,10 @@ public:
     }
 
 protected:
-    using pcg32_arrayBase<pcg32, std::array<size_t, N>>::m_gen;
-    using GeneratorBase_array<std::array<size_t, N>>::m_size;
-    using GeneratorBase_array<std::array<size_t, N>>::m_shape;
-    using GeneratorBase_array<std::array<size_t, N>>::m_strides;
+    using pcg32_arrayBase<pcg32, shape_type>::m_gen;
+    using GeneratorBase_array<shape_type>::m_size;
+    using GeneratorBase_array<shape_type>::m_shape;
+    using GeneratorBase_array<shape_type>::m_strides;
 };
 
 /**
