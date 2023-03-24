@@ -97,7 +97,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         auto c = generator.random({1});
 
         REQUIRE(a == b);
-        REQUIRE(a == c(0));
+        REQUIRE(xt::allclose(a, c));
     }
 
     SECTION("randint - scalar")
@@ -128,7 +128,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         generator.advance(-1);
         auto c = generator.normal({1}, mu, sigma);
 
-        REQUIRE(a == c(0));
+        REQUIRE(xt::allclose(a, c));
     }
 
     SECTION("exponential - scalar")
@@ -141,7 +141,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         generator.advance(-1);
         auto c = generator.exponential({1}, scale);
 
-        REQUIRE(a == c(0));
+        REQUIRE(xt::allclose(a, c));
     }
 
     SECTION("weibull - scalar")
@@ -155,7 +155,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         generator.advance(-1);
         auto c = generator.weibull({1}, k, scale);
 
-        REQUIRE(a == c(0));
+        REQUIRE(xt::allclose(a, c));
     }
 
     SECTION("gamma - scalar")
@@ -169,7 +169,7 @@ TEST_CASE("prrng::pgc32", "prrng.h")
         generator.advance(-1);
         auto c = generator.gamma({1}, k, scale);
 
-        REQUIRE(a == c(0));
+        REQUIRE(xt::allclose(a, c));
     }
 
     SECTION("random - cumsum")
