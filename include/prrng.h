@@ -310,12 +310,10 @@ inline std::string replace(std::string str, const std::string& from, const std::
 }
 
 template <class T>
-struct is_std_array : std::false_type {
-};
+struct is_std_array : std::false_type {};
 
 template <class T, size_t N>
-struct is_std_array<std::array<T, N>> : std::true_type {
-};
+struct is_std_array<std::array<T, N>> : std::true_type {};
 
 /**
  * Check that an object has a certain fixed rank.
