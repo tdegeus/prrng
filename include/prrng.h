@@ -1,15 +1,18 @@
 /**
- * Portable Reconstructible Random Number Generator.
- * The idea is that a random sequence can be restored independent of platform or compiler.
- * In addition, this library allows you to store a point in the sequence, and then later restore
- * the sequence exactly from this point (in both directions actually).
+ * @file
  *
- * Note that the core of this code is taken from
- * https://github.com/imneme/pcg-c-basic
- * All the credits goes to those developers.
- * This is just a wrapper.
+ * @brief Portable Reconstructible Random Number Generator.
  *
- * @file prrng.h
+ * @details
+ *      The idea is that a random sequence can be restored independent of platform or compiler.
+ *      In addition, this library allows you to store a point in the sequence, and then later
+ *      restore the sequence exactly from this point (in both directions actually).
+ *
+ *      Note that the core of this code is taken from
+ *      https://github.com/imneme/pcg-c-basic
+ *      All the credits goes to those developers.
+ *      This is just a wrapper.
+ *
  * @copyright Copyright 2021. Tom de Geus. All rights reserved.
  * @par license This project is released under the MIT License.
  */
@@ -200,10 +203,24 @@ enum distribution {
 };
 
 /**
- * @brief Add default parameters depending on the distribution.
+ * @page default_parameters
  * @param distribution Distribution.
- * @param parameters Parameters (defaults appended if needed).
- * @return Parameters with defaults filled.
+ * @param parameters
+ *      Parameters for the distribution: appended by the following defaults if needed.
+ *
+ *      -   prrng::distribution::random: {scale = 1, offset = 0}
+ *      -   prrng::distribution::delta: {scale = 1, offset = 0}
+ *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
+ *      -   prrng::distribution::power: {k = 1, offset = 0}
+ *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
+ *      -   prrng::distribution::pareto: {k = 1, scale = 1, offset = 0}
+ *      -   prrng::distribution::weibull: {k = 1, scale = 1, offset = 0}
+ *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
+ *      -   prrng::distribution::custom: {}
+ */
+
+/**
+ * @copydoc default_parameters
  */
 std::vector<double> default_parameters(
     enum distribution distribution,
@@ -879,6 +896,141 @@ inline V cumsum_chunk(const V& cumsum, const V& delta, const I& shift)
 namespace detail {
 
 /**
+ * Align the chunk with the requested index.
+ *
+ * @param generator Generator, see prrng::pcg32_index() (modified).
+ * @param get_chunk ///< @copybrief pcg32_arrayBase_cumsum::m_draw
+ * @param param Alignment parameters, see prrng::alignment().
+ * @param data Pointer to the chunk (modified).
+ * @param size Size of the chunk.
+ * @param start Start index of the chunk (modified).
+ * @param index Index (global) to align with.
+ */
+template <class G, class D, class P>
+void chunk_align_at(
+    G& generator,
+    const D& get_chunk,
+    const P& param,
+    double* data,
+    ptrdiff_t size,
+    ptrdiff_t* start,
+    ptrdiff_t index)
+{
+    ptrdiff_t ichunk = index - *start;
+
+    if (ichunk > param.buffer && ichunk < size - param.buffer) {
+        return;
+    }
+
+    using R = decltype(get_chunk(size_t{}));
+    ptrdiff_t n = size;
+    ptrdiff_t offset = 0;
+    ichunk -= param.margin;
+
+    if (ichunk < 0 && ichunk > -size) {
+        n = -ichunk;
+        std::copy(data, data + size + ichunk, data + n);
+    }
+    else if (ichunk > 0 && ichunk < size) {
+        n = ichunk;
+        offset = size - ichunk;
+        std::copy(data + n, data + size, data);
+    }
+
+    *start = index - param.margin;
+    generator.jump_to(*start + offset);
+    R extra = get_chunk(static_cast<size_t>(n));
+    generator.drawn(n);
+    std::copy(extra.begin(), extra.end(), data + offset);
+}
+
+/**
+ * @copydoc chunk_align_at
+ * @param get_sum ///< @copybrief pcg32_arrayBase_cumsum::m_sum
+ */
+template <class G, class D, class S, class P>
+void cumsum_align_at(
+    G& generator,
+    const D& get_chunk,
+    const S& get_sum,
+    const P& param,
+    double* data,
+    ptrdiff_t size,
+    ptrdiff_t* start,
+    ptrdiff_t index)
+{
+    ptrdiff_t ichunk = index - *start;
+
+    if (ichunk > param.buffer && ichunk < size - param.buffer) {
+        return;
+    }
+
+    using R = decltype(get_chunk(size_t{}));
+    ichunk -= param.margin;
+
+    if (ichunk > 0 && ichunk < size) {
+        ptrdiff_t n = ichunk;
+        ptrdiff_t offset = size - ichunk;
+        double back = data[size - 1];
+        std::copy(data + n, data + size, data);
+
+        *start = index - param.margin;
+        generator.jump_to(*start + offset);
+        R extra = get_chunk(static_cast<size_t>(n));
+        generator.drawn(n);
+
+        extra.front() += back;
+        std::partial_sum(extra.begin(), extra.end(), extra.begin());
+        std::copy(extra.begin(), extra.end(), data + offset);
+        return;
+    }
+
+    if (ichunk < 0 && ichunk > -size) {
+        ptrdiff_t n = -ichunk;
+        double front = data[0];
+        std::copy(data, data + size + ichunk, data + n);
+
+        *start = index - param.margin;
+        generator.jump_to(*start);
+        R extra = get_chunk(static_cast<size_t>(n + 1));
+        generator.drawn(n + 1);
+
+        std::partial_sum(extra.begin(), extra.end(), extra.begin());
+        extra -= extra.back() - front;
+        std::copy(extra.begin(), extra.end(), data);
+        return;
+    }
+
+    if (ichunk < 0) {
+        ptrdiff_t n = *start - (index - param.margin + size) + 1;
+        *start = index - param.margin;
+        generator.jump_to(*start);
+        R extra = get_chunk(static_cast<size_t>(size));
+        generator.drawn(size);
+
+        double front = data[0] - get_sum(n);
+        generator.drawn(n);
+
+        std::partial_sum(extra.begin(), extra.end(), extra.begin());
+        extra -= extra.back() - front;
+        std::copy(extra.begin(), extra.end(), data);
+        return;
+    }
+
+    generator.jump_to(*start + size);
+    ptrdiff_t n = index - param.margin - (*start + size);
+    *start = index - param.margin;
+    double back = get_sum(n) + data[size - 1];
+    generator.drawn(n);
+
+    R extra = get_chunk(static_cast<size_t>(size));
+    generator.drawn(size);
+    extra.front() += back;
+    std::partial_sum(extra.begin(), extra.end(), extra.begin());
+    std::copy(extra.begin(), extra.end(), data);
+}
+
+/**
  * Shift chunk left.
  *
  * @param generator Generator, see prrng::pcg32_index() (modified).
@@ -953,8 +1105,8 @@ void next(
  * Align the chunk to encompass a target value.
  *
  * @param generator Generator, see prrng::pcg32_index() (modified).
- * @param get_chunk Function to draw the random numbers, called as `get_chunk(n)`.
- * @param get_sum Function to get the cumsum of random numbers, called: `get_sum(n)`.
+ * @param get_chunk ///< @copybrief pcg32_arrayBase_cumsum::m_draw
+ * @param get_sum ///< @copybrief pcg32_arrayBase_cumsum::m_sum
  * @param param Alignment parameters, see prrng::alignment().
  * @param data Pointer to the chunk (modified).
  * @param size Size of the chunk.
@@ -3644,7 +3796,8 @@ public:
     /**
      * @copydoc prrng::pcg32_cumsum::index_at_align() const
      */
-    [[deprecated("use index_at_align() instead")]] ptrdiff_t index() const
+    [[deprecated("use index_at_align() instead")]]
+    ptrdiff_t index() const
     {
         PRRNG_WARNING_PYTHON("deprecated in favour of index_at_align()");
         return this->index_at_align();
@@ -3653,7 +3806,8 @@ public:
     /**
      * @copydoc prrng::pcg32_cumsum::chunk_index_at_align() const
      */
-    [[deprecated("use chunk_index_at_align() instead")]] ptrdiff_t chunk_index() const
+    [[deprecated("use chunk_index_at_align() instead")]]
+    ptrdiff_t chunk_index() const
     {
         PRRNG_WARNING_PYTHON("deprecated in favour of chunk_index_at_align()")
         return this->chunk_index_at_align();
@@ -5681,30 +5835,47 @@ inline auto auto_pcg32(const T& initstate, const S& initseq)
 }
 
 /**
- * @brief Array of generators of a random cumulative sum.
+ * @brief Array of generators of which a chunk of random numbers is kept in memory.
  *
- *      -   All chunks are assembled to one big array.
- *      -   The random number generated by the pcg32 algorithm.
- *
- * @tparam D Storage of the data, e.g. xt::xarray<double>.
- * @tparam G Storage of the generator array, e.g. prrng::pcg32_array
+ * @tparam Generator Storage of the generator array, e.g. prrng::pcg32_tensor<N>.
+ * @tparam Data Storage of the data, e.g. xt::xtensor<double, N + n>.
+ * @tparam Index Storage of the index, e.g. xt::xtensor<ptrdiff_t, N>.
  */
-template <class Generator, class Data, class Index>
-class pcg32_arrayBase_cumsum {
+template <class Generator, class Data, class Index, bool is_cumsum>
+class pcg32_arrayBase_chunkBase {
+    static_assert(std::is_signed<typename Index::value_type>::value, "Index must be signed");
+
 public:
     using size_type = typename Data::size_type; ///< Size type of the data container.
 
 protected:
     Generator m_gen; ///< Array of generators
     Data m_data; ///< Data container
-    std::vector<std::function<xt::xtensor<double, 1>(size_t)>> m_draw; ///< Draw functions
-    std::vector<std::function<double(size_t)>> m_sum; ///< Result of cumsum fuctions
-    bool m_extendible; ///< Signal if the drawing functions are specified.
+
+    /**
+     * @brief Function to draw the next chunk of `n` random numbers starting from the curent state
+     * of the generator.
+     * The functions of all generators are collected in a vector (flat storage).
+     */
+    std::vector<std::function<xt::xtensor<double, 1>(size_t)>> m_draw;
+
+    /**
+     * @brief Function to get the cumsum of `n` random numbers starting from the curent state
+     * of the generator (used to skip allocating an list of size `n`).
+     * The functions of all generators are collected in a vector (flat storage).
+     */
+    std::vector<std::function<double(size_t)>> m_sum;
+
+    /**
+     * @brief Signal if the drawing functions are specified, implying that the chunk can be changed.
+     */
+    bool m_extendible;
+
     alignment m_align; ///< alignment settings, see prrng::alignment().
     distribution m_distro; ///< Distribution name, see prrng::distribution().
     std::array<double, 3> m_param; ///< Distribution parameters.
     Index m_start; ///< Start index of the chunk.
-    Index m_i; ///< Last know index of `target` in align.
+    Index m_i; ///< Last known index of `target` in align.
     size_t m_n; ///< Size of the chunk.
 
 protected:
@@ -5714,21 +5885,7 @@ protected:
      * @param shape Shape of the chunk to keep in memory per generator.
      * @param initstate State initiator for every item.
      * @param initseq Sequence initiator for every item.
-     * @param distribution Distribution type, see prrng::distribution().
-     *
-     * @param parameters
-     *      Parameters for the distribution. The following is default (and the expected order):
-     *
-     *      -   prrng::distribution::random: {scale = 1, offset = 0}
-     *      -   prrng::distribution::delta: {scale = 1, offset = 0}
-     *      -   prrng::distribution::exponential: {scale = 1, offset = 0}
-     *      -   prrng::distribution::power: {k = 1, offset = 0}
-     *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
-     *      -   prrng::distribution::pareto: {k = 1, scale = 1, offset = 0}
-     *      -   prrng::distribution::weibull: {k = 1, scale = 1, offset = 0}
-     *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
-     *      -   prrng::distribution::custom: {}
-     *
+     * @copydoc default_parameters
      * @param align Alignment parameters, see prrng::alignment().
      */
     template <class S, class T, class U>
@@ -5769,11 +5926,17 @@ protected:
 
         using E = decltype(m_draw[size_t{}](size_t{}));
 
+        // if possible: draw the first chunk
         if (m_extendible) {
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 E extra = m_draw[i](m_n);
                 m_gen[i].drawn(m_n);
-                std::partial_sum(extra.begin(), extra.end(), &m_data.flat(i * m_n));
+                if constexpr (is_cumsum) {
+                    std::partial_sum(extra.begin(), extra.end(), &m_data.flat(i * m_n));
+                }
+                else {
+                    std::copy(extra.begin(), extra.end(), &m_data.flat(i * m_n));
+                }
             }
         }
     }
@@ -5788,7 +5951,9 @@ protected:
 
         if (m_distro != distribution::custom) {
             m_draw.resize(m_gen.size());
-            m_sum.resize(m_gen.size());
+            if constexpr (is_cumsum) {
+                m_sum.resize(m_gen.size());
+            }
         }
 
         switch (m_distro) {
@@ -5798,10 +5963,12 @@ protected:
                     return m_gen[i].template random<R>(std::array<size_t, 1>{n}) * m_param[0] +
                            m_param[1];
                 };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_random(n) * m_param[0] +
-                           static_cast<double>(n) * m_param[1];
-                };
+                if constexpr (is_cumsum) {
+                    m_sum[i] = [this, i](size_t n) -> double {
+                        return m_gen[i].cumsum_random(n) * m_param[0] +
+                               static_cast<double>(n) * m_param[1];
+                    };
+                }
             }
             return;
         case delta:
@@ -5810,10 +5977,12 @@ protected:
                     return m_gen[i].template delta<R>(std::array<size_t, 1>{n}, m_param[0]) +
                            m_param[1];
                 };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_delta(n, m_param[0]) +
-                           static_cast<double>(n) * m_param[1];
-                };
+                if constexpr (is_cumsum) {
+                    m_sum[i] = [this, i](size_t n) -> double {
+                        return m_gen[i].cumsum_delta(n, m_param[0]) +
+                               static_cast<double>(n) * m_param[1];
+                    };
+                }
             }
             return;
         case exponential:
@@ -5822,10 +5991,12 @@ protected:
                     return m_gen[i].template exponential<R>(std::array<size_t, 1>{n}, m_param[0]) +
                            m_param[1];
                 };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_exponential(n, m_param[0]) +
-                           static_cast<double>(n) * m_param[1];
-                };
+                if constexpr (is_cumsum) {
+                    m_sum[i] = [this, i](size_t n) -> double {
+                        return m_gen[i].cumsum_exponential(n, m_param[0]) +
+                               static_cast<double>(n) * m_param[1];
+                    };
+                }
             }
             return;
         case power:
@@ -5834,10 +6005,12 @@ protected:
                     return m_gen[i].template power<R>(std::array<size_t, 1>{n}, m_param[0]) +
                            m_param[1];
                 };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_power(n, m_param[0]) +
-                           static_cast<double>(n) * m_param[1];
-                };
+                if constexpr (is_cumsum) {
+                    m_sum[i] = [this, i](size_t n) -> double {
+                        return m_gen[i].cumsum_power(n, m_param[0]) +
+                               static_cast<double>(n) * m_param[1];
+                    };
+                }
             }
             return;
         case gamma:
@@ -5847,10 +6020,12 @@ protected:
                                std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
                            m_param[2];
                 };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_gamma(n, m_param[0], m_param[1]) +
-                           static_cast<double>(n) * m_param[2];
-                };
+                if constexpr (is_cumsum) {
+                    m_sum[i] = [this, i](size_t n) -> double {
+                        return m_gen[i].cumsum_gamma(n, m_param[0], m_param[1]) +
+                               static_cast<double>(n) * m_param[2];
+                    };
+                }
             }
             return;
         case pareto:
@@ -5860,10 +6035,12 @@ protected:
                                std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
                            m_param[2];
                 };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_pareto(n, m_param[0], m_param[1]) +
-                           static_cast<double>(n) * m_param[2];
-                };
+                if constexpr (is_cumsum) {
+                    m_sum[i] = [this, i](size_t n) -> double {
+                        return m_gen[i].cumsum_pareto(n, m_param[0], m_param[1]) +
+                               static_cast<double>(n) * m_param[2];
+                    };
+                }
             }
             return;
         case weibull:
@@ -5873,10 +6050,12 @@ protected:
                                std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
                            m_param[2];
                 };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_weibull(n, m_param[0], m_param[1]) +
-                           static_cast<double>(n) * m_param[2];
-                };
+                if constexpr (is_cumsum) {
+                    m_sum[i] = [this, i](size_t n) -> double {
+                        return m_gen[i].cumsum_weibull(n, m_param[0], m_param[1]) +
+                               static_cast<double>(n) * m_param[2];
+                    };
+                }
             }
             return;
         case normal:
@@ -5886,10 +6065,12 @@ protected:
                                std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
                            m_param[2];
                 };
-                m_sum[i] = [this, i](size_t n) -> double {
-                    return m_gen[i].cumsum_normal(n, m_param[0], m_param[1]) +
-                           static_cast<double>(n) * m_param[2];
-                };
+                if constexpr (is_cumsum) {
+                    m_sum[i] = [this, i](size_t n) -> double {
+                        return m_gen[i].cumsum_normal(n, m_param[0], m_param[1]) +
+                               static_cast<double>(n) * m_param[2];
+                    };
+                }
             }
             return;
         case custom:
@@ -5904,7 +6085,7 @@ protected:
      *
      * @param other Object to copy.
      */
-    void copy_from(const pcg32_arrayBase_cumsum& other)
+    void copy_from(const pcg32_arrayBase_chunkBase& other)
     {
         m_gen = other.m_gen;
         m_data = other.m_data;
@@ -5918,22 +6099,21 @@ protected:
     }
 
 public:
-    pcg32_arrayBase_cumsum() = default;
-
-    virtual ~pcg32_arrayBase_cumsum() = default;
+    pcg32_arrayBase_chunkBase() = default;
+    virtual ~pcg32_arrayBase_chunkBase() = default;
 
     /**
-     * @copydoc prrng::pcg32_arrayBase_cumsum::copy_from(const prrng::pcg32_arrayBase_cumsum&)
+     * @copydoc prrng::pcg32_arrayBase_chunkBase::copy_from(const prrng::pcg32_arrayBase_chunkBase&)
      */
-    pcg32_arrayBase_cumsum(const pcg32_arrayBase_cumsum& other)
+    pcg32_arrayBase_chunkBase(const pcg32_arrayBase_chunkBase& other)
     {
         this->copy_from(other);
     }
 
     /**
-     * @copydoc prrng::pcg32_arrayBase_cumsum::copy_from(const prrng::pcg32_arrayBase_cumsum&)
+     * @copydoc prrng::pcg32_arrayBase_chunkBase::copy_from(const prrng::pcg32_arrayBase_chunkBase&)
      */
-    void operator=(const pcg32_arrayBase_cumsum& other)
+    void operator=(const pcg32_arrayBase_chunkBase& other)
     {
         this->copy_from(other);
     }
@@ -5943,7 +6123,7 @@ public:
      * @param values Values to add.
      */
     template <class T>
-    pcg32_arrayBase_cumsum& operator+=(const T& values)
+    pcg32_arrayBase_chunkBase& operator+=(const T& values)
     {
         xt::noalias(m_data) += values;
         return *this;
@@ -5954,7 +6134,7 @@ public:
      * @param values Values to subtract.
      */
     template <class T>
-    pcg32_arrayBase_cumsum& operator-=(const T& values)
+    pcg32_arrayBase_chunkBase& operator-=(const T& values)
     {
         xt::noalias(m_data) -= values;
         return *this;
@@ -5979,61 +6159,6 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::align(double)
-     */
-    template <class T>
-    void align(const T& target)
-    {
-        PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
-
-        if (!m_extendible) {
-            PRRNG_ASSERT(this->contains(target));
-            inplace::lower_bound(m_data, target, m_i);
-            return;
-        }
-
-        for (size_t i = 0; i < m_gen.size(); ++i) {
-            detail::align(
-                m_gen[i],
-                m_draw[i],
-                m_sum[i],
-                m_align,
-                &m_data.flat(i * m_n),
-                m_n,
-                &m_start.flat(i),
-                &m_i.flat(i),
-                target.flat(i));
-        }
-    }
-
-    // todo: overload with array index
-
-    /**
-     * @copydoc prrng::pcg32_cumsum::align(double)
-     * @param i Flat index of the item to align.
-     */
-    void align(size_t i, double target)
-    {
-        if (!m_extendible) {
-            PRRNG_ASSERT(this->contains(target));
-            m_i.flat(i) = iterator::lower_bound(
-                &m_data.flat(i * m_n), &m_data.flat(i * m_n) + m_n, target, m_i.flat(i));
-            return;
-        }
-
-        detail::align(
-            m_gen[i],
-            m_draw[i],
-            m_sum[i],
-            m_align,
-            &m_data.flat(i * m_n),
-            m_n,
-            &m_start.flat(i),
-            &m_i.flat(i),
-            target);
-    }
-
-    /**
      * @brief Reference to the underlying generators.
      * @return Reference to generator array.
      */
@@ -6048,8 +6173,11 @@ public:
      * @return Reference to one value.
      */
     template <class... Args>
-    typename Data::value_type& operator()(Args... args)
+    [[deprecated("Behaviour will change to global index + automatic alignment. Use .data()(...)")]]
+    typename Data::value_type&
+    operator()(Args... args)
     {
+        PRRNG_WARNING_PYTHON("Will change to global index + alignment. Use .data()(...)");
         return m_data(args...);
     }
 
@@ -6059,8 +6187,11 @@ public:
      * @return Reference to one value.
      */
     template <class... Args>
-    const typename Data::value_type& operator()(Args... args) const
+    [[deprecated("Behaviour will change to global index + automatic alignment. Use .data()(...)")]]
+    const typename Data::value_type&
+    operator()(Args... args) const
     {
+        PRRNG_WARNING_PYTHON("Will change to global index + alignment. Use .data()(...)");
         return m_data(args...);
     }
 
@@ -6099,6 +6230,46 @@ public:
     }
 
     /**
+     * @brief Get the ``index`` random number, which ``index`` specified per generator.
+     *
+     * @note `alignment::min_margin` and `alignment::strict` are not relevant: alignment is always
+     * exact.
+     *
+     * @tparam R Return type.
+     * @param index Index of the random number.
+     */
+    void align_at(const Index& index)
+    {
+        PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            if constexpr (!is_cumsum) {
+                detail::chunk_align_at(
+                    m_gen[i],
+                    m_draw[i],
+                    m_align,
+                    &m_data.flat(i * m_n),
+                    m_n,
+                    &m_start.flat(i),
+                    index.flat(i));
+            }
+            else {
+                detail::cumsum_align_at(
+                    m_gen[i],
+                    m_draw[i],
+                    m_sum[i],
+                    m_align,
+                    &m_data.flat(i * m_n),
+                    m_n,
+                    &m_start.flat(i),
+                    index.flat(i));
+            }
+        }
+
+        xt::noalias(m_i) = index - m_start;
+    }
+
+    /**
      * @copydoc prrng::pcg32_cumsum::index_at_align()
      */
     Index index_at_align() const
@@ -6117,7 +6288,8 @@ public:
     /**
      * @copydoc prrng::pcg32_cumsum::index_at_align()
      */
-    [[deprecated("use index_at_align() instead")]] Index index() const
+    [[deprecated("use index_at_align() instead")]]
+    Index index() const
     {
         PRRNG_WARNING_PYTHON("deprecated in favour of index_at_align()");
         return this->index_at_align();
@@ -6126,7 +6298,8 @@ public:
     /**
      * @copydoc prrng::pcg32_cumsum::chunk_index_at_align()
      */
-    [[deprecated("use chunk_index_at_align() instead")]] const Index& chunk_index() const
+    [[deprecated("use chunk_index_at_align() instead")]]
+    const Index& chunk_index() const
     {
         PRRNG_WARNING_PYTHON("deprecated in favour of chunk_index_at_align()")
         return this->chunk_index_at_align();
@@ -6201,6 +6374,140 @@ public:
 
         return ret;
     }
+};
+
+/**
+ * @copydoc prrng::pcg32_arrayBase_chunkBase
+ */
+template <class Generator, class Data, class Index>
+class pcg32_arrayBase_chunk : public pcg32_arrayBase_chunkBase<Generator, Data, Index, false> {
+protected:
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, false>::m_data;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, false>::m_draw;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, false>::m_gen;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, false>::m_n;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, false>::m_i;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, false>::m_start;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, false>::m_align;
+
+public:
+    using size_type = typename Data::size_type; ///< Size type of the data container.
+    using value_type = typename Data::value_type; ///< Value type of the data container.
+
+    pcg32_arrayBase_chunk() = default;
+    virtual ~pcg32_arrayBase_chunk() = default;
+
+    /**
+     * @brief Restore the generator somewhere in the sequence.
+     *
+     * @param state The state at the beginning of the new chunk.
+     * @param index The index of the first entry of the new chunk.
+     */
+    template <class S, class T>
+    void restore(const S& state, const T& index)
+    {
+        PRRNG_ASSERT(xt::same_shape(state.shape(), m_gen.shape()));
+        PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
+        xt::noalias(m_start) = index;
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            m_gen[i].set_index(index.flat(i));
+            m_gen[i].restore(state.flat(i));
+
+            using E = decltype(m_draw[i](size_t{}));
+            E extra = m_draw[i](m_n);
+            m_gen[i].drawn(m_n);
+            std::copy(extra.begin(), extra.end(), &m_data.flat(i * m_n));
+        }
+    }
+};
+
+/**
+ * TODO: copydoc
+ * @brief Array of generators of a random cumulative sum.
+ *
+ *      -   A chunk of the cumsum is kept in memory, from which to can move forward or backward.
+ *      -   All chunks are assembled to one big array.
+ *      -   The random number generated by the pcg32 algorithm.
+ *
+ * @tparam Generator Storage of the generator array, e.g. prrng::pcg32_tensor<N>.
+ * @tparam Data Storage of the data, e.g. xt::xtensor<double, N + n>.
+ * @tparam Index Storage of the index, e.g. xt::xtensor<ptrdiff_t, N>.
+ */
+template <class Generator, class Data, class Index>
+class pcg32_arrayBase_cumsum : public pcg32_arrayBase_chunkBase<Generator, Data, Index, true> {
+protected:
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_align;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_data;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_draw;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_extendible;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_gen;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_i;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_n;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_start;
+    using pcg32_arrayBase_chunkBase<Generator, Data, Index, true>::m_sum;
+
+public:
+    using size_type = typename Data::size_type; ///< Size type of the data container.
+
+    pcg32_arrayBase_cumsum() = default;
+    virtual ~pcg32_arrayBase_cumsum() = default;
+
+    // TODO: rename align_at_value ?
+    /**
+     * @copydoc prrng::pcg32_cumsum::align(double)
+     */
+    template <class T>
+    void align(const T& target)
+    {
+        PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
+
+        if (!m_extendible) {
+            PRRNG_ASSERT(this->contains(target));
+            inplace::lower_bound(m_data, target, m_i);
+            return;
+        }
+
+        for (size_t i = 0; i < m_gen.size(); ++i) {
+            detail::align(
+                m_gen[i],
+                m_draw[i],
+                m_sum[i],
+                m_align,
+                &m_data.flat(i * m_n),
+                m_n,
+                &m_start.flat(i),
+                &m_i.flat(i),
+                target.flat(i));
+        }
+    }
+
+    // todo: overload with array index
+
+    /**
+     * @copydoc prrng::pcg32_cumsum::align(double)
+     * @param i Flat index of the item to align.
+     */
+    void align(size_t i, double target)
+    {
+        if (!m_extendible) {
+            PRRNG_ASSERT(this->contains(target));
+            m_i.flat(i) = iterator::lower_bound(
+                &m_data.flat(i * m_n), &m_data.flat(i * m_n) + m_n, target, m_i.flat(i));
+            return;
+        }
+
+        detail::align(
+            m_gen[i],
+            m_draw[i],
+            m_sum[i],
+            m_align,
+            &m_data.flat(i * m_n),
+            m_n,
+            &m_start.flat(i),
+            &m_i.flat(i),
+            target);
+    }
 
     /**
      * @copydoc prrng::pcg32_cumsum::restore(uint64_t, double, ptrdiff_t)
@@ -6245,13 +6552,63 @@ public:
 };
 
 /**
- * @brief Array of generators of a random cumulative sum.
+ * @brief Array of generators of which a chunk of the random sequence is kept in memory.
+ * @copydetails pcg32_array_chunk
+ */
+template <class Data, class Index>
+class pcg32_array_chunk : public pcg32_arrayBase_chunk<pcg32_index_array, Data, Index> {
+public:
+    pcg32_array_chunk() = default;
+
+    /**
+     * @copydoc prrng::pcg32_array_cumsum::pcg32_array_cumsum
+     */
+    template <class S, class T, class U>
+    pcg32_array_chunk(
+        const S& shape,
+        const T& initstate,
+        const U& initseq,
+        enum distribution distribution,
+        const std::vector<double>& parameters,
+        const alignment& align = alignment())
+    {
+        this->init(shape, initstate, initseq, distribution, parameters, align);
+    }
+};
+
+/**
+ * @brief Array of generators of which a chunk of the random sequence is kept in memory.
+ * @copydetails pcg32_tensor_chunk
+ */
+template <class Data, class Index, size_t N>
+class pcg32_tensor_chunk : public pcg32_arrayBase_chunk<pcg32_index_tensor<N>, Data, Index> {
+public:
+    pcg32_tensor_chunk() = default;
+
+    /**
+     * @copydoc prrng::pcg32_tensor_cumsum::pcg32_tensor_cumsum
+     */
+    template <class S, class T, class U>
+    pcg32_tensor_chunk(
+        const S& shape,
+        const T& initstate,
+        const U& initseq,
+        enum distribution distribution,
+        const std::vector<double>& parameters,
+        const alignment& align = alignment())
+    {
+        this->init(shape, initstate, initseq, distribution, parameters, align);
+    }
+};
+
+/**
+ * @brief Array of generators of a random cumulative sum, see prrng::pcg32_cumsum().
+ *
+ * @details
  * A chunk is kept in memory for each generator, whereby all chunks are assembled to one big array.
  * For example, if `initstate.shape == [a, b, c]` generators are used, and the shape of the chunk
  * `shape = [m, n]`, the shape of the chunk kept in memory `[a, b, c, m, n]`.
  * The random number generated by the pcg32 algorithm.
- *
- * See prrng::pcg32_cumsum() for features.
  *
  * @tparam Data Storage of the chunk ('data'), e.g. `xt::xarray<double>`.
  * @tparam Index Storage of a 'column' index in the chunk, e.g. `xt::xarray<ptrdiff_t>`.
@@ -6262,8 +6619,11 @@ public:
     pcg32_array_cumsum() = default;
 
     /**
-     * @copydoc prrng::pcg32_arrayBase_cumsum::init(const S&, const T&, const U&,
-     *      enum distribution, const std::vector<double>&, const alignment&)
+     * @param shape Shape of the chunk to keep in memory per generator.
+     * @param initstate State initiator for every item.
+     * @param initseq Sequence initiator for every item.
+     * @copydoc default_parameters
+     * @param align Alignment parameters, see prrng::alignment().
      */
     template <class S, class T, class U>
     pcg32_array_cumsum(
@@ -6279,13 +6639,13 @@ public:
 };
 
 /**
- * @brief Array of generators of a random cumulative sum.
+ * @brief Array of generators of a random cumulative sum, see prrng::pcg32_cumsum().
+ *
+ * @details
  * A chunk is kept in memory for each generator, whereby all chunks are assembled to one big array.
  * For example, if `initstate.shape == [a, b, c]` generators are used, and the shape of the chunk
  * `shape = [m, n]`, the shape of the chunk kept in memory `[a, b, c, m, n]`.
  * The random number generated by the pcg32 algorithm.
- *
- * See prrng::pcg32_cumsum() for features.
  *
  * @tparam Data Storage of the data, e.g. `xt::tensor<double, N + n>`.
  * @tparam Index Storage of a 'column' index in the chunk, e.g. `xt::tensor<ptrdiff_t, N>`.
@@ -6297,8 +6657,7 @@ public:
     pcg32_tensor_cumsum() = default;
 
     /**
-     * @copydoc prrng::pcg32_arrayBase_cumsum::init(const S&, const T&, const U&,
-     *      enum distribution, const std::vector<double>&, const alignment&)
+     * @copydoc prrng::pcg32_array_cumsum::pcg32_array_cumsum
      */
     template <class S, class T, class U>
     pcg32_tensor_cumsum(

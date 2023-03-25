@@ -325,7 +325,7 @@ void init_pcg32_arrayBase(C& cls)
 }
 
 template <class C, class Parent, class Data, class State, class Value, class Index>
-void init_pcg32_arrayBase_cumsum(C& cls)
+void init_pcg32_arrayBase_chunkBase(C& cls)
 {
     cls.def(py::self += Data());
     cls.def(py::self -= Data());
@@ -340,16 +340,6 @@ void init_pcg32_arrayBase_cumsum(C& cls)
     cls.def_property_readonly("index_at_align", &Parent::index_at_align);
     cls.def_property_readonly("chunk_index_at_align", &Parent::chunk_index_at_align);
 
-    cls.def_property_readonly(
-        "left_of_align", py::overload_cast<>(&Parent::template left_of_align<Value>, py::const_));
-    cls.def_property_readonly(
-        "right_of_align", py::overload_cast<>(&Parent::template right_of_align<Value>, py::const_));
-
-    // deprecated
-    cls.def_property_readonly("index", &Parent::index);
-    // deprecated
-    cls.def_property_readonly("chunk_index", &Parent::chunk_index);
-
     cls.def(
         "state_at",
         &Parent::template state_at<State, Index>,
@@ -357,6 +347,33 @@ void init_pcg32_arrayBase_cumsum(C& cls)
         "See :cpp:func:`prrng::pcg32_arrayBase::state_at`.",
         py::arg("index"));
 
+    cls.def("align_at", &Parent::align_at, py::arg("index"));
+
+    // deprecated
+    cls.def_property_readonly("index", &Parent::index);
+    // deprecated
+    cls.def_property_readonly("chunk_index", &Parent::chunk_index);
+
+    cls.def_property_readonly(
+        "left_of_align", py::overload_cast<>(&Parent::template left_of_align<Value>, py::const_));
+    cls.def_property_readonly(
+        "right_of_align", py::overload_cast<>(&Parent::template right_of_align<Value>, py::const_));
+}
+
+template <class C, class Parent, class Data, class State, class Value, class Index>
+void init_pcg32_arrayBase_chunk(C& cls)
+{
+    cls.def(
+        "restore",
+        &Parent::template restore<State, Index>,
+        "Restore state.",
+        py::arg("state"),
+        py::arg("index"));
+}
+
+template <class C, class Parent, class Data, class State, class Value, class Index>
+void init_pcg32_arrayBase_cumsum(C& cls)
+{
     cls.def(
         "restore",
         &Parent::template restore<State, Value, Index>,
@@ -1242,6 +1259,109 @@ PYBIND11_MODULE(_prrng, m)
     {
         using Data = xt::pyarray<double>;
         using Index = xt::pyarray<ptrdiff_t>;
+        using Parent = prrng::pcg32_array_chunk<Data, Index>;
+        using State = xt::pyarray<uint64_t>;
+        using Value = xt::pyarray<double>;
+        using Class = py::class_<Parent>;
+
+        Class cls(m, "pcg32_array_chunk");
+
+        cls.def(
+            py::init<
+                const std::vector<size_t>&,
+                const State&,
+                const State&,
+                prrng::distribution,
+                const std::vector<double>&,
+                const prrng::alignment&>(),
+            "Random number generator. "
+            "See :cpp:class:`prrng::pcg32_array`.",
+            py::arg("shape"),
+            py::arg("initstate"),
+            py::arg("initseq"),
+            py::arg("distribution"),
+            py::arg("parameters"),
+            py::arg("align") = prrng::alignment());
+
+        init_pcg32_arrayBase_chunkBase<Class, Parent, Data, State, Value, Index>(cls);
+        init_pcg32_arrayBase_chunk<Class, Parent, Data, State, Value, Index>(cls);
+
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_array_chunk>"; });
+    }
+
+    {
+        using Data = xt::pytensor<double, 2>;
+        using Index = xt::pytensor<ptrdiff_t, 1>;
+        using Parent = prrng::pcg32_tensor_chunk<Data, Index, 1>;
+        using State = xt::pytensor<uint64_t, 1>;
+        using Value = xt::pytensor<double, 1>;
+        using Class = py::class_<Parent>;
+
+        Class cls(m, "pcg32_tensor_chunk_1_1");
+
+        cls.def(
+            py::init<
+                const std::array<size_t, 1>&,
+                const State&,
+                const State&,
+                prrng::distribution,
+                const std::vector<double>&,
+                const prrng::alignment&>(),
+            "Chunk of size ``[c]`` of cumulative sum of ``[n]`` random number generators. "
+            "The chunk can be interpreted as a matrix of shape ``[c, m]``."
+            "See :cpp:class:`prrng::pcg32_tensor_chunk`.",
+            py::arg("shape"),
+            py::arg("initstate"),
+            py::arg("initseq"),
+            py::arg("distribution"),
+            py::arg("parameters"),
+            py::arg("align") = prrng::alignment());
+
+        init_pcg32_arrayBase_chunkBase<Class, Parent, Data, State, Value, Index>(cls);
+        init_pcg32_arrayBase_chunk<Class, Parent, Data, State, Value, Index>(cls);
+
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_tensor_chunk_1_1>"; });
+    }
+
+    {
+        // rank generators N = 2
+        // rank data n = 1
+        using Data = xt::pytensor<double, 3>; // N + n
+        using Index = xt::pytensor<ptrdiff_t, 2>; // N
+        using Parent = prrng::pcg32_tensor_chunk<Data, Index, 2>; // N
+        using State = xt::pytensor<uint64_t, 2>; // N
+        using Value = xt::pytensor<double, 2>; // N
+        using Class = py::class_<Parent>;
+
+        Class cls(m, "pcg32_tensor_chunk_2_1");
+
+        cls.def(
+            py::init<
+                const std::array<size_t, 1>&,
+                const State&,
+                const State&,
+                prrng::distribution,
+                const std::vector<double>&,
+                const prrng::alignment&>(),
+            "Chunk of size ``[c, d]`` of cumulative sum of ``[n]`` random number generators. "
+            "The chunk can be interpreted as a matrix of shape ``[c, d, m]``."
+            "See :cpp:class:`prrng::pcg32_tensor_chunk`.",
+            py::arg("shape"),
+            py::arg("initstate"),
+            py::arg("initseq"),
+            py::arg("distribution"),
+            py::arg("parameters"),
+            py::arg("align") = prrng::alignment());
+
+        init_pcg32_arrayBase_chunkBase<Class, Parent, Data, State, Value, Index>(cls);
+        init_pcg32_arrayBase_chunk<Class, Parent, Data, State, Value, Index>(cls);
+
+        cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_tensor_chunk_2_1>"; });
+    }
+
+    {
+        using Data = xt::pyarray<double>;
+        using Index = xt::pyarray<ptrdiff_t>;
         using Parent = prrng::pcg32_array_cumsum<Data, Index>;
         using State = xt::pyarray<uint64_t>;
         using Value = xt::pyarray<double>;
@@ -1266,6 +1386,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("parameters"),
             py::arg("align") = prrng::alignment());
 
+        init_pcg32_arrayBase_chunkBase<Class, Parent, Data, State, Value, Index>(cls);
         init_pcg32_arrayBase_cumsum<Class, Parent, Data, State, Value, Index>(cls);
 
         cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_array_cumsum>"; });
@@ -1299,6 +1420,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("parameters"),
             py::arg("align") = prrng::alignment());
 
+        init_pcg32_arrayBase_chunkBase<Class, Parent, Data, State, Value, Index>(cls);
         init_pcg32_arrayBase_cumsum<Class, Parent, Data, State, Value, Index>(cls);
 
         cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_tensor_cumsum_1_1>"; });
@@ -1334,6 +1456,7 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("parameters"),
             py::arg("align") = prrng::alignment());
 
+        init_pcg32_arrayBase_chunkBase<Class, Parent, Data, State, Value, Index>(cls);
         init_pcg32_arrayBase_cumsum<Class, Parent, Data, State, Value, Index>(cls);
 
         cls.def("__repr__", [](const Parent&) { return "<prrng.pcg32_tensor_cumsum_2_1>"; });
