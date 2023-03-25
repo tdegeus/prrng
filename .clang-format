@@ -18,6 +18,11 @@ PenaltyBreakBeforeFirstCallParameter: 1
 PenaltyReturnTypeOnItsOwnLine: 100
 PointerBindsToType: true
 BreakBeforeBraces: Stroustrup
+RemoveSemicolon: true
+InsertNewlineAtEOF: true
+
+# https://stackoverflow.com/questions/74977150/make-clang-format-break-after-the-usage-of-c-attributes
+BreakAfterAttributes: Always
 
 # Do not align consecutive comments that follow a line of code
 AlignTrailingComments: false

@@ -5,9 +5,10 @@ import numpy as np
 import prrng
 
 seed = int(time.time())
+np.random.seed(seed)
 
 
-class Test_pcg32_cumum(unittest.TestCase):
+class Test_pcg32_cumsum(unittest.TestCase):
     def test_random(self):
         """
         Chunked storage: random
@@ -305,7 +306,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         scale = 5
         offset = 0.1
         N = 6
-        initstate = np.arange(N, dtype=np.uint64)
+        initstate = seed + np.arange(N, dtype=np.uint64)
         seq = np.zeros_like(initstate)
         ref = prrng.pcg32_array(initstate, seq)
         x0 = ref.random([]).reshape(-1, 1)
@@ -347,6 +348,48 @@ class Test_pcg32_cumum(unittest.TestCase):
         chunk.align(target)
         self.assertTrue(np.all(chunk.index_at_align == i))
 
+    def test_array_random_align_at(self):
+        """
+        Array: random.
+        """
+
+        scale = 5
+        offset = 0.1
+        N = 6
+        initstate = seed + np.arange(N, dtype=np.uint64)
+        seq = np.zeros_like(initstate)
+        ref = prrng.pcg32_array(initstate, seq)
+        xref = np.cumsum(offset + scale * ref.random([10000]), axis=1)
+
+        n = 100
+        margin = 15
+        align = prrng.alignment(margin=margin, strict=True)
+        chunk = prrng.pcg32_array_cumsum([n], initstate, seq, prrng.random, [scale, offset], align)
+        self.assertTrue(np.allclose(xref[..., :n], chunk.data))
+        self.assertTrue(np.allclose(xref[np.arange(N), chunk.start], chunk.data[..., 0]))
+        check = np.empty([N, n], dtype=np.float64)
+        h = 4 * n
+        indices = np.vstack(
+            (
+                np.sort(np.random.randint(margin, high=h, size=[10, N], dtype=int), axis=0),
+                np.sort(np.random.randint(margin, high=h, size=[10, N], dtype=int), axis=0)[::-1],
+                np.random.randint(margin, high=xref.shape[1] - 1 - n, size=[10, N], dtype=int),
+            )
+        )
+
+        for index in indices:
+            x0 = xref[np.arange(N), index]
+            chunk.align_at(index)
+            for i in range(N):
+                check[i, :] = xref[i, chunk.start[i] : chunk.start[i] + n]
+
+            self.assertTrue(np.allclose(x0, chunk.left_of_align))
+            self.assertTrue(np.allclose(chunk.data, check))
+
+            chunk.align_at(index)
+            self.assertTrue(np.allclose(x0, chunk.left_of_align))
+            self.assertTrue(np.allclose(chunk.data, check))
+
     def test_array_delta(self):
         """
         Array: delta.
@@ -355,7 +398,7 @@ class Test_pcg32_cumum(unittest.TestCase):
         scale = 5
         offset = 0.1
         N = 6
-        initstate = np.arange(N, dtype=np.uint64)
+        initstate = seed + np.arange(N, dtype=np.uint64)
         seq = np.zeros_like(initstate)
         ref = prrng.pcg32_array(initstate, seq)
         state = ref.state()
