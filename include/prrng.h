@@ -5161,7 +5161,7 @@ protected:
     template <class T, class U>
     void init(const T& initstate, const U& initseq)
     {
-        PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
+        PRRNG_ASSERT(xt::has_shape(initstate, initseq.shape()));
 
         std::copy(initstate.shape().cbegin(), initstate.shape().cend(), m_shape.begin());
         std::copy(initstate.strides().cbegin(), initstate.strides().cend(), m_strides.begin());
@@ -5897,7 +5897,7 @@ protected:
         const std::vector<double>& parameters,
         const alignment& align = alignment())
     {
-        PRRNG_ASSERT(xt::same_shape(initstate.shape(), initseq.shape()));
+        PRRNG_ASSERT(xt::has_shape(initstate, initseq.shape()));
         using shape_type = typename S::value_type;
 
         m_align = align;
@@ -6225,7 +6225,7 @@ public:
      */
     void set_start(const Index& index)
     {
-        PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(index, m_gen.shape()));
         xt::noalias(m_start) = index;
     }
 
@@ -6240,7 +6240,7 @@ public:
      */
     void align_at(const Index& index)
     {
-        PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(index, m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             if constexpr (!is_cumsum) {
@@ -6363,7 +6363,7 @@ public:
     template <class R, class T>
     R state_at(const T& index)
     {
-        PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(index, m_gen.shape()));
 
         using value_type = typename R::value_type;
         R ret = R::from_shape(m_gen.shape());
@@ -6406,8 +6406,8 @@ public:
     template <class S, class T>
     void restore(const S& state, const T& index)
     {
-        PRRNG_ASSERT(xt::same_shape(state.shape(), m_gen.shape()));
-        PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(state, m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(index, m_gen.shape()));
         xt::noalias(m_start) = index;
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
@@ -6460,7 +6460,7 @@ public:
     template <class T>
     void align(const T& target)
     {
-        PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(target, m_gen.shape()));
 
         if (!m_extendible) {
             PRRNG_ASSERT(this->contains(target));
@@ -6491,7 +6491,8 @@ public:
     void align(size_t i, double target)
     {
         if (!m_extendible) {
-            PRRNG_ASSERT(this->contains(target));
+            PRRNG_ASSERT(
+                target >= m_data.flat(i * m_n) && target <= m_data.flat((i + 1) * m_n - 1));
             m_i.flat(i) = iterator::lower_bound(
                 &m_data.flat(i * m_n), &m_data.flat(i * m_n) + m_n, target, m_i.flat(i));
             return;
@@ -6515,9 +6516,9 @@ public:
     template <class S, class V, class T>
     void restore(const S& state, const V& value, const T& index)
     {
-        PRRNG_ASSERT(xt::same_shape(state.shape(), m_gen.shape()));
-        PRRNG_ASSERT(xt::same_shape(value.shape(), m_gen.shape()));
-        PRRNG_ASSERT(xt::same_shape(index.shape(), m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(state, m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(value, m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(index, m_gen.shape()));
         xt::noalias(m_start) = index;
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
@@ -6538,7 +6539,7 @@ public:
     template <class T>
     bool contains(const T& target) const
     {
-        PRRNG_ASSERT(xt::same_shape(target.shape(), m_gen.shape()));
+        PRRNG_ASSERT(xt::has_shape(target, m_gen.shape()));
 
         for (size_t i = 0; i < m_gen.size(); ++i) {
             if (target.flat(i) < m_data.flat(i * m_n) ||
