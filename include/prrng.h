@@ -5913,8 +5913,7 @@ protected:
         std::copy(initstate.shape().begin(), initstate.shape().end(), data_shape.begin());
         std::copy(shape.begin(), shape.end(), data_shape.begin() + initstate.dimension());
         m_data = xt::empty<typename Data::value_type>(data_shape);
-        m_n = static_cast<size_t>(
-            std::accumulate(shape.cbegin(), shape.cend(), 1, std::multiplies<shape_type>{}));
+        m_n = m_data.size() / initstate.size();
 
         m_start = xt::zeros<typename Index::value_type>(m_gen.shape());
         m_i = m_n * xt::ones<typename Index::value_type>(m_gen.shape());
