@@ -215,7 +215,7 @@ enum distribution {
  *      -   prrng::distribution::gamma: {k = 1, scale = 1, offset = 0}
  *      -   prrng::distribution::pareto: {k = 1, scale = 1, offset = 0}
  *      -   prrng::distribution::weibull: {k = 1, scale = 1, offset = 0}
- *      -   prrng::distribution::normal: {mu = 1, sigma = , offset = 0}
+ *      -   prrng::distribution::normal: {mu = 1, sigma = 0, offset = 0}
  *      -   prrng::distribution::custom: {}
  */
 
