@@ -70,8 +70,8 @@
 #define PRRNG_ASSERT_IMPL(expr, file, line) \
     if (!(expr)) { \
         throw std::runtime_error( \
-            std::string(file) + ':' + std::to_string(line) + \
-            ": assertion failed (" #expr ") \n\t"); \
+            std::string(file) + ':' + std::to_string(line) + ": assertion failed (" #expr ") \n\t" \
+        ); \
     }
 
 #define PRRNG_WARNING_IMPL(message, file, line, function) \
@@ -224,7 +224,8 @@ enum distribution {
  */
 std::vector<double> default_parameters(
     enum distribution distribution,
-    const std::vector<double>& parameters = std::vector<double>{})
+    const std::vector<double>& parameters = std::vector<double>{}
+)
 {
     std::vector<double> ret;
     switch (distribution) {
@@ -568,20 +569,23 @@ inline std::vector<std::string> version_dependencies()
     ret.push_back(
         "xtensor=" + detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_VERSION_MAJOR))) + "." +
         detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_VERSION_MINOR))) + "." +
-        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_VERSION_PATCH))));
+        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_VERSION_PATCH)))
+    );
 
 #ifdef XSIMD_VERSION_MAJOR
     ret.push_back(
         "xsimd=" + detail::unquote(std::string(PRRNG_QUOTE(XSIMD_VERSION_MAJOR))) + "." +
         detail::unquote(std::string(PRRNG_QUOTE(XSIMD_VERSION_MINOR))) + "." +
-        detail::unquote(std::string(PRRNG_QUOTE(XSIMD_VERSION_PATCH))));
+        detail::unquote(std::string(PRRNG_QUOTE(XSIMD_VERSION_PATCH)))
+    );
 #endif
 
 #ifdef XTL_VERSION_MAJOR
     ret.push_back(
         "xtl=" + detail::unquote(std::string(PRRNG_QUOTE(XTL_VERSION_MAJOR))) + "." +
         detail::unquote(std::string(PRRNG_QUOTE(XTL_VERSION_MINOR))) + "." +
-        detail::unquote(std::string(PRRNG_QUOTE(XTL_VERSION_PATCH))));
+        detail::unquote(std::string(PRRNG_QUOTE(XTL_VERSION_PATCH)))
+    );
 #endif
 
 #if defined(XTENSOR_PYTHON_VERSION_MAJOR)
@@ -589,14 +593,16 @@ inline std::vector<std::string> version_dependencies()
         "xtensor-python=" +
         detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_PYTHON_VERSION_MAJOR))) + "." +
         detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_PYTHON_VERSION_MINOR))) + "." +
-        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_PYTHON_VERSION_PATCH))));
+        detail::unquote(std::string(PRRNG_QUOTE(XTENSOR_PYTHON_VERSION_PATCH)))
+    );
 #endif
 
 #ifdef BOOST_VERSION
     ret.push_back(
         "boost=" + detail::unquote(std::to_string(BOOST_VERSION / 100000)) + "." +
         detail::unquote(std::to_string((BOOST_VERSION / 100) % 1000)) + "." +
-        detail::unquote(std::to_string(BOOST_VERSION % 100)));
+        detail::unquote(std::to_string(BOOST_VERSION % 100))
+    );
 #endif
 
     std::sort(ret.begin(), ret.end(), std::greater<std::string>());
@@ -641,14 +647,16 @@ inline std::vector<std::string> version_compiler()
     ret.push_back(
         "clang=" + detail::unquote(std::string(PRRNG_QUOTE(__clang_major__))) + "." +
         detail::unquote(std::string(PRRNG_QUOTE(__clang_minor__))) + "." +
-        detail::unquote(std::string(PRRNG_QUOTE(__clang_patchlevel__))));
+        detail::unquote(std::string(PRRNG_QUOTE(__clang_patchlevel__)))
+    );
 #endif
 
 #ifdef __GNUC__
     ret.push_back(
         "gcc=" + detail::unquote(std::string(PRRNG_QUOTE(__GNUC__))) + "." +
         detail::unquote(std::string(PRRNG_QUOTE(__GNUC_MINOR__))) + "." +
-        detail::unquote(std::string(PRRNG_QUOTE(__GNUC_PATCHLEVEL__))));
+        detail::unquote(std::string(PRRNG_QUOTE(__GNUC_PATCHLEVEL__)))
+    );
 #endif
 
 #ifdef _MSC_VER
@@ -747,7 +755,8 @@ lower_bound(const T& matrix, const V& value, R& index, typename R::value_type pr
             &matrix.flat(i * stride) + stride,
             value.flat(i),
             index.flat(i),
-            proximity);
+            proximity
+        );
     }
 }
 
@@ -914,7 +923,8 @@ void chunk_align_at(
     double* data,
     ptrdiff_t size,
     ptrdiff_t* start,
-    ptrdiff_t index)
+    ptrdiff_t index
+)
 {
     ptrdiff_t ichunk = index - *start;
 
@@ -957,7 +967,8 @@ void cumsum_align_at(
     double* data,
     ptrdiff_t size,
     ptrdiff_t* start,
-    ptrdiff_t index)
+    ptrdiff_t index
+)
 {
     ptrdiff_t ichunk = index - *start;
 
@@ -1047,7 +1058,8 @@ void prev(
     ptrdiff_t margin,
     double* data,
     ptrdiff_t size,
-    ptrdiff_t* start)
+    ptrdiff_t* start
+)
 {
     using R = decltype(get_chunk(size_t{}));
 
@@ -1083,7 +1095,8 @@ void next(
     ptrdiff_t margin,
     double* data,
     ptrdiff_t size,
-    ptrdiff_t* start)
+    ptrdiff_t* start
+)
 {
     using R = decltype(get_chunk(size_t{}));
     PRRNG_ASSERT(margin < size);
@@ -1126,7 +1139,8 @@ void align(
     ptrdiff_t* start,
     ptrdiff_t* i,
     double target,
-    bool recursive = false)
+    bool recursive = false
+)
 {
     using R = decltype(get_chunk(size_t{}));
 
@@ -2498,7 +2512,8 @@ public:
     double draw(
         enum prrng::distribution distribution,
         std::vector<double> parameters = std::vector<double>{},
-        bool append_default = true)
+        bool append_default = true
+    )
     {
         if (append_default) {
             parameters = default_parameters(distribution, parameters);
@@ -2544,7 +2559,8 @@ public:
         const S& shape,
         enum prrng::distribution distribution,
         std::vector<double> parameters = std::vector<double>{},
-        bool append_default = true)
+        bool append_default = true
+    )
     {
         if (append_default) {
             parameters = default_parameters(distribution, parameters);
@@ -2589,7 +2605,8 @@ public:
         size_t n,
         enum prrng::distribution distribution,
         std::vector<double> parameters = std::vector<double>{},
-        bool append_default = true)
+        bool append_default = true
+    )
     {
         if (append_default) {
             parameters = default_parameters(distribution, parameters);
@@ -2630,7 +2647,8 @@ private:
     {
         static_assert(
             std::is_same<typename detail::allocate_return<R>::value_type, double>::value,
-            "Return value_type must be double");
+            "Return value_type must be double"
+        );
 
         detail::allocate_return<R> ret(shape);
         this->draw_list(ret.data(), ret.size());
@@ -2643,7 +2661,8 @@ private:
         static_assert(
             std::numeric_limits<typename detail::allocate_return<R>::value_type>::max() >=
                 std::numeric_limits<T>::max(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         PRRNG_ASSERT(high >= 0);
         PRRNG_ASSERT(static_cast<uint32_t>(high) < std::numeric_limits<uint32_t>::max());
@@ -2661,22 +2680,26 @@ private:
         static_assert(
             std::numeric_limits<typename detail::allocate_return<R>::value_type>::min() >=
                 std::numeric_limits<T>::min(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         static_assert(
             std::numeric_limits<typename detail::allocate_return<R>::value_type>::max() >=
                 std::numeric_limits<T>::max(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         static_assert(
             std::numeric_limits<typename detail::allocate_return<R>::value_type>::min() >=
                 std::numeric_limits<U>::min(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         static_assert(
             std::numeric_limits<typename detail::allocate_return<R>::value_type>::max() >=
                 std::numeric_limits<U>::max(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         PRRNG_ASSERT(high - low >= 0);
         PRRNG_ASSERT(static_cast<uint32_t>(high - low) < std::numeric_limits<uint32_t>::max());
@@ -2980,11 +3003,13 @@ public:
     {
         static_assert(
             std::numeric_limits<R>::max() >= std::numeric_limits<decltype(m_state)>::max(),
-            "Down-casting not allowed.");
+            "Down-casting not allowed."
+        );
 
         static_assert(
             std::numeric_limits<R>::min() <= std::numeric_limits<decltype(m_state)>::min(),
-            "Down-casting not allowed.");
+            "Down-casting not allowed."
+        );
 
         return static_cast<R>(m_state);
     }
@@ -3010,11 +3035,13 @@ public:
     {
         static_assert(
             std::numeric_limits<R>::max() >= std::numeric_limits<decltype(m_initstate)>::max(),
-            "Down-casting not allowed.");
+            "Down-casting not allowed."
+        );
 
         static_assert(
             std::numeric_limits<R>::min() <= std::numeric_limits<decltype(m_initstate)>::min(),
-            "Down-casting not allowed.");
+            "Down-casting not allowed."
+        );
 
         return static_cast<R>(m_initstate);
     }
@@ -3040,11 +3067,13 @@ public:
     {
         static_assert(
             std::numeric_limits<R>::max() >= std::numeric_limits<decltype(m_initseq)>::max(),
-            "Down-casting not allowed.");
+            "Down-casting not allowed."
+        );
 
         static_assert(
             std::numeric_limits<R>::min() <= std::numeric_limits<decltype(m_initseq)>::min(),
-            "Down-casting not allowed.");
+            "Down-casting not allowed."
+        );
 
         return static_cast<R>(m_initseq);
     }
@@ -3294,7 +3323,8 @@ public:
     pcg32_index(
         T initstate = PRRNG_PCG32_INITSTATE,
         S initseq = PRRNG_PCG32_INITSEQ,
-        bool delta = false)
+        bool delta = false
+    )
     {
         static_assert(sizeof(uint64_t) >= sizeof(T), "Down-casting not allowed.");
         static_assert(sizeof(uint64_t) >= sizeof(S), "Down-casting not allowed.");
@@ -3402,7 +3432,8 @@ struct alignment {
         ptrdiff_t buffer = 0,
         ptrdiff_t margin = 0,
         ptrdiff_t min_margin = 0,
-        bool strict = false)
+        bool strict = false
+    )
     {
         this->buffer = buffer;
         this->margin = margin;
@@ -3602,7 +3633,8 @@ public:
         S initseq = PRRNG_PCG32_INITSEQ,
         enum distribution distribution = distribution::custom,
         const std::vector<double>& parameters = std::vector<double>{},
-        const alignment& align = alignment())
+        const alignment& align = alignment()
+    )
     {
         m_data = xt::empty<typename Data::value_type>(shape);
         m_gen = pcg32_index(initstate, initseq, distribution == distribution::delta);
@@ -3632,7 +3664,8 @@ public:
     void set_functions(
         std::function<Data(size_t)> get_chunk,
         std::function<double(size_t)> get_cumsum,
-        bool uses_generator = true)
+        bool uses_generator = true
+    )
     {
         m_extendible = true;
         m_draw = get_chunk;
@@ -3920,7 +3953,8 @@ public:
         }
 
         detail::align(
-            m_gen, m_draw, m_sum, m_align, m_data.data(), m_data.size(), &m_start, &m_i, target);
+            m_gen, m_draw, m_sum, m_align, m_data.data(), m_data.size(), &m_start, &m_i, target
+        );
     }
 };
 
@@ -4808,7 +4842,8 @@ public:
     void decide(const P& p, R& ret)
     {
         static_assert(
-            std::is_same<typename R::value_type, bool>::value, "Return value_type must be bool");
+            std::is_same<typename R::value_type, bool>::value, "Return value_type must be bool"
+        );
 
         PRRNG_ASSERT(xt::has_shape(p, m_shape));
         PRRNG_ASSERT(xt::has_shape(p, ret.shape()));
@@ -4861,7 +4896,8 @@ public:
     void decide_masked(const P& p, const T& mask, R& ret)
     {
         static_assert(
-            std::is_same<typename R::value_type, bool>::value, "Return value_type must be bool");
+            std::is_same<typename R::value_type, bool>::value, "Return value_type must be bool"
+        );
 
         PRRNG_ASSERT(xt::has_shape(p, m_shape));
         PRRNG_ASSERT(xt::has_shape(p, mask.shape()));
@@ -4874,8 +4910,8 @@ private:
     R random_impl(const S& ishape)
     {
         static_assert(
-            std::is_same<typename R::value_type, double>::value,
-            "Return value_type must be double");
+            std::is_same<typename R::value_type, double>::value, "Return value_type must be double"
+        );
 
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
@@ -4888,11 +4924,12 @@ private:
     {
         static_assert(
             std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<T>::max(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         static_assert(
-            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(),
-            "Bound too large");
+            std::numeric_limits<T>::max() <= std::numeric_limits<uint32_t>::max(), "Bound too large"
+        );
 
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
@@ -4907,24 +4944,29 @@ private:
     {
         static_assert(
             std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<T>::max(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         static_assert(
             std::numeric_limits<typename R::value_type>::min() >= std::numeric_limits<T>::min(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         static_assert(
             std::numeric_limits<typename R::value_type>::max() >= std::numeric_limits<U>::max(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         static_assert(
             std::numeric_limits<typename R::value_type>::min() >= std::numeric_limits<U>::min(),
-            "Return value_type must must be able to accommodate the bound");
+            "Return value_type must must be able to accommodate the bound"
+        );
 
         static_assert(
             static_cast<uint32_t>(std::numeric_limits<T>::max()) <
                 std::numeric_limits<uint32_t>::max(),
-            "Bound too large");
+            "Bound too large"
+        );
 
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
@@ -5895,7 +5937,8 @@ protected:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const alignment& align = alignment())
+        const alignment& align = alignment()
+    )
     {
         PRRNG_ASSERT(xt::has_shape(initstate, initseq.shape()));
         using shape_type = typename S::value_type;
@@ -6016,7 +6059,8 @@ protected:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
                     return m_gen[i].template gamma<R>(
-                               std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                               std::array<size_t, 1>{n}, m_param[0], m_param[1]
+                           ) +
                            m_param[2];
                 };
                 if constexpr (is_cumsum) {
@@ -6031,7 +6075,8 @@ protected:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
                     return m_gen[i].template pareto<R>(
-                               std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                               std::array<size_t, 1>{n}, m_param[0], m_param[1]
+                           ) +
                            m_param[2];
                 };
                 if constexpr (is_cumsum) {
@@ -6046,7 +6091,8 @@ protected:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
                     return m_gen[i].template weibull<R>(
-                               std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                               std::array<size_t, 1>{n}, m_param[0], m_param[1]
+                           ) +
                            m_param[2];
                 };
                 if constexpr (is_cumsum) {
@@ -6061,7 +6107,8 @@ protected:
             for (size_t i = 0; i < m_gen.size(); ++i) {
                 m_draw[i] = [this, i](size_t n) -> R {
                     return m_gen[i].template normal<R>(
-                               std::array<size_t, 1>{n}, m_param[0], m_param[1]) +
+                               std::array<size_t, 1>{n}, m_param[0], m_param[1]
+                           ) +
                            m_param[2];
                 };
                 if constexpr (is_cumsum) {
@@ -6250,7 +6297,8 @@ public:
                     &m_data.flat(i * m_n),
                     m_n,
                     &m_start.flat(i),
-                    index.flat(i));
+                    index.flat(i)
+                );
             }
             else {
                 detail::cumsum_align_at(
@@ -6261,7 +6309,8 @@ public:
                     &m_data.flat(i * m_n),
                     m_n,
                     &m_start.flat(i),
-                    index.flat(i));
+                    index.flat(i)
+                );
             }
         }
 
@@ -6477,7 +6526,8 @@ public:
                 m_n,
                 &m_start.flat(i),
                 &m_i.flat(i),
-                target.flat(i));
+                target.flat(i)
+            );
         }
     }
 
@@ -6491,9 +6541,11 @@ public:
     {
         if (!m_extendible) {
             PRRNG_ASSERT(
-                target >= m_data.flat(i * m_n) && target <= m_data.flat((i + 1) * m_n - 1));
+                target >= m_data.flat(i * m_n) && target <= m_data.flat((i + 1) * m_n - 1)
+            );
             m_i.flat(i) = iterator::lower_bound(
-                &m_data.flat(i * m_n), &m_data.flat(i * m_n) + m_n, target, m_i.flat(i));
+                &m_data.flat(i * m_n), &m_data.flat(i * m_n) + m_n, target, m_i.flat(i)
+            );
             return;
         }
 
@@ -6506,7 +6558,8 @@ public:
             m_n,
             &m_start.flat(i),
             &m_i.flat(i),
-            target);
+            target
+        );
     }
 
     /**
@@ -6570,7 +6623,8 @@ public:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const alignment& align = alignment())
+        const alignment& align = alignment()
+    )
     {
         this->init(shape, initstate, initseq, distribution, parameters, align);
     }
@@ -6595,7 +6649,8 @@ public:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const alignment& align = alignment())
+        const alignment& align = alignment()
+    )
     {
         this->init(shape, initstate, initseq, distribution, parameters, align);
     }
@@ -6632,7 +6687,8 @@ public:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const alignment& align = alignment())
+        const alignment& align = alignment()
+    )
     {
         this->init(shape, initstate, initseq, distribution, parameters, align);
     }
@@ -6666,7 +6722,8 @@ public:
         const U& initseq,
         enum distribution distribution,
         const std::vector<double>& parameters,
-        const alignment& align = alignment())
+        const alignment& align = alignment()
+    )
     {
         this->init(shape, initstate, initseq, distribution, parameters, align);
     }
