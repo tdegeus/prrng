@@ -3206,8 +3206,8 @@ public:
     /**
      * Draw uniformly distributed permutation and permute the given STL container.
      *
-     * @param begin
-     * @param end
+     * @param begin Iterator to the beginning of the container.
+     * @param end Iterator to the end of the container.
      *
      * \note From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
      *
