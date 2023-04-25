@@ -5,7 +5,6 @@ Language: Cpp
 DerivePointerAlignment: false
 PointerAlignment: Left
 AccessModifierOffset: -4
-AlignAfterOpenBracket: AlwaysBreak
 AlignConsecutiveAssignments: false
 AlignEscapedNewlines: DontAlign
 AllowShortBlocksOnASingleLine: false
@@ -20,6 +19,9 @@ PointerBindsToType: true
 BreakBeforeBraces: Stroustrup
 RemoveSemicolon: true
 InsertNewlineAtEOF: true
+
+# closing brace on new line
+AlignAfterOpenBracket: BlockIndent
 
 # https://stackoverflow.com/questions/74977150/make-clang-format-break-after-the-usage-of-c-attributes
 BreakAfterAttributes: Always
