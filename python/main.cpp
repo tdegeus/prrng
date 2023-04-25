@@ -1023,6 +1023,24 @@ PYBIND11_MODULE(_prrng, m)
             py::arg("distance"))
 
         .def(
+            "shuffle",
+            [](prrng::pcg32& self, xt::pyarray<int64_t>& array) {
+                self.shuffle(array.begin(), array.end());
+            },
+            "Shuffle array. "
+            "See :cpp:func:`prrng::pcg32::shuffle`.",
+            py::arg("array"))
+
+        .def(
+            "shuffle",
+            [](prrng::pcg32& self, xt::pyarray<double>& array) {
+                self.shuffle(array.begin(), array.end());
+            },
+            "Shuffle array. "
+            "See :cpp:func:`prrng::pcg32::shuffle`.",
+            py::arg("array"))
+
+        .def(
             "random",
             py::overload_cast<const std::vector<size_t>&>(
                 &prrng::pcg32::random<xt::pyarray<double>, std::vector<size_t>>),

@@ -44,6 +44,22 @@ class Test_pcg32_basic(unittest.TestCase):
 
         self.assertTrue(np.allclose(a[-1, ...], b))
 
+    def test_shuffle_int64(self):
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        a = np.arange(100, dtype=np.int64)
+        b = np.copy(a)
+        gen.shuffle(a)
+        self.assertFalse(np.allclose(a, b))
+
+    def test_shuffle_float64(self):
+        seed = int(time.time())
+        gen = prrng.pcg32(seed)
+        a = np.arange(100, dtype=np.float64)
+        b = np.copy(a)
+        gen.shuffle(a)
+        self.assertFalse(np.allclose(a, b))
+
     def test_pcg32_decide(self):
         seed = int(time.time())
         gen = prrng.pcg32(seed)
