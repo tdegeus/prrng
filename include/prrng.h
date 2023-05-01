@@ -2449,7 +2449,7 @@ public:
     {
 #if PRRNG_USE_BOOST
         return mu + sigma * std::sqrt(2.0) *
-                        boost::math::erf_inv<double>(2.0 * this->draw_double() - 1.0);
+                        boost::math::erf_inv<double>(2.0 * this->draw_positive_double() - 1.0);
 #else
         return std::numeric_limits<double>::quiet_NaN();
 #endif
@@ -2643,6 +2643,19 @@ public:
 
 private:
     template <class R, class S>
+    R positive_random_impl(const S& shape)
+    {
+        static_assert(
+            std::is_same<typename detail::allocate_return<R>::value_type, double>::value,
+            "Return value_type must be double"
+        );
+
+        detail::allocate_return<R> ret(shape);
+        this->draw_list_positive_double(ret.data(), ret.size());
+        return std::move(ret.value);
+    }
+
+    template <class R, class S>
     R random_impl(const S& shape)
     {
         static_assert(
@@ -2651,7 +2664,7 @@ private:
         );
 
         detail::allocate_return<R> ret(shape);
-        this->draw_list(ret.data(), ret.size());
+        this->draw_list_double(ret.data(), ret.size());
         return std::move(ret.value);
     }
 
@@ -2757,7 +2770,7 @@ private:
     template <class R, class S>
     R normal_impl(const S& shape, double mu, double sigma)
     {
-        R r = this->random_impl<R>(shape);
+        R r = this->positive_random_impl<R>(shape);
         return normal_distribution(mu, sigma).quantile(r);
     }
 
@@ -2772,12 +2785,34 @@ protected:
     }
 
     /**
+     * @brief Draw one random double.
+     * @return double
+     */
+    virtual double draw_positive_double()
+    {
+        return 0.5;
+    }
+
+    /**
      * Draw `n` random numbers and write them to list (input as pointer `data`).
      *
      * @param data Pointer to the data (no bounds-check).
      * @param n Size of `data`.
      */
-    virtual void draw_list(double* data, size_t n)
+    virtual void draw_list_double(double* data, size_t n)
+    {
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = 0.5;
+        }
+    }
+
+    /**
+     * Draw `n` random numbers and write them to list (input as pointer `data`).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param n Size of `data`.
+     */
+    virtual void draw_list_positive_double(double* data, size_t n)
     {
         for (size_t i = 0; i < n; ++i) {
             data[i] = 0.5;
@@ -2977,6 +3012,26 @@ public:
         } x;
 
         x.u = ((uint64_t)next_uint32() << 20) | 0x3ff0000000000000ULL;
+
+        return x.d - 1.0;
+    }
+
+    /**
+     * @brief Generate a double precision floating point value on the interval (0, 1).
+     * @return Next random number in sequence.
+     */
+    double next_positive_double()
+    {
+        union {
+            uint64_t u;
+            double d;
+        } x;
+
+        x.u = ((uint64_t)next_uint32() << 20) | 0x3ff0000000000000ULL;
+
+        if (x.u == 0x3ff0000000000000ULL) {
+            x.u += 1;
+        }
 
         return x.d - 1.0;
     }
@@ -3280,10 +3335,22 @@ protected:
         return next_double();
     }
 
-    void draw_list(double* data, size_t n) override
+    double draw_positive_double() override
+    {
+        return next_positive_double();
+    }
+
+    void draw_list_double(double* data, size_t n) override
     {
         for (size_t i = 0; i < n; ++i) {
             data[i] = next_double();
+        }
+    }
+
+    void draw_list_positive_double(double* data, size_t n) override
+    {
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = next_positive_double();
         }
     }
 
@@ -4907,6 +4974,19 @@ public:
 
 private:
     template <class R, class S>
+    R positive_random_impl(const S& ishape)
+    {
+        static_assert(
+            std::is_same<typename R::value_type, double>::value, "Return value_type must be double"
+        );
+
+        auto n = detail::size(ishape);
+        R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
+        this->draw_list_positive_double(&ret.front(), n);
+        return ret;
+    }
+
+    template <class R, class S>
     R random_impl(const S& ishape)
     {
         static_assert(
@@ -4915,7 +4995,7 @@ private:
 
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
-        this->draw_list(&ret.front(), n);
+        this->draw_list_double(&ret.front(), n);
         return ret;
     }
 
@@ -5022,7 +5102,7 @@ private:
     template <class R, class S>
     R normal_impl(const S& ishape, double mu, double sigma)
     {
-        R r = this->random_impl<R>(ishape);
+        R r = this->positive_random_impl<R>(ishape);
         return normal_distribution(mu, sigma).quantile(r);
     }
 
@@ -5130,12 +5210,25 @@ protected:
     }
 
     /**
-     * Draw `n` random numbers and write them to list (input as pointer `data`).
+     * Draw `n` random numbers [0, 1) and write them to list (input as pointer `data`).
      *
      * @param data Pointer to the data (no bounds-check).
      * @param n Size of `data`.
      */
-    virtual void draw_list(double* data, size_t n)
+    virtual void draw_list_double(double* data, size_t n)
+    {
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = 0.5;
+        }
+    }
+
+    /**
+     * Draw `n` random numbers (0, 1) and write them to list (input as pointer `data`).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param n Size of `data`.
+     */
+    virtual void draw_list_positive_double(double* data, size_t n)
     {
         for (size_t i = 0; i < n; ++i) {
             data[i] = 0.5;
@@ -5584,11 +5677,27 @@ protected:
      * @param data Pointer to the data (no bounds-check).
      * @param n The number of random numbers per generator.
      */
-    void draw_list(double* data, size_t n) override
+    void draw_list_double(double* data, size_t n) override
     {
         for (size_type i = 0; i < m_size; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 data[i * n + j] = m_gen[i].next_double();
+            }
+        }
+    }
+
+    /**
+     * Draw `n` random numbers per array item, and write them to the correct position in `data`
+     * (assuming row-major storage!).
+     *
+     * @param data Pointer to the data (no bounds-check).
+     * @param n The number of random numbers per generator.
+     */
+    void draw_list_positive_double(double* data, size_t n) override
+    {
+        for (size_type i = 0; i < m_size; ++i) {
+            for (size_t j = 0; j < n; ++j) {
+                data[i * n + j] = m_gen[i].next_positive_double();
             }
         }
     }
