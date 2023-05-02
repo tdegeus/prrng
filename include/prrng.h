@@ -1671,11 +1671,10 @@ private:
  * Base class of the pseudorandom number generators.
  * This class provides common methods, but itself does not really do much.
  */
+template <class Derived>
 class GeneratorBase {
 public:
     GeneratorBase() = default;
-
-    virtual ~GeneratorBase() = default;
 
     /**
      * @brief Result of the cumulative sum of `n` random numbers.
@@ -1686,7 +1685,7 @@ public:
     {
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += draw_double();
+            ret += (static_cast<Derived*>(this))->draw_double();
         }
         return ret;
     }
@@ -1714,7 +1713,7 @@ public:
     {
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret -= std::log(1.0 - this->draw_double());
+            ret -= std::log(1.0 - (static_cast<Derived*>(this))->draw_double());
         }
         return scale * ret;
     }
@@ -1731,7 +1730,7 @@ public:
         double ret = 0.0;
         double exponent = 1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(1.0 - this->draw_double(), exponent);
+            ret += std::pow(1.0 - (static_cast<Derived*>(this))->draw_double(), exponent);
         }
         return ret;
     }
@@ -1749,7 +1748,7 @@ public:
 #if PRRNG_USE_BOOST
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += boost::math::gamma_p_inv<double, double>(k, this->draw_double());
+            ret += boost::math::gamma_p_inv<double, double>(k, (static_cast<Derived*>(this))->draw_double());
         }
         return scale * ret;
 #else
@@ -1770,7 +1769,7 @@ public:
         double ret = 0.0;
         double exponent = -1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(1.0 - this->draw_double(), exponent);
+            ret += std::pow(1.0 - (static_cast<Derived*>(this))->draw_double(), exponent);
         }
         return scale * ret;
     }
@@ -1788,7 +1787,7 @@ public:
         double ret = 0.0;
         double k_inv = 1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(-std::log(1.0 - this->draw_double()), k_inv);
+            ret += std::pow(-std::log(1.0 - (static_cast<Derived*>(this))->draw_double()), k_inv);
         }
         return scale * ret;
     }
@@ -1806,7 +1805,7 @@ public:
 #if PRRNG_USE_BOOST
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += boost::math::erf_inv<double>(2.0 * this->draw_double() - 1.0);
+            ret += boost::math::erf_inv<double>(2.0 * (static_cast<Derived*>(this))->draw_double() - 1.0);
         }
         return static_cast<double>(n) * mu + sigma * std::sqrt(2.0) * ret;
 #else
@@ -1858,7 +1857,7 @@ public:
         using value_type = typename detail::get_value_type<R>::type;
 
         for (size_t i = 0; i < p.size(); ++i) {
-            if (draw_double() < p.flat(i)) {
+            if ((static_cast<Derived*>(this))->draw_double() < p.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(true);
             }
             else {
@@ -1916,7 +1915,7 @@ public:
             if (mask.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(false);
             }
-            else if (draw_double() < p.flat(i)) {
+            else if ((static_cast<Derived*>(this))->draw_double() < p.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(true);
             }
             else {
@@ -1932,7 +1931,7 @@ public:
      */
     double random()
     {
-        return this->draw_double();
+        return (static_cast<Derived*>(this))->draw_double();
     }
 
     /**
@@ -2151,7 +2150,7 @@ public:
      */
     double exponential(double scale = 1)
     {
-        return -std::log(1.0 - this->draw_double()) * scale;
+        return -std::log(1.0 - (static_cast<Derived*>(this))->draw_double()) * scale;
     }
 
     /**
@@ -2208,7 +2207,7 @@ public:
      */
     double power(double k = 1)
     {
-        return std::pow(1.0 - this->draw_double(), 1.0 / k);
+        return std::pow(1.0 - (static_cast<Derived*>(this))->draw_double(), 1.0 / k);
     }
 
     /**
@@ -2266,7 +2265,7 @@ public:
     double gamma(double k = 1, double scale = 1)
     {
 #if PRRNG_USE_BOOST
-        return scale * boost::math::gamma_p_inv<double, double>(k, this->draw_double());
+        return scale * boost::math::gamma_p_inv<double, double>(k, (static_cast<Derived*>(this))->draw_double());
 #else
         return std::numeric_limits<double>::quiet_NaN();
 #endif
@@ -2329,7 +2328,7 @@ public:
      */
     double pareto(double k = 1, double scale = 1)
     {
-        return scale * std::pow(1.0 - this->draw_double(), -1.0 / k);
+        return scale * std::pow(1.0 - (static_cast<Derived*>(this))->draw_double(), -1.0 / k);
     }
 
     /**
@@ -2388,7 +2387,7 @@ public:
      */
     double weibull(double k = 1, double scale = 1)
     {
-        return scale * std::pow(-std::log(1.0 - this->draw_double()), 1.0 / k);
+        return scale * std::pow(-std::log(1.0 - (static_cast<Derived*>(this))->draw_double()), 1.0 / k);
     }
 
     /**
@@ -2448,8 +2447,9 @@ public:
     double normal(double mu = 0, double sigma = 1)
     {
 #if PRRNG_USE_BOOST
-        return mu + sigma * std::sqrt(2.0) *
-                        boost::math::erf_inv<double>(2.0 * this->draw_positive_double() - 1.0);
+        return mu +
+               sigma * std::sqrt(2.0) *
+                   boost::math::erf_inv<double>(2.0 * (static_cast<Derived*>(this))->draw_positive_double() - 1.0);
 #else
         return std::numeric_limits<double>::quiet_NaN();
 #endif
@@ -2651,7 +2651,7 @@ private:
         );
 
         detail::allocate_return<R> ret(shape);
-        this->draw_list_positive_double(ret.data(), ret.size());
+        (static_cast<Derived*>(this))->draw_list_positive_double(ret.data(), ret.size());
         return std::move(ret.value);
     }
 
@@ -2664,7 +2664,7 @@ private:
         );
 
         detail::allocate_return<R> ret(shape);
-        this->draw_list_double(ret.data(), ret.size());
+        (static_cast<Derived*>(this))->draw_list_double(ret.data(), ret.size());
         return std::move(ret.value);
     }
 
@@ -2682,7 +2682,7 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), ret.size());
+        (static_cast<Derived*>(this))->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), ret.size());
         std::copy(tmp.begin(), tmp.end(), ret.data());
         return std::move(ret.value);
     }
@@ -2719,7 +2719,7 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), ret.size());
+        (static_cast<Derived*>(this))->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), ret.size());
         std::copy(tmp.begin(), tmp.end(), ret.data());
         return ret.value + low;
     }
@@ -2773,67 +2773,6 @@ private:
         R r = this->positive_random_impl<R>(shape);
         return normal_distribution(mu, sigma).quantile(r);
     }
-
-protected:
-    /**
-     * @brief Draw one random double.
-     * @return double
-     */
-    virtual double draw_double()
-    {
-        return 0.5;
-    }
-
-    /**
-     * @brief Draw one random double.
-     * @return double
-     */
-    virtual double draw_positive_double()
-    {
-        return 0.5;
-    }
-
-    /**
-     * Draw `n` random numbers and write them to list (input as pointer `data`).
-     *
-     * @param data Pointer to the data (no bounds-check).
-     * @param n Size of `data`.
-     */
-    virtual void draw_list_double(double* data, size_t n)
-    {
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = 0.5;
-        }
-    }
-
-    /**
-     * Draw `n` random numbers and write them to list (input as pointer `data`).
-     *
-     * @param data Pointer to the data (no bounds-check).
-     * @param n Size of `data`.
-     */
-    virtual void draw_list_positive_double(double* data, size_t n)
-    {
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = 0.5;
-        }
-    }
-
-    /**
-     * Draw `n` random numbers and write them to list (input as pointer `data`).
-     *
-     * @param data Pointer to the data (no bounds-check).
-     * @param bound Upper bound of the random numbers.
-     * @param n Size of `data`.
-     */
-    virtual void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
-    {
-        (void)(bound);
-
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = 0;
-        }
-    }
 };
 
 /**
@@ -2869,7 +2808,7 @@ protected:
  *     Wenzel Jakob, February 2015
  *     https://github.com/wjakob/pcg32
  */
-class pcg32 : public GeneratorBase {
+class pcg32 : public GeneratorBase<pcg32> {
 public:
     /**
      * Constructor.
@@ -3329,32 +3268,31 @@ public:
         return m_state != other.m_state || m_inc != other.m_inc;
     }
 
-protected:
-    double draw_double() override
+    double draw_double()
     {
         return next_double();
     }
 
-    double draw_positive_double() override
+    double draw_positive_double()
     {
         return next_positive_double();
     }
 
-    void draw_list_double(double* data, size_t n) override
+    void draw_list_double(double* data, size_t n)
     {
         for (size_t i = 0; i < n; ++i) {
             data[i] = next_double();
         }
     }
 
-    void draw_list_positive_double(double* data, size_t n) override
+    void draw_list_positive_double(double* data, size_t n)
     {
         for (size_t i = 0; i < n; ++i) {
             data[i] = next_positive_double();
         }
     }
 
-    void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n) override
+    void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
     {
         for (size_t i = 0; i < n; ++i) {
             data[i] = next_uint32(bound);
