@@ -5053,10 +5053,12 @@ template <class Generator, class Shape>
 class pcg32_arrayBase : public GeneratorBase_array<pcg32_arrayBase<Generator, Shape>, Shape> {
     friend GeneratorBase_array<pcg32_arrayBase<Generator, Shape>, Shape>;
 
+private:
+    using derived_type = pcg32_arrayBase<Generator, Shape>;
+
 public:
     using size_type = typename Shape::value_type; ///< Size type
     using shape_type = Shape; ///< Shape type
-    using derived_type = pcg32_arrayBase<Generator, Shape>;
 
 protected:
     /**
@@ -5559,10 +5561,12 @@ protected:
  * here to store/restore the state of the entire array of generators.
  */
 class pcg32_array : public pcg32_arrayBase<pcg32, std::vector<size_t>> {
+private:
+    using derived_type = pcg32_arrayBase<pcg32, std::vector<size_t>>;
+
 public:
     using size_type = size_t; ///< Size type
     using shape_type = std::vector<size_t>; ///< Shape type
-    using derived_type = pcg32_arrayBase<pcg32, std::vector<size_t>>;
 
     pcg32_array() = default;
 
@@ -5607,10 +5611,12 @@ protected:
  */
 template <size_t N>
 class pcg32_tensor : public pcg32_arrayBase<pcg32, std::array<size_t, N>> {
+private:
+    using derived_type = pcg32_arrayBase<pcg32, std::array<size_t, N>>;
+
 public:
     using size_type = size_t; ///< Size type
     using shape_type = std::array<size_t, N>; ///< Shape type
-    using derived_type = pcg32_arrayBase<pcg32, std::array<size_t, N>>;
 
     pcg32_tensor() = default;
 
@@ -5652,9 +5658,10 @@ protected:
  * @brief Array of prrng::pcg32_index().
  */
 class pcg32_index_array : public pcg32_arrayBase<pcg32_index, std::vector<size_t>> {
-public:
+private:
     using derived_type = pcg32_arrayBase<pcg32_index, std::vector<size_t>>;
 
+public:
     pcg32_index_array() = default;
 
     /**
@@ -5684,9 +5691,10 @@ protected:
  */
 template <size_t N>
 class pcg32_index_tensor : public pcg32_arrayBase<pcg32_index, std::array<size_t, N>> {
-public:
+private:
     using derived_type = pcg32_arrayBase<pcg32_index, std::array<size_t, N>>;
 
+public:
     pcg32_index_tensor() = default;
 
     /**
