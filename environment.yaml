@@ -10,5 +10,7 @@ dependencies:
 - python
 - scikit-build
 - setuptools_scm
+- typing-extensions
+- wheel
 - xtensor
 - xtensor-python
