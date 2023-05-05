@@ -1674,8 +1674,6 @@ private:
 template <class Derived>
 class GeneratorBase {
 public:
-    GeneratorBase() = default;
-
     /**
      * @brief Result of the cumulative sum of `n` random numbers.
      * @param n Number of steps.
