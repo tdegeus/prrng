@@ -1816,6 +1816,26 @@ public:
     }
 
     /**
+     * Draw uniformly distributed permutation and permute the given STL container.
+     *
+     * @param begin Iterator to the beginning of the container.
+     * @param end Iterator to the end of the container.
+     *
+     * \note From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
+     *
+     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
+     */
+    template <typename Iterator>
+    void shuffle(Iterator begin, Iterator end)
+    {
+        for (Iterator it = end - 1; it > begin; --it) {
+            std::iter_swap(
+                it, begin + static_cast<Derived*>(this)->next_uint32((uint32_t)(it - begin + 1))
+            );
+        }
+    }
+
+    /**
      * @brief Decide based on probability per value.
      * This is fully equivalent to `generator.random(p.shape) < p`,
      * but avoids the memory allocation of `random`.
@@ -3251,24 +3271,6 @@ public:
             delta /= 2;
         }
         m_state = acc_mult * m_state + acc_plus;
-    }
-
-    /**
-     * Draw uniformly distributed permutation and permute the given STL container.
-     *
-     * @param begin Iterator to the beginning of the container.
-     * @param end Iterator to the end of the container.
-     *
-     * \note From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
-     *
-     * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
-     */
-    template <typename Iterator>
-    void shuffle(Iterator begin, Iterator end)
-    {
-        for (Iterator it = end - 1; it > begin; --it) {
-            std::iter_swap(it, begin + next_uint32((uint32_t)(it - begin + 1)));
-        }
     }
 
     /**
