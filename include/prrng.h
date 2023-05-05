@@ -3832,7 +3832,9 @@ public:
     /**
      * @copydoc prrng::pcg32_cumsum::index_at_align() const
      */
+#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
     [[deprecated("use index_at_align() instead")]]
+#endif
     ptrdiff_t index() const
     {
         PRRNG_WARNING_PYTHON("deprecated in favour of index_at_align()");
@@ -3842,7 +3844,9 @@ public:
     /**
      * @copydoc prrng::pcg32_cumsum::chunk_index_at_align() const
      */
+#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
     [[deprecated("use chunk_index_at_align() instead")]]
+#endif
     ptrdiff_t chunk_index() const
     {
         PRRNG_WARNING_PYTHON("deprecated in favour of chunk_index_at_align()")
@@ -5854,7 +5858,6 @@ protected:
     )
     {
         PRRNG_ASSERT(xt::has_shape(initstate, initseq.shape()));
-        using shape_type = typename S::value_type;
 
         m_align = align;
         m_distro = distribution;
@@ -6131,7 +6134,9 @@ public:
      * @return Reference to one value.
      */
     template <class... Args>
+#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
     [[deprecated("Behaviour will change to global index + automatic alignment. Use .data()(...)")]]
+#endif
     typename Data::value_type&
     operator()(Args... args)
     {
@@ -6145,7 +6150,9 @@ public:
      * @return Reference to one value.
      */
     template <class... Args>
+#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
     [[deprecated("Behaviour will change to global index + automatic alignment. Use .data()(...)")]]
+#endif
     const typename Data::value_type&
     operator()(Args... args) const
     {
@@ -6248,7 +6255,9 @@ public:
     /**
      * @copydoc prrng::pcg32_cumsum::index_at_align()
      */
+#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
     [[deprecated("use index_at_align() instead")]]
+#endif
     Index index() const
     {
         PRRNG_WARNING_PYTHON("deprecated in favour of index_at_align()");
@@ -6258,7 +6267,9 @@ public:
     /**
      * @copydoc prrng::pcg32_cumsum::chunk_index_at_align()
      */
+#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
     [[deprecated("use chunk_index_at_align() instead")]]
+#endif
     const Index& chunk_index() const
     {
         PRRNG_WARNING_PYTHON("deprecated in favour of chunk_index_at_align()")
