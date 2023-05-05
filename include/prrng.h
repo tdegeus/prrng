@@ -3830,30 +3830,6 @@ public:
     }
 
     /**
-     * @copydoc prrng::pcg32_cumsum::index_at_align() const
-     */
-#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
-    [[deprecated("use index_at_align() instead")]]
-#endif
-    ptrdiff_t index() const
-    {
-        PRRNG_WARNING_PYTHON("deprecated in favour of index_at_align()");
-        return this->index_at_align();
-    }
-
-    /**
-     * @copydoc prrng::pcg32_cumsum::chunk_index_at_align() const
-     */
-#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
-    [[deprecated("use chunk_index_at_align() instead")]]
-#endif
-    ptrdiff_t chunk_index() const
-    {
-        PRRNG_WARNING_PYTHON("deprecated in favour of chunk_index_at_align()")
-        return this->chunk_index_at_align();
-    }
-
-    /**
      * @brief Return the value of the cumsum left of the `target`
      * (the last time prrng::pcg32_cumsum::align() was called).
      * `gen.left_of_align() == gen.data()[gen.chunk_index_at_align()] <= target`.
@@ -6129,38 +6105,6 @@ public:
     }
 
     /**
-     * @brief Return a reference to one value in the chunk.
-     * @param args Index in the chunk.
-     * @return Reference to one value.
-     */
-    template <class... Args>
-#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
-    [[deprecated("Behaviour will change to global index + automatic alignment. Use .data()(...)")]]
-#endif
-    typename Data::value_type&
-    operator()(Args... args)
-    {
-        PRRNG_WARNING_PYTHON("Will change to global index + alignment. Use .data()(...)");
-        return m_data(args...);
-    }
-
-    /**
-     * @brief Return a reference to one value in the chunk.
-     * @param args Index in the chunk.
-     * @return Reference to one value.
-     */
-    template <class... Args>
-#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
-    [[deprecated("Behaviour will change to global index + automatic alignment. Use .data()(...)")]]
-#endif
-    const typename Data::value_type&
-    operator()(Args... args) const
-    {
-        PRRNG_WARNING_PYTHON("Will change to global index + alignment. Use .data()(...)");
-        return m_data(args...);
-    }
-
-    /**
      * @copydoc prrng::pcg32_cumsum::data()
      */
     const Data& data() const
@@ -6250,30 +6194,6 @@ public:
     const Index& chunk_index_at_align() const
     {
         return m_i;
-    }
-
-    /**
-     * @copydoc prrng::pcg32_cumsum::index_at_align()
-     */
-#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
-    [[deprecated("use index_at_align() instead")]]
-#endif
-    Index index() const
-    {
-        PRRNG_WARNING_PYTHON("deprecated in favour of index_at_align()");
-        return this->index_at_align();
-    }
-
-    /**
-     * @copydoc prrng::pcg32_cumsum::chunk_index_at_align()
-     */
-#if !defined(XTENSOR_PYTHON_VERSION_MAJOR)
-    [[deprecated("use chunk_index_at_align() instead")]]
-#endif
-    const Index& chunk_index() const
-    {
-        PRRNG_WARNING_PYTHON("deprecated in favour of chunk_index_at_align()")
-        return this->chunk_index_at_align();
     }
 
     /**
