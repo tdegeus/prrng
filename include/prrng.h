@@ -2709,9 +2709,7 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        this->draw_list_uint32(
-            &tmp.front(), static_cast<uint32_t>(high), ret.size()
-        );
+        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), ret.size());
         std::copy(tmp.begin(), tmp.end(), ret.data());
         return std::move(ret.value);
     }
@@ -2748,9 +2746,7 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        this->draw_list_uint32(
-            &tmp.front(), static_cast<uint32_t>(high - low), ret.size()
-        );
+        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), ret.size());
         std::copy(tmp.begin(), tmp.end(), ret.data());
         return ret.value + low;
     }
