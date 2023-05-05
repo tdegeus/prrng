@@ -5117,8 +5117,6 @@ protected:
 public:
     pcg32_arrayBase() = default;
 
-    virtual ~pcg32_arrayBase() = default;
-
     /**
      * Return a reference to one generator, using an array index.
      *
@@ -6067,7 +6065,6 @@ protected:
 
 public:
     pcg32_arrayBase_chunkBase() = default;
-    virtual ~pcg32_arrayBase_chunkBase() = default;
 
     /**
      * @copydoc prrng::pcg32_arrayBase_chunkBase::copy_from(const prrng::pcg32_arrayBase_chunkBase&)
@@ -6364,7 +6361,6 @@ public:
     using value_type = typename Data::value_type; ///< Value type of the data container.
 
     pcg32_arrayBase_chunk() = default;
-    virtual ~pcg32_arrayBase_chunk() = default;
 
     /**
      * @brief Restore the generator somewhere in the sequence.
@@ -6420,7 +6416,6 @@ public:
     using size_type = typename Data::size_type; ///< Size type of the data container.
 
     pcg32_arrayBase_cumsum() = default;
-    virtual ~pcg32_arrayBase_cumsum() = default;
 
     // TODO: rename align_at_value ?
     /**
