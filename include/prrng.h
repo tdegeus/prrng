@@ -1668,8 +1668,18 @@ private:
 };
 
 /**
- * Base class of the pseudorandom number generators.
- * This class provides common methods, but itself does not really do much.
+ * Base class of the pseudorandom number generators providing common methods.
+ * If you want to implement a new generator, you should inherit from this class.
+ * The following minimal signature is required:
+ *
+ *      class MyGenerator : public GeneratorBase<MyGenerator> {
+ *      public:
+ *          double next_double();
+ *          double next_positive_double();
+ *          uint32_t next_uint32();
+ *      };
+ *
+ * @tparam Derived Derived class.
  */
 template <class Derived>
 class GeneratorBase {
@@ -2012,7 +2022,7 @@ public:
         PRRNG_ASSERT(static_cast<uint32_t>(high) < std::numeric_limits<uint32_t>::max());
 
         uint32_t ret;
-        static_cast<Derived*>(this)->draw_list_uint32(&ret, static_cast<uint32_t>(high), 1);
+        this->draw_list_uint32(&ret, static_cast<uint32_t>(high), 1);
         return static_cast<T>(ret);
     }
 
