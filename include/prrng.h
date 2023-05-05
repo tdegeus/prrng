@@ -1683,7 +1683,7 @@ public:
     {
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += static_cast<Derived*>(this)->draw_double();
+            ret += static_cast<Derived*>(this)->next_double();
         }
         return ret;
     }
@@ -1711,7 +1711,7 @@ public:
     {
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret -= std::log(1.0 - static_cast<Derived*>(this)->draw_double());
+            ret -= std::log(1.0 - static_cast<Derived*>(this)->next_double());
         }
         return scale * ret;
     }
@@ -1728,7 +1728,7 @@ public:
         double ret = 0.0;
         double exponent = 1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(1.0 - static_cast<Derived*>(this)->draw_double(), exponent);
+            ret += std::pow(1.0 - static_cast<Derived*>(this)->next_double(), exponent);
         }
         return ret;
     }
@@ -1747,7 +1747,7 @@ public:
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
             ret += boost::math::gamma_p_inv<double, double>(
-                k, static_cast<Derived*>(this)->draw_double()
+                k, static_cast<Derived*>(this)->next_double()
             );
         }
         return scale * ret;
@@ -1769,7 +1769,7 @@ public:
         double ret = 0.0;
         double exponent = -1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(1.0 - static_cast<Derived*>(this)->draw_double(), exponent);
+            ret += std::pow(1.0 - static_cast<Derived*>(this)->next_double(), exponent);
         }
         return scale * ret;
     }
@@ -1787,7 +1787,7 @@ public:
         double ret = 0.0;
         double k_inv = 1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(-std::log(1.0 - static_cast<Derived*>(this)->draw_double()), k_inv);
+            ret += std::pow(-std::log(1.0 - static_cast<Derived*>(this)->next_double()), k_inv);
         }
         return scale * ret;
     }
@@ -1806,7 +1806,7 @@ public:
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
             ret += boost::math::erf_inv<double>(
-                2.0 * static_cast<Derived*>(this)->draw_double() - 1.0
+                2.0 * static_cast<Derived*>(this)->next_double() - 1.0
             );
         }
         return static_cast<double>(n) * mu + sigma * std::sqrt(2.0) * ret;
@@ -1859,7 +1859,7 @@ public:
         using value_type = typename detail::get_value_type<R>::type;
 
         for (size_t i = 0; i < p.size(); ++i) {
-            if (static_cast<Derived*>(this)->draw_double() < p.flat(i)) {
+            if (static_cast<Derived*>(this)->next_double() < p.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(true);
             }
             else {
@@ -1917,7 +1917,7 @@ public:
             if (mask.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(false);
             }
-            else if (static_cast<Derived*>(this)->draw_double() < p.flat(i)) {
+            else if (static_cast<Derived*>(this)->next_double() < p.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(true);
             }
             else {
@@ -1933,7 +1933,7 @@ public:
      */
     double random()
     {
-        return static_cast<Derived*>(this)->draw_double();
+        return static_cast<Derived*>(this)->next_double();
     }
 
     /**
@@ -2152,7 +2152,7 @@ public:
      */
     double exponential(double scale = 1)
     {
-        return -std::log(1.0 - static_cast<Derived*>(this)->draw_double()) * scale;
+        return -std::log(1.0 - static_cast<Derived*>(this)->next_double()) * scale;
     }
 
     /**
@@ -2209,7 +2209,7 @@ public:
      */
     double power(double k = 1)
     {
-        return std::pow(1.0 - static_cast<Derived*>(this)->draw_double(), 1.0 / k);
+        return std::pow(1.0 - static_cast<Derived*>(this)->next_double(), 1.0 / k);
     }
 
     /**
@@ -2268,7 +2268,7 @@ public:
     {
 #if PRRNG_USE_BOOST
         return scale * boost::math::gamma_p_inv<double, double>(
-                           k, static_cast<Derived*>(this)->draw_double()
+                           k, static_cast<Derived*>(this)->next_double()
                        );
 #else
         return std::numeric_limits<double>::quiet_NaN();
@@ -2332,7 +2332,7 @@ public:
      */
     double pareto(double k = 1, double scale = 1)
     {
-        return scale * std::pow(1.0 - static_cast<Derived*>(this)->draw_double(), -1.0 / k);
+        return scale * std::pow(1.0 - static_cast<Derived*>(this)->next_double(), -1.0 / k);
     }
 
     /**
@@ -2392,7 +2392,7 @@ public:
     double weibull(double k = 1, double scale = 1)
     {
         return scale *
-               std::pow(-std::log(1.0 - static_cast<Derived*>(this)->draw_double()), 1.0 / k);
+               std::pow(-std::log(1.0 - static_cast<Derived*>(this)->next_double()), 1.0 / k);
     }
 
     /**
@@ -2454,7 +2454,7 @@ public:
 #if PRRNG_USE_BOOST
         return mu + sigma * std::sqrt(2.0) *
                         boost::math::erf_inv<double>(
-                            2.0 * static_cast<Derived*>(this)->draw_positive_double() - 1.0
+                            2.0 * static_cast<Derived*>(this)->next_positive_double() - 1.0
                         );
 #else
         return std::numeric_limits<double>::quiet_NaN();
@@ -2648,6 +2648,27 @@ public:
     }
 
 private:
+    void draw_list_double(double* data, size_t n)
+    {
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = static_cast<Derived*>(this)->next_double();
+        }
+    }
+
+    void draw_list_positive_double(double* data, size_t n)
+    {
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = static_cast<Derived*>(this)->next_positive_double();
+        }
+    }
+
+    void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
+    {
+        for (size_t i = 0; i < n; ++i) {
+            data[i] = static_cast<Derived*>(this)->next_uint32(bound);
+        }
+    }
+
     template <class R, class S>
     R positive_random_impl(const S& shape)
     {
@@ -2657,7 +2678,7 @@ private:
         );
 
         detail::allocate_return<R> ret(shape);
-        static_cast<Derived*>(this)->draw_list_positive_double(ret.data(), ret.size());
+        this->draw_list_positive_double(ret.data(), ret.size());
         return std::move(ret.value);
     }
 
@@ -2670,7 +2691,7 @@ private:
         );
 
         detail::allocate_return<R> ret(shape);
-        static_cast<Derived*>(this)->draw_list_double(ret.data(), ret.size());
+        this->draw_list_double(ret.data(), ret.size());
         return std::move(ret.value);
     }
 
@@ -2688,7 +2709,7 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        static_cast<Derived*>(this)->draw_list_uint32(
+        this->draw_list_uint32(
             &tmp.front(), static_cast<uint32_t>(high), ret.size()
         );
         std::copy(tmp.begin(), tmp.end(), ret.data());
@@ -2727,7 +2748,7 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        static_cast<Derived*>(this)->draw_list_uint32(
+        this->draw_list_uint32(
             &tmp.front(), static_cast<uint32_t>(high - low), ret.size()
         );
         std::copy(tmp.begin(), tmp.end(), ret.data());
@@ -3276,37 +3297,6 @@ public:
     bool operator!=(const pcg32& other) const
     {
         return m_state != other.m_state || m_inc != other.m_inc;
-    }
-
-    double draw_double()
-    {
-        return next_double();
-    }
-
-    double draw_positive_double()
-    {
-        return next_positive_double();
-    }
-
-    void draw_list_double(double* data, size_t n)
-    {
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = next_double();
-        }
-    }
-
-    void draw_list_positive_double(double* data, size_t n)
-    {
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = next_positive_double();
-        }
-    }
-
-    void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
-    {
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = next_uint32(bound);
-        }
     }
 
 protected:
