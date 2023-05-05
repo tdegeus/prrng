@@ -1685,7 +1685,7 @@ public:
     {
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += (static_cast<Derived*>(this))->draw_double();
+            ret += static_cast<Derived*>(this)->draw_double();
         }
         return ret;
     }
@@ -1713,7 +1713,7 @@ public:
     {
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret -= std::log(1.0 - (static_cast<Derived*>(this))->draw_double());
+            ret -= std::log(1.0 - static_cast<Derived*>(this)->draw_double());
         }
         return scale * ret;
     }
@@ -1730,7 +1730,7 @@ public:
         double ret = 0.0;
         double exponent = 1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(1.0 - (static_cast<Derived*>(this))->draw_double(), exponent);
+            ret += std::pow(1.0 - static_cast<Derived*>(this)->draw_double(), exponent);
         }
         return ret;
     }
@@ -1748,7 +1748,9 @@ public:
 #if PRRNG_USE_BOOST
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += boost::math::gamma_p_inv<double, double>(k, (static_cast<Derived*>(this))->draw_double());
+            ret += boost::math::gamma_p_inv<double, double>(
+                k, static_cast<Derived*>(this)->draw_double()
+            );
         }
         return scale * ret;
 #else
@@ -1769,7 +1771,7 @@ public:
         double ret = 0.0;
         double exponent = -1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(1.0 - (static_cast<Derived*>(this))->draw_double(), exponent);
+            ret += std::pow(1.0 - static_cast<Derived*>(this)->draw_double(), exponent);
         }
         return scale * ret;
     }
@@ -1787,7 +1789,7 @@ public:
         double ret = 0.0;
         double k_inv = 1.0 / k;
         for (size_t i = 0; i < n; ++i) {
-            ret += std::pow(-std::log(1.0 - (static_cast<Derived*>(this))->draw_double()), k_inv);
+            ret += std::pow(-std::log(1.0 - static_cast<Derived*>(this)->draw_double()), k_inv);
         }
         return scale * ret;
     }
@@ -1805,7 +1807,9 @@ public:
 #if PRRNG_USE_BOOST
         double ret = 0.0;
         for (size_t i = 0; i < n; ++i) {
-            ret += boost::math::erf_inv<double>(2.0 * (static_cast<Derived*>(this))->draw_double() - 1.0);
+            ret += boost::math::erf_inv<double>(
+                2.0 * static_cast<Derived*>(this)->draw_double() - 1.0
+            );
         }
         return static_cast<double>(n) * mu + sigma * std::sqrt(2.0) * ret;
 #else
@@ -1857,7 +1861,7 @@ public:
         using value_type = typename detail::get_value_type<R>::type;
 
         for (size_t i = 0; i < p.size(); ++i) {
-            if ((static_cast<Derived*>(this))->draw_double() < p.flat(i)) {
+            if (static_cast<Derived*>(this)->draw_double() < p.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(true);
             }
             else {
@@ -1915,7 +1919,7 @@ public:
             if (mask.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(false);
             }
-            else if ((static_cast<Derived*>(this))->draw_double() < p.flat(i)) {
+            else if (static_cast<Derived*>(this)->draw_double() < p.flat(i)) {
                 ret.flat(i) = static_cast<value_type>(true);
             }
             else {
@@ -1931,7 +1935,7 @@ public:
      */
     double random()
     {
-        return (static_cast<Derived*>(this))->draw_double();
+        return static_cast<Derived*>(this)->draw_double();
     }
 
     /**
@@ -2150,7 +2154,7 @@ public:
      */
     double exponential(double scale = 1)
     {
-        return -std::log(1.0 - (static_cast<Derived*>(this))->draw_double()) * scale;
+        return -std::log(1.0 - static_cast<Derived*>(this)->draw_double()) * scale;
     }
 
     /**
@@ -2207,7 +2211,7 @@ public:
      */
     double power(double k = 1)
     {
-        return std::pow(1.0 - (static_cast<Derived*>(this))->draw_double(), 1.0 / k);
+        return std::pow(1.0 - static_cast<Derived*>(this)->draw_double(), 1.0 / k);
     }
 
     /**
@@ -2265,7 +2269,9 @@ public:
     double gamma(double k = 1, double scale = 1)
     {
 #if PRRNG_USE_BOOST
-        return scale * boost::math::gamma_p_inv<double, double>(k, (static_cast<Derived*>(this))->draw_double());
+        return scale * boost::math::gamma_p_inv<double, double>(
+                           k, static_cast<Derived*>(this)->draw_double()
+                       );
 #else
         return std::numeric_limits<double>::quiet_NaN();
 #endif
@@ -2328,7 +2334,7 @@ public:
      */
     double pareto(double k = 1, double scale = 1)
     {
-        return scale * std::pow(1.0 - (static_cast<Derived*>(this))->draw_double(), -1.0 / k);
+        return scale * std::pow(1.0 - static_cast<Derived*>(this)->draw_double(), -1.0 / k);
     }
 
     /**
@@ -2387,7 +2393,8 @@ public:
      */
     double weibull(double k = 1, double scale = 1)
     {
-        return scale * std::pow(-std::log(1.0 - (static_cast<Derived*>(this))->draw_double()), 1.0 / k);
+        return scale *
+               std::pow(-std::log(1.0 - static_cast<Derived*>(this)->draw_double()), 1.0 / k);
     }
 
     /**
@@ -2447,9 +2454,10 @@ public:
     double normal(double mu = 0, double sigma = 1)
     {
 #if PRRNG_USE_BOOST
-        return mu +
-               sigma * std::sqrt(2.0) *
-                   boost::math::erf_inv<double>(2.0 * (static_cast<Derived*>(this))->draw_positive_double() - 1.0);
+        return mu + sigma * std::sqrt(2.0) *
+                        boost::math::erf_inv<double>(
+                            2.0 * static_cast<Derived*>(this)->draw_positive_double() - 1.0
+                        );
 #else
         return std::numeric_limits<double>::quiet_NaN();
 #endif
@@ -2651,7 +2659,7 @@ private:
         );
 
         detail::allocate_return<R> ret(shape);
-        (static_cast<Derived*>(this))->draw_list_positive_double(ret.data(), ret.size());
+        static_cast<Derived*>(this)->draw_list_positive_double(ret.data(), ret.size());
         return std::move(ret.value);
     }
 
@@ -2664,7 +2672,7 @@ private:
         );
 
         detail::allocate_return<R> ret(shape);
-        (static_cast<Derived*>(this))->draw_list_double(ret.data(), ret.size());
+        static_cast<Derived*>(this)->draw_list_double(ret.data(), ret.size());
         return std::move(ret.value);
     }
 
@@ -2682,7 +2690,9 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        (static_cast<Derived*>(this))->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), ret.size());
+        static_cast<Derived*>(this)->draw_list_uint32(
+            &tmp.front(), static_cast<uint32_t>(high), ret.size()
+        );
         std::copy(tmp.begin(), tmp.end(), ret.data());
         return std::move(ret.value);
     }
@@ -2719,7 +2729,9 @@ private:
 
         detail::allocate_return<R> ret(shape);
         std::vector<uint32_t> tmp(ret.size());
-        (static_cast<Derived*>(this))->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), ret.size());
+        static_cast<Derived*>(this)->draw_list_uint32(
+            &tmp.front(), static_cast<uint32_t>(high - low), ret.size()
+        );
         std::copy(tmp.begin(), tmp.end(), ret.data());
         return ret.value + low;
     }
