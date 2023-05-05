@@ -386,25 +386,41 @@ void init_pcg32_arrayBase_chunkBase(C& cls)
     // cls.def(py::self += double());
     // cls.def(py::self -= double());
 
-    cls.def("__iadd__", [](Parent &a, const Data& b) -> Parent& {
-        a += b;
-        return a;
-    }, py::is_operator());
+    cls.def(
+        "__iadd__",
+        [](Parent& a, const Data& b) -> Parent& {
+            a += b;
+            return a;
+        },
+        py::is_operator()
+    );
 
-    cls.def("__iadd__", [](Parent &a, double b) -> Parent& {
-        a += b;
-        return a;
-    }, py::is_operator());
+    cls.def(
+        "__iadd__",
+        [](Parent& a, double b) -> Parent& {
+            a += b;
+            return a;
+        },
+        py::is_operator()
+    );
 
-    cls.def("__isub__", [](Parent &a, const Data& b) -> Parent& {
-        a -= b;
-        return a;
-    }, py::is_operator());
+    cls.def(
+        "__isub__",
+        [](Parent& a, const Data& b) -> Parent& {
+            a -= b;
+            return a;
+        },
+        py::is_operator()
+    );
 
-    cls.def("__isub__", [](Parent &a, double b) -> Parent& {
-        a -= b;
-        return a;
-    }, py::is_operator());
+    cls.def(
+        "__isub__",
+        [](Parent& a, double b) -> Parent& {
+            a -= b;
+            return a;
+        },
+        py::is_operator()
+    );
 
     cls.def_property_readonly("generators", &Parent::generators);
     cls.def_property_readonly("is_extendible", &Parent::is_extendible);
