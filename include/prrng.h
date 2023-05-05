@@ -1994,7 +1994,7 @@ public:
         PRRNG_ASSERT(static_cast<uint32_t>(high) < std::numeric_limits<uint32_t>::max());
 
         uint32_t ret;
-        this->draw_list_uint32(&ret, static_cast<uint32_t>(high), 1);
+        static_cast<Derived*>(this)->draw_list_uint32(&ret, static_cast<uint32_t>(high), 1);
         return static_cast<T>(ret);
     }
 
@@ -3982,15 +3982,11 @@ public:
  *
  * @tparam M Type to use storage of the shape and array vectors. E.g. `std::vector` or `std::array`
  */
-template <class M>
+template <class Derived, class M>
 class GeneratorBase_array {
 public:
     using shape_type = M; ///< Type of the shape and strides lists.
     using size_type = typename M::value_type; ///< Type of sizes.
-
-    GeneratorBase_array() = default;
-
-    virtual ~GeneratorBase_array() = default;
 
     /**
      * Return the size of the array of generators.
@@ -4566,7 +4562,7 @@ public:
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_random_impl(ret.data(), n.data());
+        static_cast<Derived*>(this)->cumsum_random_impl(ret.data(), n.data());
         return ret;
     }
 
@@ -4579,7 +4575,7 @@ public:
     R cumsum_random(const T& n)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_random_impl(ret.data(), n.data());
+        static_cast<Derived*>(this)->cumsum_random_impl(ret.data(), n.data());
         return ret;
     }
 
@@ -4631,7 +4627,7 @@ public:
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_exponential_impl(ret.data(), n.data(), scale);
+        static_cast<Derived*>(this)->cumsum_exponential_impl(ret.data(), n.data(), scale);
         return ret;
     }
 
@@ -4646,7 +4642,7 @@ public:
     R cumsum_exponential(const T& n, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_exponential_impl(ret.data(), n.data(), scale);
+        static_cast<Derived*>(this)->cumsum_exponential_impl(ret.data(), n.data(), scale);
         return ret;
     }
 
@@ -4662,7 +4658,7 @@ public:
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_power_impl(ret.data(), n.data(), k);
+        static_cast<Derived*>(this)->cumsum_power_impl(ret.data(), n.data(), k);
         return ret;
     }
 
@@ -4677,7 +4673,7 @@ public:
     R cumsum_power(const T& n, double k = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_power_impl(ret.data(), n.data(), k);
+        static_cast<Derived*>(this)->cumsum_power_impl(ret.data(), n.data(), k);
         return ret;
     }
 
@@ -4695,7 +4691,7 @@ public:
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
+        static_cast<Derived*>(this)->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -4711,7 +4707,7 @@ public:
     R cumsum_gamma(const T& n, double k = 1, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
+        static_cast<Derived*>(this)->cumsum_gamma_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -4729,7 +4725,7 @@ public:
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_pareto_impl(ret.data(), n.data(), k, scale);
+        static_cast<Derived*>(this)->cumsum_pareto_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -4745,7 +4741,7 @@ public:
     R cumsum_pareto(const T& n, double k = 1, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_pareto_impl(ret.data(), n.data(), k, scale);
+        static_cast<Derived*>(this)->cumsum_pareto_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -4763,7 +4759,7 @@ public:
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_weibull_impl(ret.data(), n.data(), k, scale);
+        static_cast<Derived*>(this)->cumsum_weibull_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -4779,7 +4775,7 @@ public:
     R cumsum_weibull(const T& n, double k = 1, double scale = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_weibull_impl(ret.data(), n.data(), k, scale);
+        static_cast<Derived*>(this)->cumsum_weibull_impl(ret.data(), n.data(), k, scale);
         return ret;
     }
 
@@ -4797,7 +4793,7 @@ public:
     {
         using R = typename detail::return_type<double, M>::type;
         R ret = R::from_shape(m_shape);
-        this->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
+        static_cast<Derived*>(this)->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
         return ret;
     }
 
@@ -4813,7 +4809,7 @@ public:
     R cumsum_normal(const T& n, double mu = 0, double sigma = 1)
     {
         R ret = R::from_shape(m_shape);
-        this->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
+        static_cast<Derived*>(this)->cumsum_normal_impl(ret.data(), n.data(), mu, sigma);
         return ret;
     }
 
@@ -4831,7 +4827,7 @@ public:
         PRRNG_ASSERT(xt::has_shape(p, m_shape));
         using R = typename detail::return_type<bool, P>::type;
         R ret = R::from_shape(m_shape);
-        this->decide_impl(p.data(), ret.data());
+        static_cast<Derived*>(this)->decide_impl(p.data(), ret.data());
         return ret;
     }
 
@@ -4843,7 +4839,7 @@ public:
     {
         PRRNG_ASSERT(xt::has_shape(p, m_shape));
         R ret = R::from_shape(m_shape);
-        this->decide_impl(p.data(), ret.data());
+        static_cast<Derived*>(this)->decide_impl(p.data(), ret.data());
         return ret;
     }
 
@@ -4864,7 +4860,7 @@ public:
 
         PRRNG_ASSERT(xt::has_shape(p, m_shape));
         PRRNG_ASSERT(xt::has_shape(p, ret.shape()));
-        this->decide_impl(p.data(), ret.data());
+        static_cast<Derived*>(this)->decide_impl(p.data(), ret.data());
     }
 
     /**
@@ -4883,7 +4879,7 @@ public:
         PRRNG_ASSERT(xt::has_shape(p, mask.shape()));
         using R = typename detail::return_type<bool, P>::type;
         R ret = R::from_shape(m_shape);
-        this->decide_masked_impl(p.data(), mask.data(), ret.data());
+        static_cast<Derived*>(this)->decide_masked_impl(p.data(), mask.data(), ret.data());
         return ret;
     }
 
@@ -4896,7 +4892,7 @@ public:
         PRRNG_ASSERT(xt::has_shape(p, m_shape));
         PRRNG_ASSERT(xt::has_shape(p, mask.shape()));
         R ret = R::from_shape(m_shape);
-        this->decide_masked_impl(p.data(), mask.data(), ret.data());
+        static_cast<Derived*>(this)->decide_masked_impl(p.data(), mask.data(), ret.data());
         return ret;
     }
 
@@ -4919,7 +4915,7 @@ public:
         PRRNG_ASSERT(xt::has_shape(p, m_shape));
         PRRNG_ASSERT(xt::has_shape(p, mask.shape()));
         PRRNG_ASSERT(xt::has_shape(p, ret.shape()));
-        this->decide_masked_impl(p.data(), mask.data(), ret.data());
+        static_cast<Derived*>(this)->decide_masked_impl(p.data(), mask.data(), ret.data());
     }
 
 private:
@@ -4932,7 +4928,7 @@ private:
 
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
-        this->draw_list_positive_double(&ret.front(), n);
+        static_cast<Derived*>(this)->draw_list_positive_double(&ret.front(), n);
         return ret;
     }
 
@@ -4945,7 +4941,7 @@ private:
 
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
-        this->draw_list_double(&ret.front(), n);
+        static_cast<Derived*>(this)->draw_list_double(&ret.front(), n);
         return ret;
     }
 
@@ -4964,7 +4960,7 @@ private:
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
         std::vector<uint32_t> tmp(ret.size());
-        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), n);
+        static_cast<Derived*>(this)->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high), n);
         std::copy(tmp.begin(), tmp.end(), ret.begin());
         return ret;
     }
@@ -5001,7 +4997,7 @@ private:
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
         std::vector<uint32_t> tmp(ret.size());
-        this->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), n);
+        static_cast<Derived*>(this)->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), n);
         std::copy(tmp.begin(), tmp.end(), ret.begin());
         return ret + low;
     }
@@ -5057,151 +5053,6 @@ private:
     }
 
 protected:
-    /**
-     * @brief For each `p` take a decision.
-     * @param p Array of probabilities.
-     * @param ret Outcome, same shape as `p`.
-     */
-    virtual void decide_impl(const double* p, bool* ret)
-    {
-        for (size_type i = 0; i < m_size; ++i) {
-            ret[i] = 0.5 < p[i];
-        }
-    }
-
-    /**
-     * @brief For each `p` take a decision.
-     * @param p Array of probabilities.
-     * @param mask Mask entries of `p`.
-     * @param ret Outcome, same shape as `p`.
-     */
-    virtual void decide_masked_impl(const double* p, const bool* mask, bool* ret)
-    {
-        for (size_type i = 0; i < m_size; ++i) {
-            if (mask[i]) {
-                ret[i] = false;
-            }
-            else {
-                ret[i] = 0.5 < p[i];
-            }
-        }
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
-     */
-    virtual void cumsum_random_impl(double* ret, const size_t* n)
-    {
-        for (size_type i = 0; i < m_size; ++i) {
-            ret[i] = (double)(n[i]) * 0.5;
-        }
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
-     */
-    virtual void cumsum_exponential_impl(double* ret, const size_t* n, double)
-    {
-        return cumsum_random_impl(ret, n); // dummy
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
-     */
-    virtual void cumsum_power_impl(double* ret, const size_t* n, double)
-    {
-        return cumsum_random_impl(ret, n); // dummy
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
-     */
-    virtual void cumsum_gamma_impl(double* ret, const size_t* n, double, double)
-    {
-        return cumsum_random_impl(ret, n); // dummy
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
-     */
-    virtual void cumsum_pareto_impl(double* ret, const size_t* n, double, double)
-    {
-        return cumsum_random_impl(ret, n); // dummy
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
-     */
-    virtual void cumsum_weibull_impl(double* ret, const size_t* n, double, double)
-    {
-        return cumsum_random_impl(ret, n); // dummy
-    }
-
-    /**
-     * @brief Return the result of the cumulative sum of `n` random numbers.
-     * @param ret Output, per generator.
-     * @param n Number to draw, per generator.
-     */
-    virtual void cumsum_normal_impl(double* ret, const size_t* n, double, double)
-    {
-        return cumsum_random_impl(ret, n); // dummy
-    }
-
-    /**
-     * Draw `n` random numbers [0, 1) and write them to list (input as pointer `data`).
-     *
-     * @param data Pointer to the data (no bounds-check).
-     * @param n Size of `data`.
-     */
-    virtual void draw_list_double(double* data, size_t n)
-    {
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = 0.5;
-        }
-    }
-
-    /**
-     * Draw `n` random numbers (0, 1) and write them to list (input as pointer `data`).
-     *
-     * @param data Pointer to the data (no bounds-check).
-     * @param n Size of `data`.
-     */
-    virtual void draw_list_positive_double(double* data, size_t n)
-    {
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = 0.5;
-        }
-    }
-
-    /**
-     * Draw `n` random numbers and write them to list (input as pointer `data`).
-     *
-     * @param data Pointer to the data (no bounds-check).
-     * @param bound Upper bound of the random numbers.
-     * @param n Size of `data`.
-     */
-    virtual void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
-    {
-        (void)(bound);
-
-        for (size_t i = 0; i < n; ++i) {
-            data[i] = 0;
-        }
-    }
-
-protected:
     size_type m_size = 0; ///< See size().
     shape_type m_shape; ///< See shape().
     shape_type m_strides; ///< The strides of the array of generators.
@@ -5211,10 +5062,12 @@ protected:
  * Base class, see pcg32_array for description.
  */
 template <class Generator, class Shape>
-class pcg32_arrayBase : public GeneratorBase_array<Shape> {
+class pcg32_arrayBase : public GeneratorBase_array<pcg32_arrayBase<Generator, Shape>, Shape> {
+    friend GeneratorBase_array<pcg32_arrayBase<Generator, Shape>, Shape>;
 public:
     using size_type = typename Shape::value_type; ///< Size type
     using shape_type = Shape; ///< Shape type
+    using derived_type = pcg32_arrayBase<Generator, Shape>;
 
 protected:
     /**
@@ -5501,7 +5354,7 @@ protected:
      * @param p Array of probabilities.
      * @param ret Outcome, same shape as `p`.
      */
-    void decide_impl(const double* p, bool* ret) override
+    void decide_impl(const double* p, bool* ret)
     {
         for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].next_double() < p[i];
@@ -5514,7 +5367,7 @@ protected:
      * @param mask Mask entries of `p`.
      * @param ret Outcome, same shape as `p`.
      */
-    void decide_masked_impl(const double* p, const bool* mask, bool* ret) override
+    void decide_masked_impl(const double* p, const bool* mask, bool* ret)
     {
         for (size_type i = 0; i < m_size; ++i) {
             if (mask[i]) {
@@ -5531,7 +5384,7 @@ protected:
      * @param ret Output, per generator.
      * @param n Number to draw, per generator.
      */
-    void cumsum_random_impl(double* ret, const size_t* n) override
+    void cumsum_random_impl(double* ret, const size_t* n)
     {
         for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_random(n[i]);
@@ -5544,7 +5397,7 @@ protected:
      * @param n Number to draw, per generator.
      * @param scale Scale.
      */
-    void cumsum_exponential_impl(double* ret, const size_t* n, double scale) override
+    void cumsum_exponential_impl(double* ret, const size_t* n, double scale)
     {
         for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_exponential(n[i], scale);
@@ -5557,7 +5410,7 @@ protected:
      * @param n Number to draw, per generator.
      * @param k Scale.
      */
-    void cumsum_power_impl(double* ret, const size_t* n, double k) override
+    void cumsum_power_impl(double* ret, const size_t* n, double k)
     {
         for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_power(n[i], k);
@@ -5571,7 +5424,7 @@ protected:
      * @param k Shape parameter.
      * @param scale Scale parameter.
      */
-    void cumsum_gamma_impl(double* ret, const size_t* n, double k, double scale) override
+    void cumsum_gamma_impl(double* ret, const size_t* n, double k, double scale)
     {
         for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_gamma(n[i], k, scale);
@@ -5585,7 +5438,7 @@ protected:
      * @param k Shape parameter.
      * @param scale Scale parameter.
      */
-    void cumsum_pareto_impl(double* ret, const size_t* n, double k, double scale) override
+    void cumsum_pareto_impl(double* ret, const size_t* n, double k, double scale)
     {
         for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_pareto(n[i], k, scale);
@@ -5599,7 +5452,7 @@ protected:
      * @param k Shape parameter.
      * @param scale Scale parameter.
      */
-    void cumsum_weibull_impl(double* ret, const size_t* n, double k, double scale) override
+    void cumsum_weibull_impl(double* ret, const size_t* n, double k, double scale)
     {
         for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_weibull(n[i], k, scale);
@@ -5613,7 +5466,7 @@ protected:
      * @param mu Mean.
      * @param sigma Standard deviation.
      */
-    void cumsum_normal_impl(double* ret, const size_t* n, double mu, double sigma) override
+    void cumsum_normal_impl(double* ret, const size_t* n, double mu, double sigma)
     {
         for (size_type i = 0; i < m_size; ++i) {
             ret[i] = m_gen[i].cumsum_normal(n[i], mu, sigma);
@@ -5627,7 +5480,7 @@ protected:
      * @param data Pointer to the data (no bounds-check).
      * @param n The number of random numbers per generator.
      */
-    void draw_list_double(double* data, size_t n) override
+    void draw_list_double(double* data, size_t n)
     {
         for (size_type i = 0; i < m_size; ++i) {
             for (size_t j = 0; j < n; ++j) {
@@ -5643,7 +5496,7 @@ protected:
      * @param data Pointer to the data (no bounds-check).
      * @param n The number of random numbers per generator.
      */
-    void draw_list_positive_double(double* data, size_t n) override
+    void draw_list_positive_double(double* data, size_t n)
     {
         for (size_type i = 0; i < m_size; ++i) {
             for (size_t j = 0; j < n; ++j) {
@@ -5660,7 +5513,7 @@ protected:
      * @param bound The upper bound of the random numbers.
      * @param n The number of random numbers per generator.
      */
-    void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n) override
+    void draw_list_uint32(uint32_t* data, uint32_t bound, size_t n)
     {
         for (size_type i = 0; i < m_size; ++i) {
             for (size_t j = 0; j < n; ++j) {
@@ -5692,9 +5545,9 @@ private:
 
 protected:
     std::vector<Generator> m_gen; ///< Underlying storage: one generator per array item
-    using GeneratorBase_array<Shape>::m_size;
-    using GeneratorBase_array<Shape>::m_shape;
-    using GeneratorBase_array<Shape>::m_strides;
+    using GeneratorBase_array<derived_type, Shape>::m_size;
+    using GeneratorBase_array<derived_type, Shape>::m_shape;
+    using GeneratorBase_array<derived_type, Shape>::m_strides;
 };
 
 /**
@@ -5722,6 +5575,7 @@ class pcg32_array : public pcg32_arrayBase<pcg32, std::vector<size_t>> {
 public:
     using size_type = size_t; ///< Size type
     using shape_type = std::vector<size_t>; ///< Shape type
+    using derived_type = pcg32_arrayBase<pcg32, std::vector<size_t>>;
 
     pcg32_array() = default;
 
@@ -5756,9 +5610,9 @@ public:
 
 protected:
     using pcg32_arrayBase<pcg32, shape_type>::m_gen;
-    using GeneratorBase_array<shape_type>::m_size;
-    using GeneratorBase_array<shape_type>::m_shape;
-    using GeneratorBase_array<shape_type>::m_strides;
+    using GeneratorBase_array<derived_type, shape_type>::m_size;
+    using GeneratorBase_array<derived_type, shape_type>::m_shape;
+    using GeneratorBase_array<derived_type, shape_type>::m_strides;
 };
 
 /**
@@ -5769,6 +5623,7 @@ class pcg32_tensor : public pcg32_arrayBase<pcg32, std::array<size_t, N>> {
 public:
     using size_type = size_t; ///< Size type
     using shape_type = std::array<size_t, N>; ///< Shape type
+    using derived_type = pcg32_arrayBase<pcg32, std::array<size_t, N>>;
 
     pcg32_tensor() = default;
 
@@ -5801,9 +5656,9 @@ public:
 
 protected:
     using pcg32_arrayBase<pcg32, shape_type>::m_gen;
-    using GeneratorBase_array<shape_type>::m_size;
-    using GeneratorBase_array<shape_type>::m_shape;
-    using GeneratorBase_array<shape_type>::m_strides;
+    using GeneratorBase_array<derived_type, shape_type>::m_size;
+    using GeneratorBase_array<derived_type, shape_type>::m_shape;
+    using GeneratorBase_array<derived_type, shape_type>::m_strides;
 };
 
 /**
@@ -5811,6 +5666,8 @@ protected:
  */
 class pcg32_index_array : public pcg32_arrayBase<pcg32_index, std::vector<size_t>> {
 public:
+    using derived_type = pcg32_arrayBase<pcg32_index, std::vector<size_t>>;
+
     pcg32_index_array() = default;
 
     /**
@@ -5830,9 +5687,9 @@ public:
 
 protected:
     using pcg32_arrayBase<pcg32_index, std::vector<size_t>>::m_gen;
-    using GeneratorBase_array<std::vector<size_t>>::m_size;
-    using GeneratorBase_array<std::vector<size_t>>::m_shape;
-    using GeneratorBase_array<std::vector<size_t>>::m_strides;
+    using GeneratorBase_array<derived_type, std::vector<size_t>>::m_size;
+    using GeneratorBase_array<derived_type, std::vector<size_t>>::m_shape;
+    using GeneratorBase_array<derived_type, std::vector<size_t>>::m_strides;
 };
 
 /**
@@ -5841,6 +5698,8 @@ protected:
 template <size_t N>
 class pcg32_index_tensor : public pcg32_arrayBase<pcg32_index, std::array<size_t, N>> {
 public:
+    using derived_type = pcg32_arrayBase<pcg32_index, std::array<size_t, N>>;
+
     pcg32_index_tensor() = default;
 
     /**
@@ -5859,9 +5718,9 @@ public:
 
 protected:
     using pcg32_arrayBase<pcg32_index, std::array<size_t, N>>::m_gen;
-    using GeneratorBase_array<std::array<size_t, N>>::m_size;
-    using GeneratorBase_array<std::array<size_t, N>>::m_shape;
-    using GeneratorBase_array<std::array<size_t, N>>::m_strides;
+    using GeneratorBase_array<derived_type, std::array<size_t, N>>::m_size;
+    using GeneratorBase_array<derived_type, std::array<size_t, N>>::m_shape;
+    using GeneratorBase_array<derived_type, std::array<size_t, N>>::m_strides;
 };
 
 namespace detail {
