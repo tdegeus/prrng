@@ -435,11 +435,6 @@ void init_pcg32_arrayBase_chunkBase(C& cls)
 
     cls.def("align_at", &Parent::align_at, py::arg("index"));
 
-    // deprecated
-    cls.def_property_readonly("index", &Parent::index);
-    // deprecated
-    cls.def_property_readonly("chunk_index", &Parent::chunk_index);
-
     cls.def_property_readonly(
         "left_of_align", py::overload_cast<>(&Parent::template left_of_align<Value>, py::const_)
     );
@@ -1363,18 +1358,6 @@ PYBIND11_MODULE(_prrng, m)
             "right_of_align",
             &prrng::pcg32_cumsum<xt::pyarray<double>>::right_of_align,
             "Value of the cumsum just right of ``target`` (last time ``align`` was called)."
-        )
-
-        // deprecated
-        .def_property_readonly(
-            "index", &prrng::pcg32_cumsum<xt::pyarray<double>>::index, "Index or target."
-        )
-
-        // deprecated
-        .def_property_readonly(
-            "chunk_index",
-            &prrng::pcg32_cumsum<xt::pyarray<double>>::chunk_index,
-            "Index or target in the current chunk."
         )
 
         .def(
