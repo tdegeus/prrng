@@ -4997,7 +4997,9 @@ private:
         auto n = detail::size(ishape);
         R ret = R::from_shape(detail::concatenate<M, S>::two(m_shape, ishape));
         std::vector<uint32_t> tmp(ret.size());
-        static_cast<Derived*>(this)->draw_list_uint32(&tmp.front(), static_cast<uint32_t>(high - low), n);
+        static_cast<Derived*>(this)->draw_list_uint32(
+            &tmp.front(), static_cast<uint32_t>(high - low), n
+        );
         std::copy(tmp.begin(), tmp.end(), ret.begin());
         return ret + low;
     }
@@ -5064,6 +5066,7 @@ protected:
 template <class Generator, class Shape>
 class pcg32_arrayBase : public GeneratorBase_array<pcg32_arrayBase<Generator, Shape>, Shape> {
     friend GeneratorBase_array<pcg32_arrayBase<Generator, Shape>, Shape>;
+
 public:
     using size_type = typename Shape::value_type; ///< Size type
     using shape_type = Shape; ///< Shape type
