@@ -381,11 +381,6 @@ void init_pcg32_arrayBase(C& cls)
 template <class C, class Parent, class Data, class State, class Value, class Index>
 void init_pcg32_arrayBase_chunkBase(C& cls)
 {
-    // cls.def(py::self += Data());
-    // cls.def(py::self -= Data());
-    // cls.def(py::self += double());
-    // cls.def(py::self -= double());
-
     cls.def(
         "__iadd__",
         [](Parent& a, const Data& b) -> Parent& {
