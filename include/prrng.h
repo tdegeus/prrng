@@ -1674,8 +1674,13 @@ private:
  *
  *      class MyGenerator : public GeneratorBase<MyGenerator> {
  *      public:
+ *          // Return next random number [0, 1).
  *          double next_double();
+ *
+ *          // Return next random number (0, 1).
  *          double next_positive_double();
+ *
+ *          // Return next random number [0, 2^32).
  *          uint32_t next_uint32();
  *      };
  *
