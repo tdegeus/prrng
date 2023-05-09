@@ -27,7 +27,7 @@ jobs:
       run:
         shell: bash -l {0}
 
-    name: ${{ matrix.runs-on }} • x64 ${{ matrix.args }}
+    name: ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
 
     steps:
@@ -46,6 +46,12 @@ jobs:
 
     - name: Set dummy version
       run: echo "SETUPTOOLS_SCM_PRETEND_VERSION=0.0" >> $GITHUB_ENV
+
+    - name: Install LLVM and Clang
+      if: runner.os == 'Linux'
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: "16.0"
 
     - name: Configure using CMake
       run: cmake -Bbuild ${{ matrix.config }}
