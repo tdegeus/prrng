@@ -53,6 +53,10 @@ jobs:
       with:
         version: "16.0"
 
+    - name: Use Clang
+      if: runner.os == 'Linux'
+      run: export CC=clang CXX=clang++
+
     - name: Configure using CMake
       run: cmake -Bbuild ${{ matrix.config }}
 
