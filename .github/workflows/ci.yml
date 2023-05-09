@@ -56,8 +56,8 @@ jobs:
     - name: Use Clang
       if: runner.os == 'Linux'
       run: |
-        echo "CC=clang" >> $GITHUB_ENV
-        echo "CXX=clang++" >> $GITHUB_ENV
+        echo "CC=clang-16" >> $GITHUB_ENV
+        echo "CXX=clang++-16" >> $GITHUB_ENV
 
     - name: Configure using CMake
       run: cmake -Bbuild ${{ matrix.config }}
