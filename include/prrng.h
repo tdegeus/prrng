@@ -541,9 +541,8 @@ std::array<I, L> to_array(const I (&shape)[L])
 } // namespace detail
 
 /**
- * Return version string, for example `"0.1.0"`
- *
- * @return std::string
+ * @brief Version string, e.g. `"0.8.0"`.
+ * @return String.
  */
 inline std::string version()
 {
@@ -551,8 +550,9 @@ inline std::string version()
 }
 
 /**
- * Return versions of this library and of all of its dependencies.
- * The output is a list of strings, e.g.:
+ * @brief Versions of this library and of all of its dependencies.
+ *
+ * @detail The output is a list of strings, e.g.:
  *
  *     "prrng=1.7.0",
  *     "xtensor=0.20.1"
@@ -611,7 +611,7 @@ inline std::vector<std::string> version_dependencies()
 }
 
 /**
- * Return information on the compiler, the platform, the C++ standard, and the compilation data.
+ * @brief Information on the compiler, the platform, the C++ standard, and the compilation date.
  * @return List of strings.
  */
 inline std::vector<std::string> version_compiler()
