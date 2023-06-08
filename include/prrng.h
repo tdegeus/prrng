@@ -552,7 +552,7 @@ inline std::string version()
 /**
  * @brief Versions of this library and of all of its dependencies.
  *
- * @detail The output is a list of strings, e.g.:
+ * @details The output is a list of strings, e.g.:
  *
  *     "prrng=1.7.0",
  *     "xtensor=0.20.1"
