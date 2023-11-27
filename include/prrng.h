@@ -1836,7 +1836,7 @@ public:
      * @param begin Iterator to the beginning of the container.
      * @param end Iterator to the end of the container.
      *
-     * \note From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
+     * @note From: Knuth, TAoCP Vol. 2 (3rd 3d), Section 3.4.2
      *
      * @author Wenzel Jakob, https://github.com/wjakob/pcg32.
      */
@@ -2927,7 +2927,7 @@ public:
      *
      * @return Next random number in sequence.
      *
-     * \note Wrapper around operator().
+     * @note Wrapper around operator().
      */
     uint32_t next_uint32()
     {
@@ -3254,7 +3254,7 @@ public:
      * @param distance Distance to jump ahead or jump back (depending on the sign).
      * This changes that state of the generator by the appropriate number of increments.
      *
-     * \note The method used here is based on Brown, "Random Number Generation
+     * @note The method used here is based on Brown, "Random Number Generation
      * with Arbitrary Stride", Transactions of the American Nuclear Society (Nov. 1994).
      * The algorithm is very similar to fast exponentiation.
      *
