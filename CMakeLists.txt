@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18..3.21)
+cmake_minimum_required(VERSION 3.18)
 
 project(prrng)
 
@@ -42,7 +42,7 @@ endif()
 # ==========
 
 find_package(xtensor REQUIRED)
-find_package(Boost REQUIRED COMPONENTS math)
+find_package(Boost REQUIRED COMPONENTS headers)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
