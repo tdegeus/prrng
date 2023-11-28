@@ -1,7 +1,7 @@
 channels:
 - conda-forge
 dependencies:
-- boost
+- libboost-headers
 - catch2 >=3.0.0
 - cmake
 - doxygen

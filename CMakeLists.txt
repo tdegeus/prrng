@@ -42,7 +42,7 @@ endif()
 # ==========
 
 find_package(xtensor REQUIRED)
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS math)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
@@ -51,7 +51,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
-target_link_libraries(${PROJECT_NAME} INTERFACE xtensor Boost::boost)
+target_link_libraries(${PROJECT_NAME} INTERFACE xtensor Boost::headers)
 
 target_compile_definitions(${PROJECT_NAME} INTERFACE
     ${PROJECT_NAME_UPPER}_VERSION="${PROJECT_VERSION}")

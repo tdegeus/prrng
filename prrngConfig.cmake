@@ -27,8 +27,8 @@ endif()
 
 # Find dependencies
 
-find_dependency(xtensor)
-find_dependency(Boost)
+find_dependency(xtensor REQUIRED)
+find_dependency(Boost REQUIRED COMPONENTS math)
 
 # Define support target "prrng::compiler_warnings"
 
