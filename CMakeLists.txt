@@ -42,7 +42,7 @@ endif()
 # ==========
 
 find_package(xtensor REQUIRED)
-find_package(Boost REQUIRED COMPONENTS headers)
+find_package(Boost REQUIRED)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
